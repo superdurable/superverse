@@ -80,24 +80,6 @@ RUN set -eu; \
     cp /ids /modules/.ids; \
     cp /ids /seed/.ids
 
-# The image's own commands build in a module named like the repository, so the
-# paths under sandbox/coding/ and its internal packages are those of the source tree.
-FROM --platform=${BUILDPLATFORM} ${GO_IMAGE} AS image-commands
-ENV GOTOOLCHAIN=local
-WORKDIR /image-commands
-COPY sandbox/coding/go.mod.imported ./go.mod
-COPY sandbox/coding/cmd/ ./sandbox/coding/cmd/
-COPY sandbox/coding/internal/ ./sandbox/coding/internal/
-ARG TARGETOS
-ARG TARGETARCH
-RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
-    --mount=type=cache,id=coding-sandbox-previewctl-go-build-${TARGETOS}-${TARGETARCH},target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -buildvcs=false -trimpath -ldflags='-s -w' -o /out/ \
-      ./sandbox/coding/cmd/superverse-previewctl \
-      ./sandbox/coding/cmd/superverse-exec \
-      ./sandbox/coding/cmd/superverse-files
-
 # The image's module proxy: the module graphs of the application template and
 # of each listed example (an example's go.mod may add connectors or select other
 # releases than the base's), each with its ogen tool module. The downloads go
@@ -127,6 +109,36 @@ RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
     mkdir -p /out/go-module-proxy; \
     cp -a /tmp/proxy-module-cache/cache/download/. /out/go-module-proxy/; \
     GOMODCACHE=/tmp/proxy-module-cache go clean -modcache
+
+# The image's own commands build in a module named like the repository, so the
+# paths under sandbox/coding/ and its internal packages are those of the source
+# tree. superverse-evolve also compiles the goals evaluator and the run record
+# from the source tree (internal/dexai/delivery/evolve/goals and runexport,
+# which import only the standard library, yaml.v3 and each other), with
+# yaml.v3 from the module proxy above, so the build needs no network.
+# scripts/check-package-layers.py checks that go.mod.imported and
+# go.sum.imported pin the root's yaml.v3 and that app-template/go.sum holds it.
+FROM --platform=${BUILDPLATFORM} ${GO_IMAGE} AS image-commands
+ENV GOTOOLCHAIN=local
+WORKDIR /image-commands
+COPY sandbox/coding/go.mod.imported ./go.mod
+COPY sandbox/coding/go.sum.imported ./go.sum
+COPY sandbox/coding/cmd/ ./sandbox/coding/cmd/
+COPY sandbox/coding/internal/ ./sandbox/coding/internal/
+COPY internal/dexai/delivery/evolve/goals/*.go ./internal/dexai/delivery/evolve/goals/
+COPY internal/dexai/delivery/evolve/runexport/*.go ./internal/dexai/delivery/evolve/runexport/
+COPY --from=app-dependencies /out/go-module-proxy/ /go-module-proxy/
+ARG TARGETOS
+ARG TARGETARCH
+RUN --mount=type=cache,id=coding-sandbox-app-go-mod,target=/go/pkg/mod \
+    --mount=type=cache,id=coding-sandbox-previewctl-go-build-${TARGETOS}-${TARGETARCH},target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    GOFLAGS=-mod=readonly GOPROXY=file:///go-module-proxy GOSUMDB=off \
+    go build -buildvcs=false -trimpath -ldflags='-s -w' -o /out/ \
+      ./sandbox/coding/cmd/superverse-previewctl \
+      ./sandbox/coding/cmd/superverse-exec \
+      ./sandbox/coding/cmd/superverse-files \
+      ./sandbox/coding/cmd/superverse-evolve
 
 # The toolchain the seeds are built with and the image runs: its packages, Go,
 # Temporal and Dex CLI, the module proxy and the runtime environment. Besides
@@ -267,7 +279,7 @@ ENV SUPERVERSE_GO_BUILD_CACHE_SEED=/opt/superverse/go-build-cache-seed \
     SUPERVERSE_NPM_CACHE_SEED=/opt/superverse/npm-cache-seed
 ARG DEXCLI_VERSION
 COPY --from=sandboxd-build /out/sandboxd /usr/local/bin/sandboxd
-COPY --from=image-commands /out/superverse-previewctl /out/superverse-exec /out/superverse-files /usr/local/bin/
+COPY --from=image-commands /out/superverse-previewctl /out/superverse-exec /out/superverse-files /out/superverse-evolve /usr/local/bin/
 COPY dex-skills/ /opt/superverse/dex-skills/
 COPY --chmod=0755 sandbox/coding/shims/dexcli sandbox/coding/shims/temporal /usr/local/bin/
 # The shims run the real binaries with a throwaway HOME, so the check leaves

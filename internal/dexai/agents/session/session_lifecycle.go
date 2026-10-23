@@ -345,6 +345,9 @@ func serialToolStepOptions(ctx dex.Context, call conversation.ToolCall) *dex.Ste
 			options.ExecuteLoadAttributeMapInstances = append(options.ExecuteLoadAttributeMapInstances, modelKeysAttribute.Load(modelcredential.ForModel(model).String()))
 		}
 		options.ExecuteLockAttributes = append(options.ExecuteLockAttributes, credentialInfoLocks()...)
+	case call.Name == conversation.ToolReportEvolveReview:
+		// A report pins or unpins records by review, at most two pinned.
+		options.ExecuteLoadAttributeMaps = taskMessageMaps
 	case isSubagent:
 		options.ExecuteLoadAttributeMapInstances = []dex.AttributeMapLoad{subagentsAttribute.Load(agentID)}
 	}

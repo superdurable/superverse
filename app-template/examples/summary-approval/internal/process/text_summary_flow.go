@@ -41,6 +41,7 @@ var (
 	// dex:indexed-attribute attribute-key:summary-status index-key:keyword1 index-type:keyword value-type:string description:"Summary outcome"
 	SummaryStatus       = dex.DefineAttribute[string]("summary-status", dex.Indexed(dex.AttributeIndex{Type: dex.IndexKeyword, IndexKey: "keyword1"}))
 	SummarySourceText   = dex.DefineAttribute[string]("source-text")
+	SummarySourceBytes  = dex.DefineAttribute[int64]("source-bytes")
 	SummaryText         = dex.DefineAttribute[string]("summary-text")
 	SummaryModel        = dex.DefineAttribute[string]("summary-model")
 	SummaryInputTokens  = dex.DefineAttribute[int64]("input-tokens")
@@ -138,7 +139,7 @@ func (flow TextSummaryFlow) GetRPCs() []dex.RPCDef {
 
 func (TextSummaryFlow) GetPersistenceSchema() dex.PersistenceSchema {
 	return dex.PersistenceSchema{Attributes: []dex.AttributeDef{
-		SummaryStatus, SummarySourceText, SummaryText, SummaryModel,
+		SummaryStatus, SummarySourceText, SummarySourceBytes, SummaryText, SummaryModel,
 		SummaryInputTokens, SummaryOutputTokens, SummaryTotalTokens, SummaryNotice,
 	}, Channels: []dex.ChannelDef{SummaryApprovals}}
 }
@@ -152,10 +153,10 @@ type PrepareSummary struct {
 func (PrepareSummary) Execute(ctx dex.Context, input TextSummaryInput) (_ *dex.StepDecision, err error) {
 	defer logFailure(ctx, TextSummaryFlow{}, "PrepareSummary", &err)
 	input.Text = strings.TrimSpace(input.Text)
-	if err = SummarySourceText.Set(ctx, input.Text); err != nil {
+	if err = errors.Join(SummarySourceText.Set(ctx, input.Text), SummarySourceBytes.Set(ctx, int64(len(input.Text)))); err != nil {
 		return nil, err
 	}
-	if input.Text == "" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text) {
+	if !SummaryTextAccepted(len(input.Text)) || !utf8.ValidString(input.Text) {
 		err = errors.Join(
 			SummaryStatus.Set(ctx, "invalid_input"),
 			SummaryNotice.Set(ctx, "Text must contain 1 to 65,536 UTF-8 bytes. No model request was made."),

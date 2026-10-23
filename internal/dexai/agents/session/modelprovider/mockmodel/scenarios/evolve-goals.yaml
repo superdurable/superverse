@@ -11,7 +11,8 @@
 # gate, the second replaces it with a file that the goals parser refuses and
 # pushes that. Goal measurement reads the goals file of the Live build's
 # commit, so neither push changes what Live measures until a Live deployment
-# names its commit.
+# names its commit. Where agent reviews run, a review of the first goals
+# notifies the Session, whose turn only answers it; the test reports it.
 name: evolve-goals
 title: "Write the application's goals"
 description: "Pushes a valid .superverse/goals.md for TextSummaryFlow, then one the goals parser refuses; goal measurement reads the file of the Live build's commit."
@@ -76,6 +77,9 @@ inputs:
               verification:
                 - ".superverse/goals.md holds one goals block for TextSummaryFlow"
       - text: "The goals are pushed. Goal measurement reads them once a Live deployment serves this commit."
+      - text: "An agent review of these goals arrived; this scenario leaves its report to the test, which reports through the platform."
+        notification: task
+        notification_source: evolve
   - label: "Push invalid goals"
     message: "Replace the goals with a draft that is not finished and push it."
     replies:

@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/superdurable/dex/blob-cache-go/blobcache"
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -46,6 +47,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deliverydao"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/deployments"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
@@ -214,9 +216,10 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	previewClient := &preview.PreviewFlowClient{Flow: previewFlow}
 	sessionService.Previews, sessionService.Instances, sessionService.PreviewData = previewClient, sessionAgent.Instances(), previewConfiguration
 
-	// Goal measurement reads Live runs through the Project diagnostics, set below.
-	evolveFlows := evolve.NewEvolveFlowBootstrap(config.evolve, projectClient, config.host, config.objects, projectDiagnostics)
+	// Goal measurement reads Live runs through the Project diagnostics, set below, and tells the Session of reviews.
+	evolveFlows := evolve.NewEvolveFlowBootstrap(config.evolve, projectClient, config.host, config.objects, evolveDependency{diagnostics: projectDiagnostics, sessions: sessionService})
 	evolveClient := evolveFlows.Client()
+	sessionService.Evolve = evolveClient
 	deploymentClient := deployments.NewProjectDeployFlowClient(projectClient, providers.serving, providers.grants)
 	publishingService := deployments.NewPublishingFlowService(projectClient, deploymentClient, configuration, shared.Usages, deployments.BuildLogReads{Redactor: providers.redactor, PerSecond: config.buildLogReadsPerSecond})
 	// Both delivery Flows report their failures to the Project's Session.
@@ -360,4 +363,33 @@ func (g localModelGrants) GrantEnvironment(ctx context.Context, workload infra.W
 	}
 	environment["SUPERVERSE_LOCAL_MOCK_LLM_URL"] = g.endpoint
 	return environment, nil
+}
+
+// evolveDependency serves EvolveFlow: the Live reads of the Project
+// diagnostics and the Session notifications of the Session Service.
+type evolveDependency struct {
+	diagnostics *diagnostics.ProjectDiagnostics
+	sessions    *agents.SessionFlowService
+}
+
+var _ evolve.EvolveFlowDependency = evolveDependency{}
+
+func (d evolveDependency) InvokeEvolveLive(ctx context.Context, projectID string, read func(context.Context, dexpb.FlowServiceClient) error) error {
+	return d.diagnostics.InvokeEvolveLive(ctx, projectID, read)
+}
+
+func (d evolveDependency) CurrentLive(ctx context.Context, projectID string) (evolve.LiveRelease, error) {
+	return d.diagnostics.CurrentLive(ctx, projectID)
+}
+
+func (d evolveDependency) LiveRedaction(ctx context.Context, projectID string) (func(string) string, error) {
+	return d.diagnostics.LiveRedaction(ctx, projectID)
+}
+
+func (d evolveDependency) LiveTimeline(ctx context.Context, projectID string, until time.Time) ([]runexport.Release, error) {
+	return d.diagnostics.LiveTimeline(ctx, projectID, until)
+}
+
+func (d evolveDependency) ReportEvolveNotification(ctx context.Context, projectID string, notice evolve.EvolveNotice) error {
+	return d.sessions.ReportEvolveNotification(ctx, projectID, notice)
 }

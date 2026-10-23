@@ -46,4 +46,6 @@ The chat's header holds only a dot while live updates reconnect (`SessionConnect
 workspace's time, Keep running for 7 days and its startup phases are in Project details (`WorkspaceDetails`).
 `HistoryJumps` floats Jump to beginning and Jump to latest at the bottom of the history once the reader
 scrolls away from the latest message; scrolling up loads earlier messages on its own.
+`SessionChat` keeps the Builder's `dock` card, such as the agent's proposal, above the pending actions; it never
+blocks the composer, and the chat knows nothing of what it holds.
 Requests use the thin typed Studio API and remain outside shared Agent UI.

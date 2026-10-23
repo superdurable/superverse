@@ -323,6 +323,10 @@ func (flow *SessionAgentFlow) recordPlatformModelResult(ctx dex.Context, input p
 	if input.Reply == nil {
 		panic("model outcome has no reply")
 	}
+	if state := comm.Must(agentStateAttribute.Get(ctx)); state.EvolveReview != nil {
+		// The platform model usage of an agent review's own turns, its billable record.
+		comm.MustDo(agentStateAttribute.Set(ctx, agentloop.AddEvolveUsage(state, input.Reply.Metrics)))
+	}
 	return platformModelRecord{next: recordModelReply(ctx, *input.Reply, input.StartedAt, input.Admission.Authority)}
 }
 

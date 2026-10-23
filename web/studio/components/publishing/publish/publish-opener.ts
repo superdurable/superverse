@@ -16,18 +16,25 @@ import { useEffect, useRef } from "react";
  */
 export type PublishOpening = { mode: "version"; commit?: string } | { mode: "live" };
 
-const listeners = new Set<(opening: PublishOpening) => void>();
+const listeners = new Set<(opening: PublishOpening) => boolean>();
 
 /**
  * Opens the bar's Publish popover from anywhere in the Builder, such as Tools ▸ Publishing's "Publish
- * V13…" or the Live tab's "Publish this change…" banner, which passes `{ mode: "live" }`.
+ * V13…" or the Live tab's "Publish this change…" banner, which passes `{ mode: "live" }`. False when it
+ * did not open: the bar shows no Publish, or a publish runs; the caller can lead to Tools ▸ Publishing
+ * instead, which shows that publish.
  */
-export function openPublishPopover(opening: PublishOpening): void {
-  for (const listener of listeners) listener(opening);
+export function openPublishPopover(opening: PublishOpening): boolean {
+  let opened = false;
+  for (const listener of listeners) opened = listener(opening) || opened;
+  return opened;
 }
 
-/** Calls `onOpen` whenever a page asks the popover to open; the bar's Publish button listens. */
-export function usePublishOpenings(onOpen: (opening: PublishOpening) => void) {
+/**
+ * Calls `onOpen` whenever a page asks the popover to open, which answers whether it opened; the bar's
+ * Publish button listens.
+ */
+export function usePublishOpenings(onOpen: (opening: PublishOpening) => boolean) {
   const latest = useRef(onOpen);
   useEffect(() => {
     latest.current = onOpen;

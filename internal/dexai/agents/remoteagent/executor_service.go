@@ -70,6 +70,8 @@ func (s *Connections) activate(ctx context.Context, access remoteagentdao.Access
 	if err = authorizeAccess(fresh); err != nil {
 		return bridgeapi.ActivateResponse{}, err
 	}
+	// A local agent never runs the platform model: an agent review that waits for the Session ends skipped.
+	s.Sessions.ReportEvolveRemote(ctx, access.ProjectID)
 	last := result.Executor.Remote.ActivationSequence
 	if last == nil {
 		// A remote epoch committed by an older Worker has no recorded head.

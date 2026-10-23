@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-package runexport
+package history
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
 	"github.com/superdurable/superversev2/internal/dexai/studio/flowapi/fdg"
 )
 
@@ -69,16 +70,16 @@ func (f Found) InWindow(from time.Time) bool {
 }
 
 // Record reads a run's history and compacts it.
-func (e Engine) Record(ctx context.Context, found Found, s Settings) (Record, error) {
+func (e Engine) Record(ctx context.Context, found Found, s Settings) (runexport.Record, error) {
 	events, truncated, err := e.history(ctx, found)
 	if err != nil {
-		return Record{}, err
+		return runexport.Record{}, err
 	}
 	reader := &engineValues{ctx: ctx, flows: e.Flows, flowID: found.FlowID, budget: defaultMaxBlobs}
 	record := compact(found.runIdentity, events, reader, s)
 	record.HistoryTruncated = truncated
 	if reader.err != nil {
-		return Record{}, reader.err
+		return runexport.Record{}, reader.err
 	}
 	return record, nil
 }

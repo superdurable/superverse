@@ -17,6 +17,7 @@ with its tests. A new Flow follows the existing one.
 | Path | Holds |
 | --- | --- |
 | `internal/process/text_summary_flow.go` | the Flow, its approval Channel and Action, its RPCs |
+| `internal/process/summary_rules.go` | `SummaryTextAccepted`, the plain function that decides whether a text gets a model request, from the `source-bytes` the run records |
 | `internal/worker/connections.go`, `application.go` | one `Connections` field per connection; the Flow list |
 | `internal/worker/worker.go`, `cmd/server/main.go` | the Worker and the HTTP server |
 | `dex-app.yaml` | one `flowDefinitions` entry per Flow file; one `connectors` entry per connection |

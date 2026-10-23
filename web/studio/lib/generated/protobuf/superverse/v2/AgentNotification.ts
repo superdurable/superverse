@@ -29,6 +29,24 @@ export type _superverse_v2_AgentNotification_ConnectorEvent__Output = typeof _su
 
 // Original file: api/superverse/v2/superverse.proto
 
+export const _superverse_v2_AgentNotification_EvolvePhase = {
+  EVOLVE_PHASE_UNSPECIFIED: 'EVOLVE_PHASE_UNSPECIFIED',
+  EVOLVE_PHASE_REVIEW: 'EVOLVE_PHASE_REVIEW',
+  EVOLVE_PHASE_DECISION: 'EVOLVE_PHASE_DECISION',
+} as const;
+
+export type _superverse_v2_AgentNotification_EvolvePhase =
+  | 'EVOLVE_PHASE_UNSPECIFIED'
+  | 0
+  | 'EVOLVE_PHASE_REVIEW'
+  | 1
+  | 'EVOLVE_PHASE_DECISION'
+  | 2
+
+export type _superverse_v2_AgentNotification_EvolvePhase__Output = typeof _superverse_v2_AgentNotification_EvolvePhase[keyof typeof _superverse_v2_AgentNotification_EvolvePhase]
+
+// Original file: api/superverse/v2/superverse.proto
+
 export const _superverse_v2_AgentNotification_Kind = {
   KIND_UNSPECIFIED: 'KIND_UNSPECIFIED',
   KIND_TASK: 'KIND_TASK',
@@ -100,6 +118,7 @@ export const _superverse_v2_AgentNotification_Source = {
   SOURCE_RELEASE: 'SOURCE_RELEASE',
   SOURCE_DEPLOYMENT: 'SOURCE_DEPLOYMENT',
   SOURCE_CONNECTOR: 'SOURCE_CONNECTOR',
+  SOURCE_EVOLVE: 'SOURCE_EVOLVE',
 } as const;
 
 export type _superverse_v2_AgentNotification_Source =
@@ -117,6 +136,8 @@ export type _superverse_v2_AgentNotification_Source =
   | 5
   | 'SOURCE_CONNECTOR'
   | 6
+  | 'SOURCE_EVOLVE'
+  | 7
 
 export type _superverse_v2_AgentNotification_Source__Output = typeof _superverse_v2_AgentNotification_Source[keyof typeof _superverse_v2_AgentNotification_Source]
 
@@ -173,6 +194,8 @@ export interface AgentNotification {
   'remedy'?: (_superverse_v2_FailureRemedy);
   'resolvedNoticeId'?: (string);
   'url'?: (string);
+  'reviewId'?: (string);
+  'evolvePhase'?: (_superverse_v2_AgentNotification_EvolvePhase);
 }
 
 export interface AgentNotification__Output {
@@ -198,4 +221,6 @@ export interface AgentNotification__Output {
   'remedy': (_superverse_v2_FailureRemedy__Output);
   'resolvedNoticeId': (string);
   'url': (string);
+  'reviewId': (string);
+  'evolvePhase': (_superverse_v2_AgentNotification_EvolvePhase__Output);
 }

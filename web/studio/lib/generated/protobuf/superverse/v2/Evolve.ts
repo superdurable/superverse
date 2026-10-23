@@ -5,6 +5,7 @@ import type { EvolveGoals as _superverse_v2_EvolveGoals, EvolveGoals__Output as 
 import type { EvolveSchedule as _superverse_v2_EvolveSchedule, EvolveSchedule__Output as _superverse_v2_EvolveSchedule__Output } from '../../superverse/v2/EvolveSchedule';
 import type { EvolveReview as _superverse_v2_EvolveReview, EvolveReview__Output as _superverse_v2_EvolveReview__Output } from '../../superverse/v2/EvolveReview';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../google/protobuf/Timestamp';
+import type { EvolveProposal as _superverse_v2_EvolveProposal, EvolveProposal__Output as _superverse_v2_EvolveProposal__Output } from '../../superverse/v2/EvolveProposal';
 
 export interface Evolve {
   'projectId'?: (string);
@@ -15,6 +16,7 @@ export interface Evolve {
   'reviews'?: (_superverse_v2_EvolveReview)[];
   'agentReviews'?: (boolean);
   'nextManualReviewAt'?: (_google_protobuf_Timestamp | null);
+  'proposals'?: (_superverse_v2_EvolveProposal)[];
 }
 
 export interface Evolve__Output {
@@ -26,4 +28,5 @@ export interface Evolve__Output {
   'reviews': (_superverse_v2_EvolveReview__Output)[];
   'agentReviews': (boolean);
   'nextManualReviewAt': (_google_protobuf_Timestamp__Output | null);
+  'proposals': (_superverse_v2_EvolveProposal__Output)[];
 }

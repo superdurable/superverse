@@ -119,3 +119,8 @@ live:
 accounts:
   platformAdminEmails:
     - admin@superverse.test
+
+# Agent reviews run for every Project of the local lanes, whose tests drive them with the mock model;
+# the hosted default is the listed TeamSpaces.
+evolve:
+  reviewAccess: all

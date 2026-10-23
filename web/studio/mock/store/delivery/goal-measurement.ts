@@ -7,8 +7,8 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 // The mock's goal measurement of a Project's Live runs, as EvolveService answers it: example goals of an invented
-// outreach application, three kept reviews, and Review now measured on the mock clock. Development only; no real
-// Project, account or run is behind these numbers.
+// outreach application, three kept reviews, the newest with the agent's proposal (evolve-proposals.ts), and Review now
+// reviewed on the mock clock. Development only; no real Project, account or run is behind these numbers.
 import type { Evolve } from "@/lib/generated/protobuf/superverse/v2/Evolve";
 import type { EvolveGoal } from "@/lib/generated/protobuf/superverse/v2/EvolveGoal";
 import type { EvolveGoalsStatus__Output } from "@/lib/generated/protobuf/superverse/v2/EvolveGoalsStatus";
@@ -18,13 +18,14 @@ import type { EvolveReviewRefusal } from "@/lib/generated/protobuf/superverse/v2
 import { httpError } from "@/lib/server/request-body";
 import { isoToTimestamp } from "@/lib/shared/protobuf";
 import { nowIso } from "@/mock/store/clock";
+import { mockProposals, PROPOSAL_OFFERED_AGO, PROPOSAL_REVIEW } from "@/mock/store/delivery/evolve-proposals";
 import type { MockStore } from "@/mock/store/store";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 /** The runs a review reads: those that closed within the Live retention of closed runs, and the open ones. */
 const WINDOW = 30 * DAY;
-/** How long a mock Review now exports and measures before it ends measured. */
+/** How long a mock Review now exports, measures and is reviewed before the agent finds nothing new to propose. */
 const REVIEW_MILLISECONDS = 8_000;
 
 /** Example goals: an outreach application that writes to prospects and records their replies. */
@@ -40,25 +41,25 @@ const EXAMPLE_GOALS: (EvolveGoal & { id: string })[] = [
   {
     id: "qualified-rate",
     kind: "EVOLVE_GOAL_KIND_OUTCOME",
-    statement: "Half of those who answer qualify for a discovery call",
-    metric: "rate(qualified, of replied)",
+    statement: "Half of the discovery calls we book qualify",
+    metric: "rate(qualified, of booked)",
     direction: "EVOLVE_GOAL_DIRECTION_UP",
     target: 0.5,
   },
   {
     id: "messages",
     kind: "EVOLVE_GOAL_KIND_EXPERIENCE",
-    statement: "No more than three messages to anyone who does not answer",
-    metric: "max(steps.AwaitReply, where not replied)",
+    statement: "No prospect gets more than three messages",
+    metric: "max(steps.WriteOutreachMessage)",
     guardrailMax: 3,
   },
   {
     id: "ai-spend",
     kind: "EVOLVE_GOAL_KIND_COST",
-    statement: "AI spend under $2 per qualified prospect",
-    metric: "sum(ai.usd) / count(qualified)",
+    statement: "AI spend under 4 cents per prospect",
+    metric: "mean(ai.usd)",
     direction: "EVOLVE_GOAL_DIRECTION_DOWN",
-    target: 2,
+    target: 0.04,
   },
 ];
 
@@ -72,19 +73,19 @@ const EXAMPLE_PROBLEMS = [
 const EXAMPLE_VALUES: Record<string, [older: [number, number], newer: [number, number]]> = {
   "reply-rate": [
     [0.31, 188],
-    [0.343, 212],
+    [0.396, 212],
   ],
   "qualified-rate": [
     [0.5, 12],
-    [0.571, 14],
+    [0.357, 14],
   ],
   messages: [
-    [3, 131],
-    [3, 141],
+    [3, 188],
+    [3, 212],
   ],
   "ai-spend": [
-    [2.18, 188],
-    [1.74, 212],
+    [0.048, 188],
+    [0.0448, 212],
   ],
 };
 
@@ -144,7 +145,10 @@ function review(
   };
 }
 
-/** The example history: a scheduled review the first Live version skipped, then Review now and a scheduled one. */
+/**
+ * The example history: a scheduled review the first Live version skipped, then Review now, measured before agent
+ * reviews were on, and a scheduled one whose agent review proposed a change.
+ */
 function exampleMeasurement(now: number, commit: string): MockGoalMeasurement {
   const measured = (index: 0 | 1, runs: number) => ({
     status: "EVOLVE_REVIEW_STATUS_MEASURED" as const,
@@ -162,10 +166,11 @@ function exampleMeasurement(now: number, commit: string): MockGoalMeasurement {
     lastManualMs: manualMs,
     requests: new Map(),
     reviews: [
-      review(3, now - DAY - 5 * HOUR, {
+      review(Number(PROPOSAL_REVIEW.slice(2)), now - PROPOSAL_OFFERED_AGO - 50 * 60_000, {
         trigger: "EVOLVE_REVIEW_TRIGGER_SCHEDULE",
-        finishedAt: at(now - DAY - 5 * HOUR + 4 * 60_000),
+        finishedAt: at(now - PROPOSAL_OFFERED_AGO),
         ...measured(1, 212),
+        status: "EVOLVE_REVIEW_STATUS_PROPOSAL",
       }),
       review(2, manualMs, {
         trigger: "EVOLVE_REVIEW_TRIGGER_MANUAL",
@@ -211,7 +216,7 @@ function advance(state: MockGoalMeasurement, commit: string) {
     return { ...item, value: Number(item.value) * moved, runs: goalRuns, fewRuns: goalRuns < 20 };
   });
   Object.assign(running, {
-    status: "EVOLVE_REVIEW_STATUS_MEASURED",
+    status: "EVOLVE_REVIEW_STATUS_NO_CHANGE",
     finishedAt: at(nowMs()),
     goalsCommit: commit,
     runs,
@@ -231,7 +236,8 @@ export function mockEvolve(store: MockStore, projectId: string): Evolve {
   return {
     projectId,
     live: {
-      revision: live.revision,
+      // Live's revision is the Live pointer's, as the Project's snapshot shows it.
+      revision: live.generation,
       releaseId: live.releaseId,
       buildCommit: live.releaseId,
       committedAt: at(now - DAY * 9),
@@ -251,7 +257,8 @@ export function mockEvolve(store: MockStore, projectId: string): Evolve {
     },
     activeReviewId: state.active,
     reviews: state.reviews,
-    agentReviews: false,
+    agentReviews: true,
+    proposals: mockProposals(store, projectId),
     nextManualReviewAt: again === null ? null : at(again),
   };
 }

@@ -39,6 +39,7 @@ import { RecentEventsProvider } from "@/components/project/activity/RecentEvents
 import { RecentEventsProblem } from "@/components/project/activity/RecentEventsProblem";
 import { PreviewStartButton } from "@/components/build/PreviewStart";
 import { resolveRole } from "./project-surfaces";
+import { seedProposalFixture } from "@/mock/store/delivery/evolve-proposals";
 import { seedGoalsFixture } from "@/mock/store/delivery/goal-measurement";
 import { getProject, getStudioMockStore } from "@/mock/store/store";
 import { seedPublishFixture } from "./publish-fixtures";
@@ -201,6 +202,7 @@ export async function MockProjectSurface({
   seedSetupFixture(getStudioMockStore(), projectId, query.setupFixture);
   seedPublishFixture(getStudioMockStore(), projectId, query.publishFixture);
   seedGoalsFixture(getStudioMockStore(), projectId, query.goalsFixture);
+  seedProposalFixture(getStudioMockStore(), projectId, query.proposalFixture);
   // Without a lens the page is a builder's; the frame shows the Project's own role.
   const role = resolveRole(query.role) ?? "builder";
   // A role lens that cannot open the surface lands on the first one it can.

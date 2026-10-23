@@ -416,6 +416,22 @@ func AttachmentWorkspacePath(attachment AttachmentLabel) string {
 	return "/workspace/" + AttachmentWorkspaceDirectory + "/" + attachment.ID + "/" + safe[:min(len(safe), 128)]
 }
 
+// EvolveWorkspaceRoot is where place_evolve_export places the exports of
+// agent reviews, relative to the workspace: ignored, and refused by the
+// commit gate.
+const EvolveWorkspaceRoot = ".local/superverse-evolve"
+
+// EvolveWorkspaceDirectory is the folder of review reviewID's export,
+// relative to the workspace.
+func EvolveWorkspaceDirectory(reviewID string) string {
+	return EvolveWorkspaceRoot + "/" + reviewID
+}
+
+// EvolveWorkspacePath is the absolute path of EvolveWorkspaceDirectory.
+func EvolveWorkspacePath(reviewID string) string {
+	return "/workspace/" + EvolveWorkspaceDirectory(reviewID)
+}
+
 // IsWorkflowExport reports whether the attachment is an automation export the
 // workflow-import subskill reads.
 func (attachment AttachmentRef) IsWorkflowExport() bool {

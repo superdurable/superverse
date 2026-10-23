@@ -5,7 +5,7 @@ Purpose: Coordinates each Project's one Session across its Project, Session Agen
 
 Callers: `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary`, `internal/dexai/api/modelcredential`, `internal/dexai/bootstrap` and `internal/dexai/studio/runs` import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (22) and calls the Dex Flow API.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm/**` (2) and `internal/dexai/**` (26) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
   c5["internal/dexai/studio/runs"] --> self
   self --> d0["gen/superverse/v2"]
   self --> d1["internal/comm/** (2)"]
-  self --> d2["internal/dexai/** (22)"]
+  self --> d2["internal/dexai/** (26)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -663,7 +663,13 @@ the operator's engine for the objects.
   `TextSummaryFlow` runs started through Studio Runs, and the parts, manifest
   and metrics are read back from the artifact bucket. The second test deletes
   the Project while its review runs and finds EvolveFlow completed and the
-  export gone.
+  export gone. `TestEvolveRemoteSessionSkipDexIntegration` activates a local
+  agent through the real remote agent endpoint
+  (`ActivateLocalAgentForTest`) on two such Projects, before Review now and
+  while the review waits for the agent after the Session's turn of it; each
+  review ends skipped (`remote_session`). `startLiveRuns` returns once every
+  run waits in `AwaitSummaryApproval`, read from the Live engine through
+  Studio Runs, so a review never exports a run before it settles.
 - The Live failure feedback (on the mock model; each test that pushes turns
   the Preview's automatic deployment off first, and builds and deploys
   through the Release and Deployment Flow clients in the test's process,

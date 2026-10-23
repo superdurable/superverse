@@ -27,7 +27,7 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-19 services, 113 RPCs. A field is a string unless a type is given. Every request
+19 services, 115 RPCs. A field is a string unless a type is given. Every request
 except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
@@ -41,7 +41,7 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | SessionService | 4 | `/api/rpc/<Method>` |
 | RemoteAgentService | 4 | `/api/rpc/<Method>` |
 | AttachmentService | 4 | `/api/rpc/<Method>` |
-| EvolveService | 2 | `/api/rpc/<Method>` |
+| EvolveService | 4 | `/api/rpc/<Method>` |
 | AgentService | 10 | `/api/rpc/<Method>` |
 | PreviewService | 6 | `/api/rpc/<Method>` |
 | ReleaseService | 10 | `/api/rpc/<Method>` |
@@ -153,6 +153,8 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | --- | --- | --- |
 | GetEvolve | `project_id 1` | `Evolve evolve 1` |
 | StartEvolveReview | `project_id 1, request_id 2` | `review_id 1, EvolveReviewRefusal refusal 2` |
+| DecideEvolveProposal | `project_id 1, review_id 2, uint64 revision 3, EvolveProposalDecision decision 4, reason 5` | `EvolveProposalRefusal refusal 1, EvolveProposal proposal 2` |
+| GetEvolveProposal | `project_id 1, review_id 2` | `markdown 1` |
 
 **AgentService**
 

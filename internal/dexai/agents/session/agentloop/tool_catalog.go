@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"path"
 	"regexp"
 	"slices"
 	"sort"
@@ -22,11 +23,14 @@ import (
 	"time"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/comm/flowid"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput/generated"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 )
 
 // RequestedTimer is the durable wait a start_timer call asks for.
@@ -49,7 +53,12 @@ func RequestedSubagent(call conversation.ToolCall) (agenttasks.SubagentCall, err
 		panic(fmt.Sprintf("the start_agent schema admits the unknown kind %q", input.Kind))
 	}
 	requested := agenttasks.SubagentCall{Kind: kind, Description: strings.TrimSpace(input.Description), Prompt: input.Prompt}
+	for _, input := range input.Inputs {
+		requested.Inputs = append(requested.Inputs, path.Clean(input))
+	}
 	switch {
+	case len(requested.Inputs) > 0 && kind.ContributesConnector():
+		return agenttasks.SubagentCall{}, invalidToolArguments(call, fmt.Errorf("kind %s works in the connectors library, which takes no inputs", kind))
 	case kind.ContributesConnector() && (!input.Slug.Set || !input.Contribution.Set):
 		return agenttasks.SubagentCall{}, invalidToolArguments(call, fmt.Errorf("kind %s needs slug and contribution", kind))
 	case !kind.ContributesConnector() && (input.Slug.Set || input.Contribution.Set):
@@ -60,6 +69,66 @@ func RequestedSubagent(call conversation.ToolCall) (agenttasks.SubagentCall, err
 		requested.Connector = &agenttasks.ConnectorTarget{Slug: input.Slug.Value, Contribution: contribution}
 	}
 	return requested, nil
+}
+
+// RequestedEvolveReport is the report a report_evolve_review call makes, with
+// the change subagent's agent ID for a proposal: a reported review names its
+// verdict and, for a proposal, the change subagent and the title; an applied
+// change names its commit; a report names nothing its phase does not take.
+func RequestedEvolveReport(input generated.ReportEvolveReview) (evolve.ReviewReport, string, error) {
+	report := evolve.ReviewReport{ReviewID: input.ReviewID, Phase: evolve.ReportPhase(input.Phase)}
+	reported, proposal := report.Phase == evolve.ReportReported, input.Verdict.Value == generated.ReportEvolveReviewVerdictProposal
+	switch {
+	case reported != input.Verdict.Set:
+		return evolve.ReviewReport{}, "", errors.New("a reported review, and only one, names its verdict")
+	case proposal != (input.AgentID.Set && input.Title.Set) || !proposal && (input.Kind.Set || input.Undoes.Set):
+		return evolve.ReviewReport{}, "", errors.New("a proposal, and only one, names its change subagent's agent_id and its title, with kind and undoes")
+	case !reported && input.Summary.Set:
+		return evolve.ReviewReport{}, "", errors.New("only a reported review has a summary")
+	case (report.Phase == evolve.ReportApplied) != input.AppliedCommit.Set:
+		return evolve.ReviewReport{}, "", errors.New("an applied change, and only one, names applied_commit")
+	}
+	report.AppliedCommit = input.AppliedCommit.Value
+	if reported {
+		report.Verdict = evolve.ReviewVerdict(input.Verdict.Value)
+	}
+	if !proposal {
+		return report, "", nil
+	}
+	agentID, _ := flowid.ParseSubagentTaskID(input.AgentID.Value)
+	kind := evolve.ProposalChange
+	if input.Kind.Set {
+		kind = evolve.ProposalKind(input.Kind.Value)
+	}
+	report.Proposal = &evolve.ProposalOffer{Kind: kind, Undoes: input.Undoes.Value, Title: strings.TrimSpace(input.Title.Value), Summary: input.Summary.Value, AgentID: flowid.SubagentTaskID(agentID)}
+	return report, agentID, nil
+}
+
+// EvolveReportResult is what report_evolve_review answers once the review
+// recorded the report: the review, the phase and its proposal's status.
+func EvolveReportResult(report evolve.ReviewReport, answer evolve.ReportAnswer) any {
+	result := struct {
+		ReviewID string             `json:"review_id"`
+		Phase    evolve.ReportPhase `json:"phase"`
+		Proposal *struct {
+			Status   evolve.ProposalStatus `json:"status"`
+			Revision uint64                `json:"revision"`
+		} `json:"proposal,omitempty"`
+		Next string `json:"next"`
+	}{ReviewID: report.ReviewID, Phase: report.Phase, Next: "Tell the user in one short message what the review found and that the proposal waits on the Goals tab; never paste the report."}
+	if p := answer.Proposal; p != nil {
+		result.Proposal = &struct {
+			Status   evolve.ProposalStatus `json:"status"`
+			Revision uint64                `json:"revision"`
+		}{p.Status, p.Revision}
+	}
+	switch {
+	case report.Phase == evolve.ReportReported && report.Proposal == nil:
+		result.Next = "Tell the user in one short message that the review found nothing to change, and what you noticed."
+	case report.Phase != evolve.ReportReported:
+		result.Next = "The goal measurement recorded it; nothing more is needed."
+	}
+	return result
 }
 
 func invalidToolArguments(call conversation.ToolCall, err error) error {
@@ -252,6 +321,29 @@ var toolCatalog = []ToolDefinition{
 	// place_attachment joins no wave: it writes the workspace. It is loose, so the measured strict set stays unchanged.
 	loose(fileTool(conversation.ToolPlaceAttachment, "Write a JSON file the user attached, as its redacted copy, into the workspace at /workspace/.local/superverse-attachments/<attachment_id>/<name>, where scripts such as the workflow import inventory read it. The result names the path, size, digest and how many secret values were removed. /.local/ is ignored by Git, and commit_and_push refuses these files. Writing it again writes the same bytes.",
 		toolinput.PlaceAttachment.JSONSchema(), WorkspaceAccessMutating, sandboxtools.PlaceAttachment)),
+	// The agent review's tools: place_evolve_export writes the workspace, which a review's procedure follows.
+	evolveTool(longRunning(sandboxTool(conversation.ToolPlaceEvolveExport, "For the agent review an evolve notification names: place the review's export of the Live runs in "+
+		"/workspace/.local/superverse-evolve/<review_id>/, read-only: runs.jsonl (one JSON line per run), manifest.json, metrics.json (the goal values the review measured) and goals.md, "+
+		"the goals of the Live build the review measures with. Only these runs and these goals count for the review; the workspace's .superverse/goals.md is a draft, and Preview "+
+		"or test runs never count. The result names the folder, the run count, the goals commit, the SHA-256 of runs.jsonl and the goal values. Give the folder to subagents as "+
+		"start_agent inputs. The newest two review folders are kept; /.local/ is ignored by Git, and commit_and_push refuses these files. Placing it again writes the same bytes.",
+		toolinput.PlaceEvolveExport.JSONSchema(), WorkspaceAccessMutating, sandboxtools.PlaceEvolveExport, 10*time.Minute))),
+	evolveTool(longRunning(sandboxTool(conversation.ToolReportEvolveReview, "Report an agent review to the Project's goal measurement. phase reported ends the review the evolve "+
+		"notification names, with verdict proposal or no_change; a proposal names the change subagent (agent_id) whose result holds .superverse/evolve/<review_id>/proposal.md "+
+		"(at most 32 KiB), backtest.json and open-runs.json, which superverse-evolve compare and open-runs wrote over the placed folder, a title and a summary. The platform reads "+
+		"those files from the subagent's result and refuses a backtest not bound to the review's placed Live export and goals (export_mismatch), one a gate refuses or that does "+
+		"not decode (invalid_backtest, with the gate's code), files over their limits (evolve_result_too_large) and a review that does not wait (stale_review). After a person's "+
+		"decision: phase applied with the pushed commit after merge_agent_changes apply and commit_and_push, or discarded after merge_agent_changes discard (stale_proposal otherwise). "+
+		"Numbers reach the user only from those files, never from your text. A repeated report answers the recorded one.",
+		toolinput.ReportEvolveReview.JSONSchema(), WorkspaceAccessReadOnly, sandboxtools.ReadEvolveResult, 2*time.Minute))),
+}
+
+// evolveTool is a tool of the agent review: loose, so the measured strict set
+// stays unchanged, and serial, since it changes the workspace or the review.
+func evolveTool(definition ToolDefinition) ToolDefinition {
+	definition = loose(definition)
+	definition.supportsParallelExecution = false
+	return definition
 }
 
 // platformTool is a read-only server-side tool: it joins parallel waves and
@@ -462,7 +554,8 @@ func SessionTools(model conversation.Model) []ToolDefinition {
 // delegation, controls of the platform model and the attachment tools, since
 // only the Superverse agent reads attachments.
 var platformOnlyTools = []conversation.ToolName{conversation.ToolStartAgent, conversation.ToolMergeAgentChanges,
-	conversation.ToolSetEffort, conversation.ToolStartTimer, conversation.ToolReadAttachment, conversation.ToolPlaceAttachment}
+	conversation.ToolSetEffort, conversation.ToolStartTimer, conversation.ToolReadAttachment, conversation.ToolPlaceAttachment, conversation.ToolPlaceEvolveExport,
+	conversation.ToolReportEvolveReview}
 
 // RemoteTools is the server-owned catalog for a connected executor: the
 // catalog without platformOnlyTools.

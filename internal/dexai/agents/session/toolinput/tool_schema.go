@@ -68,6 +68,8 @@ var (
 	ReadConnectorChecks = mustSchema(conversation.ToolReadConnectorChecks, (*generated.ReadConnectorChecks).Validate)
 	ReadAttachment      = mustSchema(conversation.ToolReadAttachment, (*generated.ReadAttachment).Validate)
 	PlaceAttachment     = mustSchema(conversation.ToolPlaceAttachment, (*generated.PlaceAttachment).Validate)
+	PlaceEvolveExport   = mustSchema(conversation.ToolPlaceEvolveExport, (*generated.PlaceEvolveExport).Validate)
+	ReportEvolveReview  = mustSchema(conversation.ToolReportEvolveReview, (*generated.ReportEvolveReview).Validate)
 	WriteTodos          = mustSchema(conversation.ToolWriteTodos, (*generated.WriteTodos).Validate)
 	StartTimer          = mustSchema(conversation.ToolStartTimer, (*generated.StartTimer).Validate)
 	SetEffort           = mustSchema(conversation.ToolSetEffort, (*generated.SetEffort).Validate)

@@ -160,6 +160,7 @@ export function notificationLinks(projectId: string): NotificationLinks {
       case "subagent":
       case "command":
       case "connector":
+      case "evolve":
         return [];
     }
   };

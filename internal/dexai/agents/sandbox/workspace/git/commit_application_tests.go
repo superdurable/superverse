@@ -171,25 +171,39 @@ func (g workspaceGit) rejectProductionMocks(ctx context.Context) error {
 		connectorMockPackage, comm.TruncateUTF8(strings.Join(importers, ", "), 2<<10)))
 }
 
-// rejectAttachmentFiles refuses a staged tree that holds a file place_attachment
-// wrote under conversation.AttachmentWorkspaceDirectory: the user's
-// attachments never enter the repository, and the application may edit the
-// .gitignore that ignores them. The refusal unstages everything, which leaves
-// the working tree as it is.
+// placedFiles are the workspace folders whose files a platform tool placed and
+// that never enter the repository, with the gate's refusal and what they hold:
+// the user's attachments (place_attachment) and agent reviews' Live runs
+// (place_evolve_export).
+var placedFiles = []struct {
+	directory, holds string
+	refusal          toolfailure.Code
+}{
+	{conversation.AttachmentWorkspaceDirectory, "the user's attachments", toolfailure.AttachmentInSource},
+	{conversation.EvolveWorkspaceRoot, "an agent review's Live runs", toolfailure.EvolveExportInSource},
+}
+
+// rejectAttachmentFiles refuses a staged tree that holds a file a platform
+// tool placed (placedFiles): they never enter the repository, and the
+// application may edit the .gitignore that ignores them. The refusal unstages
+// everything, which leaves the working tree as it is.
 func (g workspaceGit) rejectAttachmentFiles(ctx context.Context) error {
-	staged, err := g.git(ctx, "ls-files", "--cached", "--", conversation.AttachmentWorkspaceDirectory)
-	if err != nil {
-		return commandError("list the staged attachment files", staged, err)
+	for _, placed := range placedFiles {
+		staged, err := g.git(ctx, "ls-files", "--cached", "--", placed.directory)
+		if err != nil {
+			return commandError("list the staged placed files", staged, err)
+		}
+		paths := boundedLines(staged.stdout, 20, func(line string) bool { return line != "" && !strings.ContainsRune(line, '\x00') })
+		if len(paths) == 0 {
+			continue
+		}
+		if err = g.step(ctx, "unstage the placed files", "reset", "--quiet"); err != nil {
+			return err
+		}
+		return sandboxd.NewToolFailure(placed.refusal, fmt.Errorf("these files hold %s, so nothing was committed: %s; keep /.local/ in .gitignore and the files out of the index, then retry commit_and_push",
+			placed.holds, comm.TruncateUTF8(strings.Join(paths, ", "), 2<<10)))
 	}
-	paths := boundedLines(staged.stdout, 20, func(line string) bool { return line != "" && !strings.ContainsRune(line, '\x00') })
-	if len(paths) == 0 {
-		return nil
-	}
-	if err = g.step(ctx, "unstage the attachment files", "reset", "--quiet"); err != nil {
-		return err
-	}
-	return sandboxd.NewToolFailure(toolfailure.AttachmentInSource, fmt.Errorf("these files hold the user's attachments, so nothing was committed: %s; keep /.local/ in .gitignore and the files out of the index, then retry commit_and_push",
-		comm.TruncateUTF8(strings.Join(paths, ", "), 2<<10)))
+	return nil
 }
 
 func isConnectorMock(importPath string) bool {

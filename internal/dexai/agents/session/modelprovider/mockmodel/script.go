@@ -166,6 +166,9 @@ type step struct {
 	// task for the automatic turn a background command's exit opens. The newest
 	// user message of the request must hold one; otherwise the call is rejected.
 	Notification conversation.NotificationKind `json:"notification"`
+	// NotificationSource, with Notification, is the source the answered
+	// notification must come from, such as evolve for an agent review.
+	NotificationSource conversation.NotificationSource `json:"notification_source"`
 	// ExpectFailure lets the scenario continue when a tool of this step fails;
 	// without it a failed tool stops the scenario.
 	ExpectFailure bool `json:"expect_failure"`
@@ -235,25 +238,31 @@ func (s *script) expectsFailure(at position) bool {
 }
 
 // expectedFailureText is the text the first line of a failed tool's result of
-// the step at a position must hold, or "", and the texts the whole result must hold.
-func (s *script) expectedFailureText(at position) (string, []string) {
+// the step at a position must hold, or "", and the texts the whole result must
+// hold, with their placeholders filled from arguments.
+func (s *script) expectedFailureText(at position, arguments map[string]string) (string, []string) {
 	step := s.stepAt(at)
 	if step == nil {
 		return "", nil
 	}
-	return step.ExpectFailureText, step.ExpectFailureContains
+	contains := make([]string, len(step.ExpectFailureContains))
+	for i, text := range step.ExpectFailureContains {
+		contains[i] = s.render(text, arguments)
+	}
+	return s.render(step.ExpectFailureText, arguments), contains
 }
 
 // missingResultText is the stop text of the step at a position when the
-// results of its tools lack a text it expects, or "".
-func (s *script) missingResultText(at position, results string) string {
+// results of its tools lack a text it expects, its placeholders filled from
+// arguments, or "".
+func (s *script) missingResultText(at position, arguments map[string]string, results string) string {
 	step := s.stepAt(at)
 	if step == nil {
 		return ""
 	}
 	for _, expected := range step.ExpectResultContains {
-		if !strings.Contains(results, expected) {
-			return fmt.Sprintf("Mock scenario %s stopped at %s: no tool result holds %q", s.Name, at, expected)
+		if rendered := s.render(expected, arguments); !strings.Contains(results, rendered) {
+			return fmt.Sprintf("Mock scenario %s stopped at %s: no tool result holds %q", s.Name, at, rendered)
 		}
 	}
 	return ""
@@ -357,7 +366,8 @@ func loadScripts() (map[string]*script, error) {
 }
 
 // loadSubagentScripts builds and validates the script of every subagent of
-// the scenarios: one input, the subagent's task, answered by its replies.
+// the scenarios: one input, the subagent's task, answered by its replies,
+// whose file tools play on the parent scenario's workspace.
 func loadSubagentScripts(loaded map[string]*script) (map[string]*script, error) {
 	subagents := map[string]*script{}
 	for _, name := range slices.Sorted(maps.Keys(loaded)) {
@@ -365,7 +375,7 @@ func loadSubagentScripts(loaded map[string]*script) (map[string]*script, error) 
 		for _, sub := range slices.Sorted(maps.Keys(parent.Subagents)) {
 			definition := parent.Subagents[sub]
 			s := &script{Name: parent.Name + "/" + sub, Title: parent.Title, Description: parent.Description, Category: parent.Category, Arguments: parent.Arguments,
-				Inputs: []input{{Label: "The subagent's task", Message: "The task its start_agent call names.", Replies: slices.Clone(definition.Replies)}}, subagentKind: definition.Kind}
+				Workspace: parent.Workspace, Inputs: []input{{Label: "The subagent's task", Message: "The task its start_agent call names.", Replies: slices.Clone(definition.Replies)}}, subagentKind: definition.Kind}
 			err := s.expandRepeats()
 			if err == nil {
 				err = s.validate()
@@ -583,6 +593,9 @@ func (s *script) validateStep(step step, files rootFiles) error {
 			return err
 		}
 	}
+	if step.NotificationSource != "" && (step.Notification == "" || conversation.ValidateNotificationSource(step.Notification, step.NotificationSource) != nil) {
+		return fmt.Errorf("notification_source %q needs a notification of a kind it produces", step.NotificationSource)
+	}
 	for _, expected := range step.ExpectAttachments {
 		if err := expected.validate(); err != nil {
 			return err
@@ -603,10 +616,11 @@ func (s *script) validateStep(step step, files rootFiles) error {
 	if len(step.ExpectResultContains) > 0 && len(step.ToolUses) == 0 || slices.Contains(step.ExpectResultContains, "") {
 		return errors.New("expect_result_contains needs tool uses and no empty text")
 	}
-	for _, expected := range step.ExpectSegmentStart {
-		if expected == "" {
-			return errors.New("expect_segment_start must not hold an empty text")
-		}
+	if slices.Contains(step.ExpectSegmentStart, "") {
+		return errors.New("expect_segment_start must not hold an empty text")
+	}
+	expectations := slices.Concat(step.ExpectSegmentStart, step.ExpectSegmentStartLacks, step.ExpectResultContains, step.ExpectFailureContains, []string{step.ExpectFailureText})
+	for _, expected := range expectations {
 		for _, match := range placeholder.FindAllStringSubmatch(expected, -1) {
 			if _, declared := s.Arguments[match[1]]; !declared {
 				return fmt.Errorf("the scenario declares no argument %q", match[1])

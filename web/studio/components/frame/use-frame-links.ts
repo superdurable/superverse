@@ -27,7 +27,7 @@ const KEPT = ["v", "flowType"] as const;
  * drops the selection of the surface left behind. Switching Preview | Live keeps the surface, its tool
  * and the Process and drops selections that named the other version. Picking a Process keeps the
  * surface and the version. A status's fix opens the Interface or Setup of its environment, or
- * Publishing, which shows both.
+ * Publishing, which shows both. A Release opens in Publishing, as for an Undo that rolls back to it.
  */
 export function useFrameLinks(projectId: string, surface: ProjectSurface, persistent: readonly string[] = []) {
   const search = useSearchParams();
@@ -49,6 +49,10 @@ export function useFrameLinks(projectId: string, surface: ProjectSurface, persis
     [keep, projectId, surface],
   );
   const toolHref = useCallback((tool: ProjectTool) => studioRoutes.tool(projectId, tool, keep([])), [keep, projectId]);
+  const releaseHref = useCallback(
+    (releaseId: string) => studioRoutes.publishingDeployment(projectId, releaseId, keep([])),
+    [keep, projectId],
+  );
   const pinnedToolHref = useCallback(
     (tool: ProjectTool) => studioRoutes.tool(projectId, tool, { ...keep([]), pinned: "1" }),
     [keep, projectId],
@@ -71,5 +75,5 @@ export function useFrameLinks(projectId: string, surface: ProjectSurface, persis
     },
     [keep, projectId],
   );
-  return { surfaceHref, environmentHref, toolHref, pinnedToolHref, processHref, fixHref };
+  return { surfaceHref, environmentHref, toolHref, releaseHref, pinnedToolHref, processHref, fixHref };
 }

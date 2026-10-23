@@ -303,7 +303,9 @@ func TestProjectAnthropicCredentialDexIntegration(t *testing.T) {
 			}
 			childState, err := children.SnapshotForTest(ctx, agenttasks.SubagentIdentity{ProjectID: project.ProjectID, AgentID: record.AgentID})
 			key, keyErr := children.ReadModelCredential(ctx, agenttasks.SubagentIdentity{ProjectID: project.ProjectID, AgentID: record.AgentID})
-			if err == nil && keyErr == nil && key != nil && key.Revision == 2 && childState.LastSequence >= 3 {
+			// The Session is read before the child, so a child admitted in between runs while its
+			// record is still STARTING, without the base commit the recovery start below needs.
+			if err == nil && keyErr == nil && key != nil && key.Revision == 2 && childState.LastSequence >= 3 && record.Status == agenttasks.SubagentRunning {
 				child, copied = record.AgentID, record
 				ready++
 			}

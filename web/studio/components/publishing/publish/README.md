@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The bar's Publish button and its popover: the version, what blocks it, what to check, what happens, the skip reason, and Publish.
 
-Importers: `components/project`, `components/publishing` and `components/session` import this directory.
+Importers: `components/project`, `components/project/proposal`, `components/publishing` and `components/session` import this directory.
 
 Imports: it imports `components/flow/scope`, `components/ui`, `components/ui/problem`, `components/ui/wait`, `lib/api`, `lib/api/flow/draft`, `lib/api/transport`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/project/publishing`, `lib/project/setup`, `lib/shared`, `lib/shared/problem` and `lib/shared/version`.
 
@@ -11,8 +11,9 @@ Imports: it imports `components/flow/scope`, `components/ui`, `components/ui/pro
 flowchart LR
   self["components/publishing/publish"]
   c0["components/project"] --> self
-  c1["components/publishing"] --> self
-  c2["components/session"] --> self
+  c1["components/project/proposal"] --> self
+  c2["components/publishing"] --> self
+  c3["components/session"] --> self
   self --> d0["components/flow/scope"]
   self --> d1["components/ui"]
   self --> d2["components/ui/problem"]
@@ -68,4 +69,5 @@ same remedy opens this popover on the failed commit.
 The bar's Publish is the one way in. On the Live tab it opens on Live's own version, which publishes it
 again with its waiting settings (the build records `LIVE_CODE`, no reason); with nothing waiting it offers
 "Publish V12 again", the same code and settings rebuilt. `publish-opener.ts` lets a page open the popover:
-a failed publish's "Publish again" in Tools ▸ Publishing (`openPublishPopover`).
+a failed publish's "Publish again" in Tools ▸ Publishing (`openPublishPopover`). It answers whether the popover
+opened; it does not while a publish runs, so a caller can lead to Tools ▸ Publishing instead.

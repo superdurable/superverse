@@ -79,10 +79,12 @@ export function PublishButton({
   const progress = usePublishProgress(projectId, started, `${live?.revision ?? ""}:${activeDeploymentId}`);
   const running = progress.outcome === "running" || progress.outcome === "cancelling";
   if (started && progress.outcome && !running) setStarted(null);
+  // A running publish keeps the popover shut; the page that asked leads to Publishing, which shows it.
   usePublishOpenings((next) => {
-    if (running) return;
+    if (running) return false;
     setOpening(next);
     popover.setOpen(true);
+    return true;
   });
   const ahead = versions.ahead.length;
   const onLive = live !== null && (environment === "live" || (versions.loaded && ahead === 0));

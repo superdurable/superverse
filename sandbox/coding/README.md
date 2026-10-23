@@ -5,7 +5,8 @@ This image is the tool execution environment inside each Agent Sandbox
 `coding-v4`) and combines the pinned Agent Sandbox daemon (`sandboxd`) with
 `tini` as PID 1, Git, Go, Node.js, npm, Python 3, ripgrep, Dex CLI 1.15.1,
 Temporal CLI 1.8.1, Chromium Headless Shell, the image's own commands
-`superverse-exec`, `superverse-files` and `superverse-previewctl`, and a
+`superverse-exec`, `superverse-files`, `superverse-previewctl` and
+`superverse-evolve`, and a
 prewarmed proxy of the module graphs of the repository's `app-template/` and
 each of its examples (the Dex Go SDK, Connector SDK, the connectors the
 examples use and ogen). The Go and gofmt entry
@@ -165,11 +166,23 @@ serves line reads, idempotent edits, writes and ripgrep searches under the
 agent's path rules. Raising what either promises raises the image contract
 revision and the coding profile's metadata revision.
 
-The three commands are built from the repository's own Go module (the build
-stage's `go.mod.imported` names it), so they share `internal/supervision`
+The image's commands are built from the repository's own Go module (the build
+stage's `go.mod.imported` names it), so `superverse-exec`, `superverse-files`
+and `superverse-previewctl` share `internal/supervision`
 (process identities, process-group termination, detached starts, locks and
 atomic JSON records) and `internal/confinement` (the path rules), and use only
 the standard library besides them.
+
+`superverse-evolve` ([contract](cmd/superverse-evolve/README.md)) is the
+agent's measurement in an agent review, which the platform never runs: it
+checks a goals file and evaluates, compares and gates a proposed change over
+the review's folder of Live runs that `place_evolve_export` placed, refusing
+any other runs or goals. It is built in the same stage from the source tree's
+goals evaluator and run record (`internal/dexai/delivery/evolve/goals` and
+`runexport`), which import only the standard library, `gopkg.in/yaml.v3`
+(`go.sum.imported`, from the image's module proxy, so the build needs no
+network) and each other, as `scripts/check-package-layers.py` checks; a change
+to them therefore runs on Local Kind (`scripts/kind-required-paths.txt`).
 
 ## Preview environment
 

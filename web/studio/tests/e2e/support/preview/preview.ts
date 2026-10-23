@@ -127,17 +127,12 @@ async function awaitDeployedPreview(page: Page, projectId: string, headCommit: s
   return url;
 }
 
-/** Whether notification is the configuration notice of an automatic Preview deployment of commit that names gap. */
-function isConfigurationNotice(
-  notification: AgentNotification__Output | null | undefined,
-  commit: string,
-  gap: string,
-) {
+/** Whether notification is the configuration notice of an automatic Preview deployment that names gap. */
+function isConfigurationNotice(notification: AgentNotification__Output | null | undefined, gap: string) {
   return (
     notification?.kind === "KIND_DELIVERY" &&
     notification.source === "SOURCE_PREVIEW" &&
     /^preview\/[^/]+\/deploy-preview-[1-9][0-9]*\/notice$/.test(notification.id) &&
-    notification.commit === commit &&
     notification.summary.startsWith("The Preview needs configuration: ") &&
     notification.summary.includes(gap)
   );
@@ -146,9 +141,18 @@ function isConfigurationNotice(
 /**
  * Waits until the automatic deployment of the Session's pushed head ends at the configuration its Preview lacks: the
  * conversation shows the configuration notice naming gap, and the Preview, which released what the deployment took,
- * is STOPPED with the refusal, so a person configures and starts it.
+ * is STOPPED with the refusal, so a person configures and starts it. The Preview tells the same gaps only once in a
+ * row, so when an earlier commit of the Session was refused for them first, the notice names that commit:
+ * earlierNotice accepts it, and the Preview's automatic deployment shows the head refused.
  */
-export async function awaitConfigurationNotice(page: Page, projectId: string, headCommit: string, gap: string) {
+export async function awaitConfigurationNotice(
+  page: Page,
+  projectId: string,
+  headCommit: string,
+  gap: string,
+  earlierNotice = false,
+) {
+  let noticedCommit = headCommit;
   await expect
     .poll(
       async () => {
@@ -157,12 +161,22 @@ export async function awaitConfigurationNotice(page: Page, projectId: string, he
         if (preview?.status === "PREVIEW_STATUS_READY") throw new Error("The unconfigured Preview was deployed");
         if (failure && (failure.code !== "PREVIEW_CONFIGURATION_INCOMPATIBLE" || failure.phase !== "deploy-preview"))
           throw new Error(`The automatic Preview deployment ended at ${failure.phase}: ${failure.code}`);
-        const noticed = (agent?.history?.messages ?? []).some(({ message }) =>
-          isConfigurationNotice(message?.notification, headCommit, gap),
-        );
+        const notice = (agent?.history?.messages ?? [])
+          .map(({ message }) => message?.notification)
+          .find(
+            (notification) =>
+              isConfigurationNotice(notification, gap) && (earlierNotice || notification?.commit === headCommit),
+          );
+        const deployment = preview?.automaticDeployment;
+        const headRefused =
+          !earlierNotice ||
+          (deployment?.commit === headCommit &&
+            deployment.status === "PREVIEW_DEPLOYMENT_STATUS_INCOMPATIBLE" &&
+            !deployment.queuedCommit);
+        if (!notice || !headRefused) return false;
+        noticedCommit = notice.commit;
         // Refused before it started anything, the deployment leaves the Preview as it was.
         return (
-          noticed &&
           Boolean(failure) &&
           (preview?.status === "PREVIEW_STATUS_NOT_STARTED" || preview?.status === "PREVIEW_STATUS_STOPPED")
         );
@@ -179,7 +193,7 @@ export async function awaitConfigurationNotice(page: Page, projectId: string, he
   const details = notices.first().locator('[data-more-details="chat.notice"] > button');
   await expect(details).toBeVisible({ timeout: 30_000 });
   if ((await details.getAttribute("aria-expanded")) !== "true") await details.click();
-  const notice = notices.filter({ has: page.getByTestId("problem-details").filter({ hasText: headCommit }) });
+  const notice = notices.filter({ has: page.getByTestId("problem-details").filter({ hasText: noticedCommit }) });
   await expect(notice).toHaveAttribute("data-notification-kind", "delivery", { timeout: 30_000 });
   await expect(notice).toContainText(gap);
   await expect(notice.getByTestId("problem-fix").getByRole("link", { name: "Open Setup" })).toBeVisible();
@@ -187,10 +201,15 @@ export async function awaitConfigurationNotice(page: Page, projectId: string, he
 
 /**
  * The push's automatic deployment stopped at the Session's unconfigured Preview with the configuration notice:
- * the person configures Preview and starts it, which then serves headCommit.
+ * the person configures Preview and starts it, which then serves headCommit. earlierNotice is awaitConfigurationNotice's.
  */
-export async function configureAndStartPreview(page: Page, projectId: string, headCommit: string) {
-  await awaitConfigurationNotice(page, projectId, headCommit, "summary-model");
+export async function configureAndStartPreview(
+  page: Page,
+  projectId: string,
+  headCommit: string,
+  earlierNotice = false,
+) {
+  await awaitConfigurationNotice(page, projectId, headCommit, "summary-model", earlierNotice);
   await page.goto(`/p/${projectId}/tools?tool=publishing`);
   await configure(page, "Preview", fillTemplateSummaryConnection);
   await startPreview(page, projectId);

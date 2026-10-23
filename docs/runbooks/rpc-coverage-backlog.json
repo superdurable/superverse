@@ -1,7 +1,6 @@
 {
   "methods": [
     "/superverse.v2.AgentService/DeleteQueuedMessage",
-    "/superverse.v2.AgentService/InterruptAgent",
     "/superverse.v2.AgentService/ResolveToolApproval",
     "/superverse.v2.AgentService/SteerQueuedMessage",
     "/superverse.v2.ConnectorService/ReleaseUnusedConnections",

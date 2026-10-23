@@ -60,6 +60,9 @@ type Result struct {
 	// Contributed what FinishContribution committed and pushed.
 	Contribution *git.ContributionWorktree
 	Contributed  *git.ContributionResult
+	// EvolveFiles are the files ReadEvolveResult read of a subagent's result,
+	// by path.
+	EvolveFiles map[string]git.ResultFile
 }
 
 // BackgroundStart is a command that runs in the background as a task. Its

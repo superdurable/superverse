@@ -31,6 +31,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
 	"github.com/superdurable/superversev2/internal/dexai/app/apptemplate"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 	projectconfig "github.com/superdurable/superversev2/internal/dexai/projects/config"
@@ -67,6 +68,9 @@ type SessionFlowService struct {
 	// BackgroundCommands stops the watches of a closing Session's background
 	// commands (session_flow_service_tasks.go).
 	BackgroundCommands *backgroundcommand.BackgroundCommandFlowClient
+	// Evolve fronts the Project's goal measurement, which the Session's agent
+	// reviews report to (session_flow_service_tasks.go).
+	Evolve *evolve.EvolveFlowClient
 }
 
 var (

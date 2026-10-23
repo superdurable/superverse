@@ -34,6 +34,7 @@ function deliverySubject(source: AgentNotification["source"]): string {
     case "subagent":
     case "command":
     case "connector":
+    case "evolve":
       return "Delivery";
   }
 }
@@ -56,6 +57,10 @@ export function needsConfiguration(notification: AgentNotification): boolean {
 function notificationTitle(notification: AgentNotification): string {
   switch (notification.kind) {
     case "task":
+      if (notification.source === "evolve")
+        return notification.evolvePhase === "decision"
+          ? `Your decision on the proposal of review ${notification.reviewId} reached the agent`
+          : `Agent review ${notification.reviewId} of the goals started`;
       return notification.taskStatus === "lost" ? "Background task lost" : "Background task finished";
     case "delivery": {
       const subject = deliverySubject(notification.source);

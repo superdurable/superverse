@@ -26,6 +26,9 @@ import { usePinnedTools } from "./use-pinned-tools";
 import { SURFACES, surfacesFor, TOOLS } from "./surface-registry";
 import { useFrameLinks } from "./use-frame-links";
 
+/** Where a tab's needs-you mark sits beside its icon. */
+const TAB_MARK = "mt-3.5 -ml-0.5 self-start";
+
 type SwitchWords = Pick<
   ComponentProps<typeof EnvironmentSwitch>,
   "previewStatus" | "liveStatus" | "saving" | "previewWord" | "previewDot"
@@ -61,6 +64,7 @@ export function ProjectFrame({
   persistentQuery,
   badges,
   setupNeedsYou = false,
+  proposalWaits = false,
   actions,
   chat,
   chatStatus,
@@ -101,6 +105,8 @@ export function ProjectFrame({
   badges?: Partial<Record<ProjectSurface, ReactNode>>;
   /** Setup's Preview column lacks items or has changes to apply: Tools and its Setup entry carry a mark. */
   setupNeedsYou?: boolean;
+  /** The agent's proposal waits for a builder's decision: Goals carries a mark. */
+  proposalWaits?: boolean;
   actions?: ReactNode;
   chat: ReactNode;
   chatStatus?: ReactNode;
@@ -184,12 +190,15 @@ export function ProjectFrame({
           )
         }
         chatOpen={builds && !conversation && !chatColumn.isCollapsed}
-        badges={
-          setupNeedsYou
-            ? { ...badges, tools: <NeedsYouMark title="Setup needs you" className="mt-3.5 -ml-0.5 self-start" /> }
-            : badges
-        }
-        notes={setupNeedsYou ? { tools: "setup needs you" } : undefined}
+        badges={{
+          ...badges,
+          ...(setupNeedsYou && { tools: <NeedsYouMark title="Setup needs you" className={TAB_MARK} /> }),
+          ...(proposalWaits && { goals: <NeedsYouMark title="A proposal waits for you" className={TAB_MARK} /> }),
+        }}
+        notes={{
+          ...(setupNeedsYou && { tools: "setup needs you" }),
+          ...(proposalWaits && { goals: "a proposal waits for you" }),
+        }}
         fresh={fresh}
         actions={actions}
       />

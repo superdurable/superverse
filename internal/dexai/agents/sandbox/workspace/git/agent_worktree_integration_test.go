@@ -35,7 +35,7 @@ printf 'base\n' > note.txt
 git add note.txt; git -c user.name=t -c user.email=t@example.com commit -q -m init
 printf 'dirty\n' >> note.txt`)
 			operations := &GitOperations{}
-			worktree, err := operations.CreateAgentWorktree(testContext(t), client, "k3n8q5r1", nil)
+			worktree, err := operations.CreateAgentWorktree(testContext(t), client, "k3n8q5r1", nil, nil)
 			if size == 1024 {
 				if err != nil {
 					t.Fatalf("a 1 GiB workspace must admit a small snapshot: %v", err)
@@ -79,7 +79,7 @@ printf 'dirty change\n' >> theirs.txt; printf 'untracked\n' > untracked.txt; pri
 	index := shell(t, client, "cd /workspace && touch -d @1000000000 clean.txt && sha256sum .git/index")
 
 	const agent = "k3n8q5r1"
-	worktree, err := operations.CreateAgentWorktree(testContext(t), client, agent, nil)
+	worktree, err := operations.CreateAgentWorktree(testContext(t), client, agent, nil, nil)
 	if err != nil {
 		t.Fatalf("create the worktree: %v", err)
 	}
@@ -89,7 +89,7 @@ printf 'dirty change\n' >> theirs.txt; printf 'untracked\n' > untracked.txt; pri
 	if worktree.Root != AgentWorktreeRoot(agent) || worktree.Root != "/workspace/.git/superverse/worktrees/"+agent {
 		t.Fatalf("the worktree is not inside the Git directory: %+v", worktree)
 	}
-	if again, err := operations.CreateAgentWorktree(testContext(t), client, agent, nil); err != nil || again != worktree {
+	if again, err := operations.CreateAgentWorktree(testContext(t), client, agent, nil, nil); err != nil || again != worktree {
 		t.Fatalf("a repeated creation did not answer the same worktree: %+v, %v", again, err)
 	}
 	if got := shell(t, client, "cd "+worktree.Root+" && cat theirs.txt untracked.txt && ls build.log 2>/dev/null; true"); got != "snapshot\ndirty change\nuntracked\n" {
@@ -156,7 +156,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 
 	// A merge resumed between its plan and its receipt writes each file once.
 	const resumed = "m2n4p6q8"
-	resumedTree, err := operations.CreateAgentWorktree(testContext(t), client, resumed, nil)
+	resumedTree, err := operations.CreateAgentWorktree(testContext(t), client, resumed, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 	// others mergeable; the same selection answers its receipt, and a merge of
 	// every file then merges the rest and closes the changes.
 	const subset = "s2t4v6x8"
-	subsetTree, err := operations.CreateAgentWorktree(testContext(t), client, subset, nil)
+	subsetTree, err := operations.CreateAgentWorktree(testContext(t), client, subset, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 
 	// discard leaves the workspace as it is.
 	const discarded, unsaved, lost, running, orphan = "d3f5h7j9", "u6w8y2a4", "w3x5z7b9", "r4t6v8x2", "o5p7q9s3"
-	discardedTree, err := operations.CreateAgentWorktree(testContext(t), client, discarded, nil)
+	discardedTree, err := operations.CreateAgentWorktree(testContext(t), client, discarded, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 	// A merge first saves the worktree of a subagent whose end could not save
 	// it, and a subagent whose worktree was lost before it was saved has
 	// nothing to merge.
-	unsavedTree, err := operations.CreateAgentWorktree(testContext(t), client, unsaved, nil)
+	unsavedTree, err := operations.CreateAgentWorktree(testContext(t), client, unsaved, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 		unsavedTree.Root+" && git show refs/superverse/agents/"+unsaved+"/result:kept.txt") != "kept\nkept\n" {
 		t.Fatalf("the merge did not save and merge an unsaved worktree: %+v, %v", receipt, err)
 	}
-	lostTree, err := operations.CreateAgentWorktree(testContext(t), client, lost, nil)
+	lostTree, err := operations.CreateAgentWorktree(testContext(t), client, lost, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,13 +241,13 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 	if receipt, err = operations.MergeAgentChanges(testContext(t), client, lost, MergeRequest{}); err != nil || receipt.Outcome != MergeNothing {
 		t.Fatalf("the merge of a lost worktree: %+v, %v", receipt, err)
 	}
-	orphanTree, err := operations.CreateAgentWorktree(testContext(t), client, orphan, nil)
+	orphanTree, err := operations.CreateAgentWorktree(testContext(t), client, orphan, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	shell(t, client, "cd "+orphanTree.Root+" && printf 'unsaved\n' > unsaved.txt")
 	// The next creation saves and removes the worktree of a subagent that no longer runs.
-	if _, err = operations.CreateAgentWorktree(testContext(t), client, running, nil); err != nil {
+	if _, err = operations.CreateAgentWorktree(testContext(t), client, running, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := shell(t, client, "cd /workspace && test ! -e "+orphanTree.Root+" && git show refs/superverse/agents/"+orphan+"/result:unsaved.txt"); got != "unsaved\n" {
@@ -255,7 +255,7 @@ printf 'binary\0workspace' > image.bin; printf 'workspace new\n' > new.txt`)
 	}
 
 	shell(t, client, "head -c 110000000 /dev/zero > /workspace/large.bin")
-	if _, err = operations.CreateAgentWorktree(testContext(t), client, "l8m2n4p6", []string{running}); !hasCode(err, toolfailure.SnapshotTooLarge) {
+	if _, err = operations.CreateAgentWorktree(testContext(t), client, "l8m2n4p6", []string{running}, nil); !hasCode(err, toolfailure.SnapshotTooLarge) {
 		t.Fatalf("a snapshot over 100 MiB was not refused: %v", err)
 	}
 	if got := shell(t, client, "test -d "+AgentWorktreeRoot(running)+" && echo kept"); got != "kept\n" {
@@ -299,4 +299,52 @@ func shell(t *testing.T, client *sandboxd.SandboxClient, script string) string {
 		t.Fatalf("%q: %v, exit %d: %s", script, err, output.ExitCode, output.Stderr)
 	}
 	return output.Stdout
+}
+
+// TestAgentWorktreeInputsActualSandbox drives start_agent's inputs through the
+// real sandboxd of a coding image container: an ignored input directory of the
+// workspace appears in the subagent's worktree at the same path, its files
+// hard links of the workspace's read-only ones; the subagent's result never
+// holds it, even after the worktree stops ignoring it; and an input that does
+// not exist refuses the creation before any snapshot.
+func TestAgentWorktreeInputsActualSandbox(t *testing.T) {
+	container := sandboxdtest.StartCodingContainerForTest(t)
+	client := container.Client()
+	operations := &GitOperations{}
+	const input = ".local/superverse-evolve/r-1"
+	shell(t, client, `set -e; cd /workspace; git init -q -b main .
+printf '/.local/\n' > .gitignore; printf 'source\n' > app.txt
+git add -A && git -c user.name=t -c user.email=t@example.com commit -q -m init
+mkdir -p `+input+`/sub; printf '{"flow_id":"a"}\n' > `+input+`/runs.jsonl; printf 'goals\n' > `+input+`/sub/goals.md
+chmod 0444 `+input+`/runs.jsonl `+input+`/sub/goals.md`)
+
+	if _, err := operations.CreateAgentWorktree(testContext(t), client, "m2n4p6q8", nil, []string{".local/superverse-evolve/r-9"}); !hasCode(err, toolfailure.SubagentInputMissing) {
+		t.Fatalf("a missing input did not refuse the creation: %v", err)
+	}
+	if refs := shell(t, client, "cd /workspace && git for-each-ref refs/superverse | wc -l"); strings.TrimSpace(refs) != "0" {
+		t.Fatalf("the refused creation left a snapshot: %s refs", refs)
+	}
+	const agent = "p6q8r2s4"
+	worktree, err := operations.CreateAgentWorktree(testContext(t), client, agent, nil, []string{input})
+	if err != nil {
+		t.Fatalf("create the worktree with its input: %v", err)
+	}
+	inodes := shell(t, client, "stat -c %i /workspace/"+input+"/runs.jsonl "+worktree.Root+"/"+input+"/runs.jsonl /workspace/"+input+"/sub/goals.md "+worktree.Root+"/"+input+"/sub/goals.md")
+	if fields := strings.Fields(inodes); len(fields) != 4 || fields[0] != fields[1] || fields[2] != fields[3] {
+		t.Fatalf("the input files are not hard links of the workspace's: %q", inodes)
+	}
+	if mode := shell(t, client, "stat -c %a "+worktree.Root+"/"+input+"/runs.jsonl"); mode != "444\n" {
+		t.Fatalf("the linked input is not read-only: %q", mode)
+	}
+	shell(t, client, `set -e; cd `+worktree.Root+`; printf '' > .gitignore; printf 'change\n' >> app.txt`)
+	finished, err := operations.FinishAgentWorktree(testContext(t), client, agent)
+	if err != nil || finished.Missing {
+		t.Fatalf("finish: %+v, %v", finished, err)
+	}
+	if tree := shell(t, client, "cd /workspace && git ls-tree -r --name-only "+finished.Result); strings.Contains(tree, ".local") || !strings.Contains(tree, "app.txt") {
+		t.Fatalf("the result holds the input or lost the change:\n%s", tree)
+	}
+	if kept := shell(t, client, "cat /workspace/"+input+"/runs.jsonl"); kept != "{\"flow_id\":\"a\"}\n" {
+		t.Fatalf("finishing the subagent changed the workspace's input: %q", kept)
+	}
 }

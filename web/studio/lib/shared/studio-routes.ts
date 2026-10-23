@@ -94,8 +94,9 @@ export const studioRoutes = {
    */
   setup: (projectId: string, environment: ProjectEnvironment, version?: string) =>
     tool(projectId, "setup", environment === "live" ? { v: "live", version } : {}),
-  publishingDeployment: (projectId: string, releaseId: string) =>
-    tool(projectId, "publishing", { tab: "deploy", release: releaseId }),
+  /** Tools, Publishing at the Release of `releaseId`, keeping `query`, such as the version shown. */
+  publishingDeployment: (projectId: string, releaseId: string, query?: Query) =>
+    tool(projectId, "publishing", { ...query, tab: "deploy", release: releaseId }),
 };
 
 /**

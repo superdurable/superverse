@@ -29,39 +29,71 @@ function Age({ at, now }: { at: string | null; now: number }) {
 }
 
 /**
- * One line of a Publishing history list: when, then what happened. With `detail`, the line opens the rest
- * underneath it; the rest stays in the page while folded.
+ * One line of a Publishing history list: when, then what happened, which a narrow line cuts short. With `trailing`,
+ * such as a status badge, what happened wraps instead, whole, and the trailing part, which is never cut, moves under it
+ * when both do not fit. With `detail`, the line opens the rest underneath it; the rest stays in the page while folded.
+ * With `open`, the caller holds whether it is open, such as for a row a link opens, and `onToggle` hears each opening
+ * and folding; `anchor` names the line, which a link to the row lands on; `wide` gives a rest with a layout of its own
+ * the row's full width.
  */
 export function HistoryRow({
   at,
   now,
   detail,
+  open,
+  onToggle,
+  anchor,
+  wide = false,
+  trailing,
   children,
 }: {
   at: string | null;
   now: number;
   detail?: ReactNode;
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+  anchor?: string;
+  wide?: boolean;
+  trailing?: ReactNode;
   children: ReactNode;
 }) {
+  const what = trailing ? (
+    <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className="max-w-full min-w-0 wrap-anywhere">{children}</span>
+      <span className="shrink-0">{trailing}</span>
+    </span>
+  ) : (
+    <span className="min-w-0 flex-1 truncate">{children}</span>
+  );
   if (!detail)
     return (
-      <div className={LINE}>
+      <div id={anchor} className={LINE}>
         <Age at={at} now={now} />
-        <span className="min-w-0 flex-1 truncate">{children}</span>
+        {what}
         <span className="w-3.5 shrink-0" />
       </div>
     );
   return (
-    <details className="group">
-      <summary className={cx(LINE, "cursor-pointer list-none hover:bg-hover [&::-webkit-details-marker]:hidden")}>
+    <details className="group" open={open} onToggle={(event) => onToggle?.(event.currentTarget.open)}>
+      <summary
+        id={anchor}
+        className={cx(LINE, "cursor-pointer list-none hover:bg-hover [&::-webkit-details-marker]:hidden")}
+      >
         <Age at={at} now={now} />
-        <span className="min-w-0 flex-1 truncate">{children}</span>
+        {what}
         <Glyph
           name="chevronRight"
           className="size-3.5 shrink-0 self-center text-ink-faint transition-transform group-open:rotate-90"
         />
       </summary>
-      <div className="grid gap-0.5 pr-3 pb-2.5 pl-24.5 text-[11.5px] text-ink-faint">{detail}</div>
+      <div
+        className={cx(
+          "grid gap-0.5 pr-3 pb-2.5",
+          wide ? "pt-1 pl-3 text-caption text-ink-dim" : "pl-24.5 text-[11.5px] text-ink-faint",
+        )}
+      >
+        {detail}
+      </div>
     </details>
   );
 }

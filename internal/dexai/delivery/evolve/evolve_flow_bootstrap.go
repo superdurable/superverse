@@ -16,7 +16,7 @@ import (
 
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/comm/platform/repohost"
-	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport/history"
 	"github.com/superdurable/superversev2/internal/dexai/projects"
 )
 
@@ -52,7 +52,7 @@ type Settings struct {
 	// KeepExports is how many of a Project's newest exports stay stored.
 	KeepExports int
 	// ModelPrices are list prices keyed by the model ID a model connector reports.
-	ModelPrices map[string]runexport.Price
+	ModelPrices map[string]history.Price
 	// PriceTableAsOf dates the price table; manifests carry it.
 	PriceTableAsOf string
 	// ReviewAccess and ReviewTeamSpaces decide where agent reviews run.

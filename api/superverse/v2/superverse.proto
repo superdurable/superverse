@@ -1750,11 +1750,14 @@ message AttachmentFailure {
 }
 
 // Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
-// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
-// goal values each one measured over the Project's Live runs.
+// goals of the Live build's .superverse/goals.md, the review schedule, the reviews with the goal
+// values each one measured over the Project's Live runs, and the proposals of agent reviews with a
+// person's decision on each.
 service EvolveService {
   rpc GetEvolve(GetEvolveRequest) returns (GetEvolveResponse);
   rpc StartEvolveReview(StartEvolveReviewRequest) returns (StartEvolveReviewResponse);
+  rpc DecideEvolveProposal(DecideEvolveProposalRequest) returns (DecideEvolveProposalResponse);
+  rpc GetEvolveProposal(GetEvolveProposalRequest) returns (GetEvolveProposalResponse);
 }
 
 // What the goals file of the Live build holds.
@@ -1795,13 +1798,18 @@ enum EvolveReviewTrigger {
   EVOLVE_REVIEW_TRIGGER_MANUAL = 2;
 }
 
-// A review's lifecycle: exporting until it measured, was skipped or failed.
+// A review's lifecycle: exporting until it measured, was skipped or failed; an agent review then
+// waits for the agent, which ends it with a proposal or no change, or expires after a day.
 enum EvolveReviewStatus {
   EVOLVE_REVIEW_STATUS_UNSPECIFIED = 0;
   EVOLVE_REVIEW_STATUS_EXPORTING = 1;
   EVOLVE_REVIEW_STATUS_MEASURED = 2;
   EVOLVE_REVIEW_STATUS_SKIPPED = 3;
   EVOLVE_REVIEW_STATUS_FAILED = 4;
+  EVOLVE_REVIEW_STATUS_WAITING_AGENT = 5;
+  EVOLVE_REVIEW_STATUS_PROPOSAL = 6;
+  EVOLVE_REVIEW_STATUS_NO_CHANGE = 7;
+  EVOLVE_REVIEW_STATUS_EXPIRED = 8;
 }
 
 // Why a review was skipped (no Live deployment, no or invalid goals, a review still running) or
@@ -1818,6 +1826,9 @@ enum EvolveReviewReason {
   EVOLVE_REVIEW_REASON_EXPORT_FAILED = 7;
   EVOLVE_REVIEW_REASON_TIMED_OUT = 8;
   EVOLVE_REVIEW_REASON_METRICS_FAILED = 9;
+  EVOLVE_REVIEW_REASON_SESSION_UNAVAILABLE = 10;
+  EVOLVE_REVIEW_REASON_REMOTE_SESSION = 11;
+  EVOLVE_REVIEW_REASON_NO_MODEL_KEY = 12;
 }
 
 // Why Review now started no review.
@@ -1827,6 +1838,44 @@ enum EvolveReviewRefusal {
   EVOLVE_REVIEW_REFUSAL_GOALS_INVALID = 2;
   EVOLVE_REVIEW_REFUSAL_REVIEW_RUNNING = 3;
   EVOLVE_REVIEW_REFUSAL_RATE_LIMITED = 4;
+}
+
+// What a proposal does: change the process, try two versions side by side, or undo a live proposal.
+enum EvolveProposalKind {
+  EVOLVE_PROPOSAL_KIND_UNSPECIFIED = 0;
+  EVOLVE_PROPOSAL_KIND_CHANGE = 1;
+  EVOLVE_PROPOSAL_KIND_TRIAL = 2;
+  EVOLVE_PROPOSAL_KIND_UNDO = 3;
+}
+
+// A proposal's lifecycle: offered until a person approves or declines it or a newer one supersedes
+// it; the agent applies an approved one to Preview or discards a declined, superseded or stale one;
+// Publish makes an applied one live, and a rollback or a live undo makes a live one undone. An
+// approved one not applied within 7 days, or an applied one not live within 30, becomes stale.
+enum EvolveProposalStatus {
+  EVOLVE_PROPOSAL_STATUS_UNSPECIFIED = 0;
+  EVOLVE_PROPOSAL_STATUS_OFFERED = 1;
+  EVOLVE_PROPOSAL_STATUS_APPROVED = 2;
+  EVOLVE_PROPOSAL_STATUS_DECLINED = 3;
+  EVOLVE_PROPOSAL_STATUS_APPLIED = 4;
+  EVOLVE_PROPOSAL_STATUS_DISCARDED = 5;
+  EVOLVE_PROPOSAL_STATUS_LIVE = 6;
+  EVOLVE_PROPOSAL_STATUS_UNDONE = 7;
+  EVOLVE_PROPOSAL_STATUS_SUPERSEDED = 8;
+  EVOLVE_PROPOSAL_STATUS_STALE = 9;
+}
+
+// A person's answer to an offered proposal.
+enum EvolveProposalDecision {
+  EVOLVE_PROPOSAL_DECISION_UNSPECIFIED = 0;
+  EVOLVE_PROPOSAL_DECISION_APPROVE = 1;
+  EVOLVE_PROPOSAL_DECISION_DECLINE = 2;
+}
+
+// Why a decision was not recorded: the proposal is no longer offered at the revision the page showed.
+enum EvolveProposalRefusal {
+  EVOLVE_PROPOSAL_REFUSAL_UNSPECIFIED = 0;
+  EVOLVE_PROPOSAL_REFUSAL_STALE_PROPOSAL = 1;
 }
 
 // Reads a Project's goal measurement for a caller who may operate its Live; NOT_FOUND before the
@@ -1854,6 +1903,8 @@ message Evolve {
   bool agent_reviews = 7;
   // When Review now is next admitted; absent when it is admitted now.
   google.protobuf.Timestamp next_manual_review_at = 8;
+  // The kept proposals of agent reviews, newest first.
+  repeated EvolveProposal proposals = 9;
 }
 
 message EvolveLive {
@@ -1923,6 +1974,47 @@ message EvolveExport {
   bool deleted = 5;
 }
 
+// The proposal of one agent review: what it changes, its backtest and where its lifecycle is.
+message EvolveProposal {
+  // The review that proposed it, which names it.
+  string review_id = 1;
+  EvolveProposalKind kind = 2;
+  // The review of the live proposal an undo reverts.
+  string undoes = 3;
+  string title = 4;
+  // Why: the findings in short, at most 2 KiB.
+  string summary = 5;
+  // The agent whose work holds the change.
+  string agent_id = 6;
+  // The summary the review kept of the change's backtest as JSON, at most 8 KiB, with the keys of the backtest.json the
+  // platform's comparison wrote: its export binding, which the review checked is its own Live export, goals commit and
+  // goal definitions, the runs by label, the calibration, the estimation and each goal before and after.
+  string backtest_json = 7;
+  EvolveProposalStatus status = 8;
+  google.protobuf.Timestamp status_at = 9;
+  // Grows with every change; a decision names the revision the page showed.
+  uint64 revision = 10;
+  google.protobuf.Timestamp offered_at = 11;
+  // The decision could not reach the agent, so the person tells it in the chat.
+  bool notify_failed = 12;
+  EvolveProposalDecisionRecord decision = 13;
+  // The commit the agent pushed the approved change as, and when.
+  string applied_commit = 14;
+  google.protobuf.Timestamp applied_at = 15;
+  // The Live revision whose build first held the applied commit, and when.
+  uint64 live_revision = 16;
+  google.protobuf.Timestamp live_at = 17;
+  // The Live release that ran just before that revision, which Undo rolls Live back to; empty when not recorded.
+  string previous_live_release_id = 18;
+}
+
+message EvolveProposalDecisionRecord {
+  EvolveProposalDecision decision = 1;
+  string actor_account_id = 2;
+  google.protobuf.Timestamp decided_at = 3;
+  string reason = 4;
+}
+
 message EvolveGoalValue {
   string goal_id = 1;
   // Absent when no run gave the goal a value.
@@ -1947,6 +2039,37 @@ message StartEvolveReviewResponse {
   // The review started, empty when refused.
   string review_id = 1;
   EvolveReviewRefusal refusal = 2;
+}
+
+// Records a decision on the offered proposal of a review for a caller who may build the Project,
+// at the proposal revision the page showed; the agent is told and applies or discards it. The same
+// decision repeated answers it again; NOT_FOUND before the Project's first Live deployment.
+message DecideEvolveProposalRequest {
+  string project_id = 1;
+  string review_id = 2;
+  uint64 revision = 3;
+  EvolveProposalDecision decision = 4;
+  // Optional, at most 500 characters; later reviews read a decline's reason.
+  string reason = 5;
+  CallerContext caller = 100;
+}
+
+message DecideEvolveProposalResponse {
+  EvolveProposalRefusal refusal = 1;
+  // The proposal as recorded; absent when the review has none.
+  EvolveProposal proposal = 2;
+}
+
+// Reads the proposal document of a review, Markdown of at most 32 KiB, for a caller who may operate
+// the Project's Live; NOT_FOUND when the review has no kept proposal.
+message GetEvolveProposalRequest {
+  string project_id = 1;
+  string review_id = 2;
+  CallerContext caller = 100;
+}
+
+message GetEvolveProposalResponse {
+  string markdown = 1;
 }
 
 // Commands to the Session Agent, the mock model's scenarios and the read of a Flow design. Every
@@ -2281,6 +2404,8 @@ message AgentNotification {
     SOURCE_RELEASE = 4;
     SOURCE_DEPLOYMENT = 5;
     SOURCE_CONNECTOR = 6;
+    // The Project's goal measurement: an agent review, or a person's decision on its proposal.
+    SOURCE_EVOLVE = 7;
   }
   // How a task ended: a background command exited or was lost; a subagent completed, failed, was
   // stopped or reached its time limit.
@@ -2348,6 +2473,16 @@ message AgentNotification {
   string resolved_notice_id = 21;
   // The Preview URL when a ready notification resolves an earlier notice.
   string url = 22;
+  // What an evolve notification reports: a review of the goals that waits for the agent, or a
+  // person's decision on its proposal.
+  enum EvolvePhase {
+    EVOLVE_PHASE_UNSPECIFIED = 0;
+    EVOLVE_PHASE_REVIEW = 1;
+    EVOLVE_PHASE_DECISION = 2;
+  }
+  // The review an evolve notification concerns, such as r-12, which names its proposal.
+  string review_id = 23;
+  EvolvePhase evolve_phase = 24;
 }
 
 // An absent counter is unknown, not zero. model is the requested model; served_model the one that

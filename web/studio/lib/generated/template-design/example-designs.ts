@@ -24,5 +24,5 @@ export const EXAMPLE_DESIGNS: Readonly<Record<string, ExampleDesignImport>> = {
   "text-summary": { tree: "6afeff73140f380fb20c5f5eff7d0ecbe021ee54", definitions: () => import("./app-template.json") },
   "github-releases-newsletter": { tree: "b0482f4a1c55b786949a4a8a3cb2bbf4cae7b6de", definitions: () => import("./examples/github-releases-newsletter.json") },
   "slack-thread-approval": { tree: "27afb6d360c09343888b00982a9a6478ecc762b1", definitions: () => import("./examples/slack-thread-approval.json") },
-  "summary-approval": { tree: "831c84141162d09749d081de2fca181a02c52745", definitions: () => import("./examples/summary-approval.json") },
+  "summary-approval": { tree: "1ffea4edc80490e7c3089c8811334f2246e350ef", definitions: () => import("./examples/summary-approval.json") },
 };

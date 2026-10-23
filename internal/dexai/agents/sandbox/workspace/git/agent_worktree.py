@@ -14,9 +14,11 @@ of the helper that asking again may repair. Every operation queries before it
 writes, so a repeated operation repeats nothing it finished:
 
   create   snapshot the workspace with a temporary index into the base ref and
-           check the snapshot out as a detached worktree
-  finish   save the worktree into the result ref, count its changes and remove
-           the checkout; the refs keep the result
+           check the snapshot out as a detached worktree; hard-link the files
+           of each input directory, ignored by Git, at the same path in it
+  finish   save the worktree, without its input directories, into the result
+           ref, count its changes and remove the checkout; the refs keep the
+           result
   merge    merge the result into the workspace file by file (plan, writes of
            the files that still hold their planned pre-image, receipt), or
            discard it; a worktree that its finish could not save is saved
@@ -25,6 +27,8 @@ writes, so a repeated operation repeats nothing it finished:
            file closes the changes, so every later call answers its receipt
   cleanup  remove refs and receipts of a closed attempt after Session state
            retained its final receipt or superseded the closed record
+  read     read named files of the result ref, each within its byte limit,
+           without a checkout
 """
 import hashlib
 import json
@@ -148,7 +152,10 @@ def snapshot_bytes(workspace):
 
 
 def save(agent, base):
-    """Saves the worktree on top of base into the result ref."""
+    """Saves the worktree on top of base into the result ref, without the input
+    directories, whatever the worktree's .gitignore says."""
+    for name in read_json(os.path.join(agent.directory, "inputs.json")) or []:
+        remove(os.path.join(agent.worktree, name))
     run(["add", "-A"], agent.worktree)
     tree = output(["write-tree"], agent.worktree)
     result = output(["commit-tree", tree, "-p", base, "-m", "Superverse subagent %s result" % agent.id], agent.worktree, COMMITTER)
@@ -178,6 +185,15 @@ def clean_orphans(agent, keep):
 
 
 def create(agent, request):
+    inputs = request.get("inputs", [])
+    for name in inputs:
+        source = os.path.join(agent.workspace, name)
+        if os.path.islink(source) or not os.path.isdir(source):
+            return {"refusal": "input_missing", "detail": "the workspace holds no directory %s" % name}
+        # An input Git does not ignore would enter the snapshot as ordinary files, and the result would delete it.
+        ignored = run(["check-ignore", "-q", name.rstrip("/") + "/"], agent.workspace, check=False).returncode == 0
+        if not ignored or output(["ls-files", "-z", "--", name], agent.workspace):
+            return {"refusal": "input_missing", "detail": "Git does not ignore every file of the directory %s" % name}
     base = agent.commit(agent.base_ref)
     if base is None:
         clean_orphans(agent, set(request["keep"]))
@@ -203,7 +219,31 @@ def create(agent, request):
         run(["worktree", "prune"], agent.workspace)
         os.makedirs(os.path.dirname(agent.worktree), exist_ok=True)
         run(["worktree", "add", "--detach", agent.worktree, base], agent.workspace)
+    if agent.registered():
+        link_inputs(agent, inputs)
     return {"base": base, "worktree": agent.worktree}
+
+
+def link_inputs(agent, inputs):
+    """Hard-links every file of each input directory of the workspace at the
+    same path in the worktree, sharing the files' read-only inodes, and records
+    the inputs, which save leaves out."""
+    os.makedirs(agent.directory, exist_ok=True)
+    write_atomically(os.path.join(agent.directory, "inputs.json"), inputs)
+    for name in inputs:
+        source = os.path.join(agent.workspace, name)
+        target = os.path.join(agent.worktree, name)
+        for directory, _, files in os.walk(source):
+            relative = os.path.relpath(directory, source)
+            os.makedirs(os.path.normpath(os.path.join(target, relative)), exist_ok=True)
+            for file_name in files:
+                original = os.path.join(directory, file_name)
+                linked = os.path.normpath(os.path.join(target, relative, file_name))
+                if os.path.lexists(linked) and os.path.samestat(os.lstat(linked), os.lstat(original)):
+                    continue
+                # Anything else at the path, such as a file the checkout wrote, gives way to the link.
+                remove(linked)
+                os.link(original, linked, follow_symlinks=False)
 
 
 def numstat(agent, base, result):
@@ -446,7 +486,32 @@ def merge(agent, request):
     return receipt
 
 
-OPERATIONS = {"create": create, "finish": finish, "merge": merge, "cleanup": cleanup}
+def read(agent, request):
+    """Reads each requested path of the result ref as UTF-8 text: missing, over
+    its limit, or not text is answered instead of its content."""
+    result = agent.commit(agent.result_ref)
+    files = {}
+    for name, limit in sorted(request["files"].items()):
+        if result is None:
+            files[name] = {"missing": True}
+            continue
+        process = run(["cat-file", "-s", "%s:%s" % (result, name)], agent.workspace, check=False)
+        if process.returncode != 0:
+            files[name] = {"missing": True}
+            continue
+        size = int(process.stdout.decode().strip())
+        if size > limit:
+            files[name] = {"size": size, "too_large": True}
+            continue
+        data = run(["cat-file", "blob", "%s:%s" % (result, name)], agent.workspace).stdout
+        try:
+            files[name] = {"size": size, "content": data.decode("utf-8")}
+        except UnicodeDecodeError:
+            files[name] = {"size": size, "binary": True}
+    return {"result": result or "", "files": files}
+
+
+OPERATIONS = {"create": create, "finish": finish, "merge": merge, "cleanup": cleanup, "read": read}
 
 
 def main():

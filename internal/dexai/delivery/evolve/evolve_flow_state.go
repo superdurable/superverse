@@ -29,10 +29,13 @@ import (
 // LiveRelease is a committed Live deployment as ProjectDeployFlow announces it.
 // Revision is the deployment's Project lease generation, which grows with every
 // Live deployment, rollbacks included; ReleaseID is the build commit.
+// ReplacedRevision is the Revision of the Live deployment it replaced, zero
+// for none and in announcements from before it.
 type LiveRelease struct {
 	Revision               uint64
 	ReleaseID, BuildCommit string
 	CommittedAt            time.Time
+	ReplacedRevision       uint64 `json:",omitempty"`
 }
 
 // GoalsStatus is what the goals file of the Live build holds.
@@ -94,14 +97,19 @@ const (
 	TriggerManual   ReviewTrigger = "manual"
 )
 
-// ReviewStatus is a review's lifecycle; measurement ends a review measured.
+// ReviewStatus is a review's lifecycle: exporting, then measured, or waiting
+// for the agent's report, which ends it proposal or no_change, or expired.
 type ReviewStatus string
 
 const (
-	ReviewExporting ReviewStatus = "exporting"
-	ReviewMeasured  ReviewStatus = "measured"
-	ReviewSkipped   ReviewStatus = "skipped"
-	ReviewFailed    ReviewStatus = "failed"
+	ReviewExporting    ReviewStatus = "exporting"
+	ReviewMeasured     ReviewStatus = "measured"
+	ReviewWaitingAgent ReviewStatus = "waiting_agent"
+	ReviewProposal     ReviewStatus = "proposal"
+	ReviewNoChange     ReviewStatus = "no_change"
+	ReviewExpired      ReviewStatus = "expired"
+	ReviewSkipped      ReviewStatus = "skipped"
+	ReviewFailed       ReviewStatus = "failed"
 )
 
 // ReviewReason is why a review was skipped or failed.
@@ -113,6 +121,10 @@ const (
 	ReasonNoGoals               ReviewReason = "no_goals"
 	ReasonGoalsInvalid          ReviewReason = "goals_invalid"
 	ReasonPreviousReviewRunning ReviewReason = "previous_review_running"
+	// The reasons the Project's Session gives when it cannot take an agent review.
+	ReasonSessionUnavailable ReviewReason = "session_unavailable"
+	ReasonRemoteSession      ReviewReason = "remote_session"
+	ReasonNoModelKey         ReviewReason = "no_model_key"
 )
 
 // The failure codes of a failed review.
@@ -152,18 +164,34 @@ type ReviewRecord struct {
 	Detail      string       `json:",omitempty"`
 	Export      ExportSummary
 	Metrics     *MetricsSummary `json:",omitempty"`
+	// Usage is the platform's model usage of the agent's review, the billable record the Session reports.
+	Usage []ModelUsage `json:",omitempty"`
 }
 
 // ended reports whether the review reached its final status.
-func (r ReviewRecord) ended() bool { return r.Status != ReviewExporting }
+func (r ReviewRecord) ended() bool {
+	return r.Status != ReviewExporting && r.Status != ReviewWaitingAgent
+}
 
 // ExportSummary is what an export stored: its parts and runs, whether it was
-// cut at a limit, and whether a later review deleted it.
+// cut at a limit, and whether a later review deleted it. RunsSHA256 and
+// Records are the digest and the count of the runs its metrics evaluated, one
+// per FlowID (runexport.WriteCanonical), which a placed runs.jsonl repeats;
+// absent until the metrics are computed.
 type ExportSummary struct {
 	Parts, Runs int
 	Bytes       int64
 	Truncated   bool
 	Deleted     bool
+	RunsSHA256  string `json:",omitempty"`
+	Records     int    `json:",omitempty"`
+}
+
+// exportDigest is the digest and the count of the runs a review's metrics
+// evaluated.
+type exportDigest struct {
+	RunsSHA256 string `json:",omitempty"`
+	Records    int    `json:",omitempty"`
 }
 
 // MetricsSummary is the review's goal values, at most maximumSummaryBytes;
@@ -174,15 +202,18 @@ type MetricsSummary struct {
 }
 
 // GoalSummary is one goal's value; Holds is set for a guardrail with a value.
+// Digest names the goal's definition the value was measured under
+// (the goals package's definition digest).
 type GoalSummary struct {
 	ID      string
+	Digest  string   `json:",omitempty"`
 	Value   *float64 `json:",omitempty"`
 	Runs    int
 	FewRuns bool
 	Holds   *bool `json:",omitempty"`
 }
 
-// Snapshot is EvolveFlow as GetEvolve reads it, the reviews newest first.
+// Snapshot is EvolveFlow as GetEvolve reads it, the reviews and proposals newest first.
 type Snapshot struct {
 	ProjectID string
 	Live      LiveRelease
@@ -193,6 +224,7 @@ type Snapshot struct {
 	// LastManualAt is the time of the last admitted Review now.
 	LastManualAt time.Time
 	Reviews      []ReviewRecord
+	Proposals    []ProposalRecord
 }
 
 // NextManualReviewAt is when the once-a-day limit admits Review now again,
@@ -220,10 +252,12 @@ const (
 	maximumSpecBytes    = 8 << 10
 	maximumGoalsErrors  = 10
 	maximumSummaryBytes = 2 << 10
-	keptReviews         = 26
-	keptManualRequests  = 16
-	manualReviewEvery   = 24 * time.Hour
-	weekHours           = 7 * 24
+	// maximumBacktestBytes bounds a proposal's backtest summary, which holds up to 8 goals.
+	maximumBacktestBytes = 8 << 10
+	keptReviews          = 26
+	keptManualRequests   = 16
+	manualReviewEvery    = 24 * time.Hour
+	weekHours            = 7 * 24
 )
 
 // reviewKey is the Reviews instance and ID of review number seq, r-<seq>.
@@ -271,7 +305,7 @@ func goalsReadFailure(commit, detail string, at time.Time) Goals {
 func summarize(metrics goals.Metrics) MetricsSummary {
 	summary := MetricsSummary{Runs: metrics.Runs}
 	for _, goal := range metrics.Goals {
-		entry := GoalSummary{ID: goal.ID, Value: goal.Value, Runs: goal.Runs, FewRuns: goal.FewRuns}
+		entry := GoalSummary{ID: goal.ID, Digest: goal.Digest, Value: goal.Value, Runs: goal.Runs, FewRuns: goal.FewRuns}
 		if goal.Guardrail != nil {
 			entry.Holds = goal.Guardrail.Holds
 		}
@@ -303,16 +337,20 @@ func partKey(projectID, reviewID string, part int, attempt int32) string {
 type reviewInput struct {
 	ReviewID string
 	// Skip is why BeginReview found the review cannot measure; DeletedExports
-	// are the earlier reviews whose exports it deleted.
-	Skip           ReviewReason `json:",omitempty"`
-	DeletedExports []string     `json:",omitempty"`
+	// are the earlier reviews whose exports it deleted, and DeletedProposals
+	// the pruned proposals whose stored proposal it deleted.
+	Skip             ReviewReason `json:",omitempty"`
+	DeletedExports   []string     `json:",omitempty"`
+	DeletedProposals []string     `json:",omitempty"`
 	// Live is the Project's current Live deployment that BeginReview read.
 	Live     *LiveRelease `json:",omitempty"`
 	Export   exportCursor
 	Manifest *objectstore.ObjectRef `json:",omitempty"`
 	Metrics  *MetricsSummary        `json:",omitempty"`
-	// Failure is a decision that ends the review failed.
+	// Failure is a decision that ends the review failed, or skipped for a Session that cannot take it.
 	Failure *reviewFailure `json:",omitempty"`
+	// ReviewsOn is whether agent reviews run for the Project, which ComputeMetrics read.
+	ReviewsOn bool `json:",omitempty"`
 }
 
 // reviewFailure is a review's failure code and its detail.
@@ -322,14 +360,25 @@ type reviewFailure struct {
 }
 
 // exportCursor is where an export continues: the next part, the goals' Flow
-// type and its search page, and what the parts so far hold.
+// type and its search page, and what the parts so far hold; Digest is set
+// once the metrics evaluated them.
 type exportCursor struct {
 	Part, Flow  int
 	PageToken   string `json:",omitempty"`
 	Runs, Reads int
 	Bytes       int64
 	Truncated   bool
-	Parts       []exportPart `json:",omitempty"`
+	Parts       []exportPart  `json:",omitempty"`
+	Digest      *exportDigest `json:",omitempty"`
+}
+
+// summary is what the export stored, as its review keeps it.
+func (cursor exportCursor) summary() ExportSummary {
+	summary := ExportSummary{Parts: len(cursor.Parts), Runs: cursor.Runs, Bytes: cursor.Bytes, Truncated: cursor.Truncated}
+	if cursor.Digest != nil {
+		summary.RunsSHA256, summary.Records = cursor.Digest.RunsSHA256, cursor.Digest.Records
+	}
+	return summary
 }
 
 // exportPart is one written part with its exact object.
@@ -339,13 +388,37 @@ type exportPart struct {
 }
 
 // goalsReading is a goals file read for one Live revision, the input of
-// ReadGoals and CommitGoals; Goals is nil until the read. ReviewID is the
+// ReadGoals and CommitGoals; Goals is nil until the read. Holds says, for
+// each applied or live proposal by review ID, whether the build holds its
+// applied commit. PreviousReleaseID and PreviousBuildCommit are the release
+// Live ran just before this revision, which this deployment replaced; empty
+// when it was the same release or none, or when the measurement missed the
+// release Live ran just before. PreviousHolds says, for each applied proposal
+// the build holds, whether that previous build held it too. ReviewID is the
 // review that waits for these goals and begins again once they are stored.
+// GoalsOnly marks a review's reading of a revision whose own reading is still
+// pending: it checks no proposal and moves none, so the pending reading, which
+// knows the release before, moves them.
 type goalsReading struct {
-	Revision uint64
-	Commit   string
-	Goals    *Goals `json:",omitempty"`
-	ReviewID string `json:",omitempty"`
+	Revision            uint64
+	Commit              string
+	PreviousReleaseID   string          `json:",omitempty"`
+	PreviousBuildCommit string          `json:",omitempty"`
+	Goals               *Goals          `json:",omitempty"`
+	Holds               map[string]bool `json:",omitempty"`
+	PreviousHolds       map[string]bool `json:",omitempty"`
+	ReviewID            string          `json:",omitempty"`
+	GoalsOnly           bool            `json:",omitempty"`
+}
+
+// liveReading is the goals reading of Live deployment live after previous,
+// which is the release before when live replaced it and is another release.
+func liveReading(previous, live LiveRelease) goalsReading {
+	reading := goalsReading{Revision: live.Revision, Commit: live.BuildCommit}
+	if previous.ReleaseID != live.ReleaseID && previous.Revision == live.ReplacedRevision {
+		reading.PreviousReleaseID, reading.PreviousBuildCommit = previous.ReleaseID, previous.BuildCommit
+	}
+	return reading
 }
 
 // measuredLive is the Live deployment whose goals a review measures with:

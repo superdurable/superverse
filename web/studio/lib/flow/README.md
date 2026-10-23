@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The providers the Flow UI reads: the scoped Flow API client, Flow view navigation and the Flow catalog, with the definition revision binding and enum labels.
 
-Importers: `components/build`, `components/flow/canvas`, `components/flow/canvas/model`, `components/flow/connections`, `components/flow/connections/model`, `components/flow/connections/row`, `components/flow/connector/native`, `components/flow/diagnostics`, `components/flow/diagnostics/event`, `components/flow/diagnostics/graph`, `components/flow/diagnostics/timeline`, `components/flow/diagnostics/value`, `components/flow/frame`, `components/flow/map`, `components/flow/run`, `components/flow/run/detail`, `components/flow/run/start`, `components/flow/run/step`, `components/flow/run/tryit`, `components/flow/scope`, `components/project`, `components/project/activity` and `components/project/goals` import this directory.
+Importers: `components/build`, `components/flow/canvas`, `components/flow/canvas/model`, `components/flow/connections`, `components/flow/connections/model`, `components/flow/connections/row`, `components/flow/connector/native`, `components/flow/diagnostics`, `components/flow/diagnostics/event`, `components/flow/diagnostics/graph`, `components/flow/diagnostics/timeline`, `components/flow/diagnostics/value`, `components/flow/frame`, `components/flow/map`, `components/flow/run`, `components/flow/run/detail`, `components/flow/run/start`, `components/flow/run/step`, `components/flow/run/tryit`, `components/flow/scope`, `components/project`, `components/project/activity`, `components/project/goals` and `components/project/proposal` import this directory.
 
 Imports: it imports `lib/api/flow`, `lib/api/flow/draft`, `lib/api/transport` and `lib/shared`.
 
@@ -33,6 +33,7 @@ flowchart LR
   c20["components/project"] --> self
   c21["components/project/activity"] --> self
   c22["components/project/goals"] --> self
+  c23["components/project/proposal"] --> self
   self --> d0["lib/api/flow"]
   self --> d1["lib/api/flow/draft"]
   self --> d2["lib/api/transport"]

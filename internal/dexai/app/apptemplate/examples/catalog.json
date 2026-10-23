@@ -1261,6 +1261,7 @@
         "dex-app.yaml",
         "internal/api/handler.go",
         "internal/apptest/text_summary_test.go",
+        "internal/process/summary_rules.go",
         "internal/process/text_summary_flow.go",
         "internal/worker/application.go",
         "internal/worker/connections.go",

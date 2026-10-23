@@ -13,6 +13,11 @@ import type { EvolveReview__Output } from "@/lib/generated/protobuf/superverse/v
 /** The goals file of an application, as its repository holds it. */
 export const GOALS_FILE = ".superverse/goals.md";
 
+/** What a goal of a proposal's backtest is called: its statement in Live's goals, or words for one they no longer have. */
+export function goalStatement(goal: EvolveGoal__Output | null | undefined): string {
+  return goal?.statement || "A goal no longer in the goals file";
+}
+
 /** The most reviews a goal's trend draws. */
 const TREND_REVIEWS = 8;
 
@@ -65,7 +70,8 @@ export function guardrailWords(goal: EvolveGoal__Output): string | null {
   return null;
 }
 
-const measured = (review: EvolveReview__Output) => review.status === "EVOLVE_REVIEW_STATUS_MEASURED";
+/** A review measured the goals when it has their values: measurement alone, or the measurement an agent review read. */
+const measured = (review: EvolveReview__Output) => review.values.length > 0;
 
 /**
  * Each goal's current value, from the newest review that measured, and its trend: the values the measured reviews

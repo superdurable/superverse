@@ -3,17 +3,18 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Runs the Sandbox tools of the Session Agent and its subagents over an accepted workspace lease, without any Flow access: files, commands, Git, subagent worktrees and the Connector catalog.
 
-Callers: `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/backgroundcommand` and `internal/dexai/agents/session/subagent` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/backgroundcommand` and `internal/dexai/agents/session/subagent` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/toolinput`, `internal/dexai/agents/session/toolinput/generated` and `internal/dexai/agents/toolfailure` and calls the Connector catalog API.
+Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/toolinput`, `internal/dexai/agents/session/toolinput/generated`, `internal/dexai/agents/toolfailure` and `internal/dexai/delivery/evolve/goals` and calls the Connector catalog API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/session/sandboxtools"]
-  c0["internal/dexai/agents/session"] --> self
-  c1["internal/dexai/agents/session/agentloop"] --> self
-  c2["internal/dexai/agents/session/backgroundcommand"] --> self
-  c3["internal/dexai/agents/session/subagent"] --> self
+  c0["internal/dexai/agents"] --> self
+  c1["internal/dexai/agents/session"] --> self
+  c2["internal/dexai/agents/session/agentloop"] --> self
+  c3["internal/dexai/agents/session/backgroundcommand"] --> self
+  c4["internal/dexai/agents/session/subagent"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/comm/platform/connectorlibrary"]
@@ -24,6 +25,7 @@ flowchart LR
   self --> d7["internal/dexai/agents/session/toolinput"]
   self --> d8["internal/dexai/agents/session/toolinput/generated"]
   self --> d9["internal/dexai/agents/toolfailure"]
+  self --> d10["internal/dexai/delivery/evolve/goals"]
   self --> e0(["Connector catalog API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -72,7 +74,8 @@ express: byte bounds, NUL, blank text and workspace-relative paths.
 | `tool_bash.go` | `bash` through the command ledger: begin, in the background on request, status, and the move to the background (or, at the background limit, the stop) after a timeout or exhausted retries |
 | `tool_tasks.go` | `read_task_output` and `stop_task` through the ledger, and the status of a task the Session watches |
 | `platform_program.go` | Programs the platform chose (`curl`), run to their exit |
-| `tool_files.go` | `read`, `edit`, `write`, `grep` and `glob` through the image's `superverse-files` helper |
+| `tool_files.go` | `read`, `edit`, `write`, `grep` and `glob` through the image's `superverse-files` helper; `place_attachment`; `place_evolve_export`, which streams an agent review's stored `runs.jsonl` (`EvolveExport.Runs`, refused above 256 MiB by its stored size before any write) in chunks of 4 MiB through sandboxd and finishes the folder with `evolve_export.py` |
+| `evolve_export.py` | The fixed program that finishes a placed review folder: concatenates the chunks into `runs.jsonl` against the export's SHA-256, moves the other files beside it, makes them read-only and keeps the newest two review folders |
 | `tool_connector_catalog.go` | `connector_catalog` over the official published catalog |
 | `tool_git.go` | `commit_and_push` |
 | `tool_agents.go` | The subagent and remote task worktree operations: creation, finish, merge and cleanup with trusted identities, and a `connector_develop` subagent's worktree of the connectors library: its creation (`CreateContributionWorktree`) and finish (`FinishContribution`) |

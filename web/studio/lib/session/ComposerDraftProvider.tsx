@@ -8,7 +8,7 @@
 
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 /** What another surface asks the chat's composer to hold: the element it is about, and optional text. */
 export interface ComposerProposal {
@@ -63,6 +63,23 @@ export function ComposerDraftProvider({ onPropose, children }: { onPropose?: () 
 /** The composer draft of the page, or null outside a Project's Builder. */
 export function useComposerDraft() {
   return useContext(ComposerDraftContext);
+}
+
+/** While `enabled`, "/" opens the chat and puts the cursor in the composer, unless the person is typing elsewhere. */
+export function useSlashFocusesComposer(enabled: boolean) {
+  const requestFocus = useComposerDraft()?.requestFocus;
+  useEffect(() => {
+    if (!enabled || !requestFocus) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      requestFocus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enabled, requestFocus]);
 }
 
 /**

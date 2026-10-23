@@ -240,7 +240,7 @@ func (sel selection) settleTools(assistant, answer requestMessage) selection {
 		return sel
 	}
 	tool, result, failed := failedTool(assistant, answer)
-	want, contains := sel.script.expectedFailureText(*at)
+	want, contains := sel.script.expectedFailureText(*at, sel.arguments)
 	missing := slices.IndexFunc(contains, func(text string) bool { return !strings.Contains(result, text) })
 	switch detail := firstLine(result); {
 	case failed && !sel.script.expectsFailure(*at):
@@ -250,7 +250,7 @@ func (sel selection) settleTools(assistant, answer requestMessage) selection {
 	case missing >= 0:
 		sel.stopped = fmt.Sprintf("Mock scenario %s stopped at %s: no failed tool result holds %q", sel.script.Name, *at, contains[missing])
 	default:
-		sel.stopped = sel.script.missingResultText(*at, allResults(assistant, answer))
+		sel.stopped = sel.script.missingResultText(*at, sel.arguments, allResults(assistant, answer))
 	}
 	return sel
 }
@@ -480,6 +480,9 @@ func describeKind(kind InputKind) string {
 var messageArguments = map[string]*regexp.Regexp{
 	"task":              regexp.MustCompile(`cmd-[a-z2-7]{12}|agent-[a-z0-9]{8}`),
 	"release_candidate": regexp.MustCompile(`v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*`),
+	// review is the review an evolve notification names; commit the commit a commit_and_push result pushed.
+	"review": regexp.MustCompile(`\\?"review_id\\?":\s*\\?"(r-[1-9][0-9]{0,17})\\?"`),
+	"commit": regexp.MustCompile(`\\?"commit\\?":\s*\\?"([0-9a-f]{40})\\?"`),
 }
 
 // withMessageArgumentsOf sets each message argument a script declares to the
@@ -562,16 +565,19 @@ func (sel selection) missingNotification(messages []requestMessage) string {
 		}
 		for _, text := range messages[index].texts() {
 			var notification struct {
-				Kind conversation.NotificationKind `json:"kind"`
+				Kind   conversation.NotificationKind   `json:"kind"`
+				Source conversation.NotificationSource `json:"source"`
 			}
 			body, isNotification := strings.CutPrefix(text, conversation.NotificationPreamble)
-			if isNotification && json.Unmarshal([]byte(body), &notification) == nil && notification.Kind == step.Notification {
+			if isNotification && json.Unmarshal([]byte(body), &notification) == nil && notification.Kind == step.Notification &&
+				(step.NotificationSource == "" || notification.Source == step.NotificationSource) {
 				return ""
 			}
 		}
 		break
 	}
-	return fmt.Sprintf("mock scenario %s at %s answers a %s notification, which the newest user message does not hold", sel.script.Name, sel.at, step.Notification)
+	return fmt.Sprintf("mock scenario %s at %s answers a %s notification%s, which the newest user message does not hold", sel.script.Name, sel.at, step.Notification,
+		map[bool]string{true: " of source " + string(step.NotificationSource)}[step.NotificationSource != ""])
 }
 
 // progress is where the next reply leaves the scenario: the input it

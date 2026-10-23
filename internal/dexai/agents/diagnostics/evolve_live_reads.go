@@ -22,7 +22,8 @@ import (
 
 // The Project diagnostics serve EvolveFlow's run export as its
 // evolve.EvolveFlowDependency: the same Live target, connection pool and
-// redaction as read_live_app_runs, for a Project the Flow owns.
+// redaction as read_live_app_runs, for a Project the Flow owns. They also
+// answer its decision notices, which no Session takes yet.
 
 // InvokeEvolveLive runs read on the Project's current Live engine within one
 // bounded Runs call.
@@ -33,12 +34,14 @@ func (d *ProjectDiagnostics) InvokeEvolveLive(ctx context.Context, projectID str
 }
 
 // CurrentLive returns the Project's current Live deployment, with the checks
-// of InvokeEvolveLive, as ProjectDeployFlow announces it to EvolveFlow.
+// of InvokeEvolveLive, as ProjectDeployFlow announces it to EvolveFlow: its
+// Flow also answers the revision it replaced, which the read model lacks.
 func (d *ProjectDiagnostics) CurrentLive(ctx context.Context, projectID string) (evolve.LiveRelease, error) {
 	var release evolve.LiveRelease
-	err := d.Runs.InvokeLive(ctx, projectID, func(_ context.Context, live runs.LiveEngine) error {
-		release = live.Live.LiveRelease()
-		return nil
+	err := d.Runs.InvokeLive(ctx, projectID, func(ctx context.Context, live runs.LiveEngine) error {
+		var err error
+		release, err = d.Deployments.LiveRelease(ctx, live.Live)
+		return err
 	})
 	return release, evolveLiveError(err)
 }

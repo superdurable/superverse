@@ -42,6 +42,9 @@ const REASON_WORDS = {
   EVOLVE_REVIEW_REASON_EXPORT_FAILED: "the runs could not be saved",
   EVOLVE_REVIEW_REASON_TIMED_OUT: "it took too long",
   EVOLVE_REVIEW_REASON_METRICS_FAILED: "the goals could not be computed",
+  EVOLVE_REVIEW_REASON_SESSION_UNAVAILABLE: "the agent's Session was unavailable",
+  EVOLVE_REVIEW_REASON_REMOTE_SESSION: "this Project uses a local agent; agent reviews need the platform agent",
+  EVOLVE_REVIEW_REASON_NO_MODEL_KEY: "the Project has no model key",
 } as const satisfies Record<EvolveReviewReason__Output, string>;
 
 const STATUS = {
@@ -50,6 +53,10 @@ const STATUS = {
   EVOLVE_REVIEW_STATUS_MEASURED: { words: "Measured", tone: "text-pass" },
   EVOLVE_REVIEW_STATUS_SKIPPED: { words: "Skipped", tone: "text-ink-dim" },
   EVOLVE_REVIEW_STATUS_FAILED: { words: "Failed", tone: "text-fail" },
+  EVOLVE_REVIEW_STATUS_WAITING_AGENT: { words: "The agent is reviewing", tone: "text-accent" },
+  EVOLVE_REVIEW_STATUS_PROPOSAL: { words: "Proposed a change", tone: "text-accent" },
+  EVOLVE_REVIEW_STATUS_NO_CHANGE: { words: "No change", tone: "text-pass" },
+  EVOLVE_REVIEW_STATUS_EXPIRED: { words: "Expired: the agent did not report within a day", tone: "text-ink-dim" },
 } as const satisfies Record<EvolveReviewStatus__Output, { words: string; tone: string }>;
 
 /** A review's status in words, with its reason when it was skipped or failed, and the colour that says how it went. */

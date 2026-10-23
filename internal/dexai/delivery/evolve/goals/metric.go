@@ -53,6 +53,14 @@ type number struct {
 	name string
 }
 
+// key is the number's name in the metric language, such as steps.AwaitReply or duration_h.
+func (n number) key() string {
+	if n.kind == numberDuration {
+		return string(numberDuration)
+	}
+	return string(n.kind) + "." + n.name
+}
+
 // condition restricts the runs of a term: an outcome, its negation, or a field's value.
 type condition struct {
 	negate  bool

@@ -147,7 +147,8 @@ the current contract.
 | [`components/project`](components/project/README.md) | The Project pages: the start form, Project creation, Project details, the Project's one Session provider, the surfaces and tools inside the Builder frame, and Setup on either tab. |
 | [`components/project/activity`](components/project/activity/README.md) | The per-environment timeline and the recent trigger events: Preview's starts, Live's publishes and deployments, each with version, outcome and problem. |
 | [`components/project/creation`](components/project/creation/README.md) | Connects a local agent using inline risk acknowledgement and an expiring pairing code. |
-| [`components/project/goals`](components/project/goals/README.md) | The Builder's Goals tab: the goals of the Live version with their values and trends, the reviews that measured them, Review now and Set goals. |
+| [`components/project/goals`](components/project/goals/README.md) | The Builder's Goals tab: the Live version's goals with their values and trends, the agent's proposals, the reviews that measured them, Review now and Set goals. |
+| [`components/project/proposal`](components/project/proposal/README.md) | The agent's proposal as the chat's card and the Goals tab's decision footer: Approve, Decline with a reason, and where it goes until it ships. |
 | [`components/project/setup`](components/project/setup/README.md) | Setup's pieces around the table: why it is not shown yet, the automatic apply of Preview's saved changes, and the Live tab's banner. |
 | [`components/project/templates`](components/project/templates/README.md) | The start page's starting points: the bundled built examples and the placeholder templates, their gallery, the suggestions while typing, and the Project name a description gives. |
 | [`components/publishing`](components/publishing/README.md) | Tools, Publishing: the publish in progress, what is Live with Stop Live, every version with its builds, rollback after its consequences, and Live's history. |
@@ -183,7 +184,7 @@ the current contract.
 | [`lib/examples`](lib/examples/README.md) | The examples of the application template this Studio was built with and the example search, which ranks them in the browser exactly as the server shortlists them. |
 | [`lib/flow`](lib/flow/README.md) | The providers the Flow UI reads: the scoped Flow API client, Flow view navigation and the Flow catalog, with the definition revision binding and enum labels. |
 | [`lib/project`](lib/project/README.md) | Project resources: the Project Watch provider and list, resource Watches, release versions, Process definitions, waiting runs, configuration reads, requirement gap names, the pending creation and the generated designs. |
-| [`lib/project/goals`](lib/project/goals/README.md) | A Project's goal measurement for the Goals tab: the read that follows a running review, Review now, and goal values in their metric's unit. |
+| [`lib/project/goals`](lib/project/goals/README.md) | A Project's goal measurement and agent proposals for the Builder: the shared read, Review now, decisions, proposal documents and backtests, and goal values in their unit. |
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
 | [`lib/project/setup`](lib/project/setup/README.md) | Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links. |
 | [`lib/project/stage`](lib/project/stage/README.md) | How far a Project has come, from its first conversation to built and Live, and the Builder tabs it has shown in this browser. |
@@ -218,7 +219,7 @@ the current contract.
 | [`tests/e2e`](tests/e2e/README.md) | The three required acceptance specs of the local lanes: registration, a Project edited and released through Studio, and an Agent-added Flow approval. |
 | [`tests/e2e/integration`](tests/e2e/integration/README.md) | Focused Studio scenarios that run against an existing environment and private fixtures; they are run one at a time and are not acceptance. |
 | [`tests/e2e/integration/catalog`](tests/e2e/integration/catalog/README.md) | Exercises catalog admission, existing model mappings, persisted Claude selection and mock continuation through the real Studio, BFF, gRPC, Dex and Sandbox. |
-| [`tests/e2e/integration/goals`](tests/e2e/integration/goals/README.md) | The Goals tab spec: a Project never published answers NOT_FOUND to GetEvolve and Review now through the BFF and shows the empty state with Set goals. |
+| [`tests/e2e/integration/goals`](tests/e2e/integration/goals/README.md) | The Goals tab specs: a never-published Project's empty state, and an agent review's proposal approved from the Goals tab or the chat card, then applied on Preview. |
 | [`tests/e2e/integration/modelcredential`](tests/e2e/integration/modelcredential/README.md) | Verifies Project credential entry and composer admission through real dependencies. |
 | [`tests/e2e/integration/publishing`](tests/e2e/integration/publishing/README.md) | The Publish popover and cancellation on a local lane: the Preview validation or a skip reason, the stated consequences, Live's waiting settings, and a cancelled build. |
 | [`tests/e2e/integration/remoteagent`](tests/e2e/integration/remoteagent/README.md) | Exercises real Studio pairing, public remote replies, and epoch-fenced takeover through the lane's existing BFF, gRPC, remote HTTP listener, SQL and Dex. |

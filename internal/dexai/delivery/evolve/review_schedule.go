@@ -10,6 +10,7 @@ package evolve
 
 import (
 	"hash/fnv"
+	"slices"
 	"time"
 
 	"github.com/superdurable/dex/sdk-go/dex"
@@ -80,12 +81,14 @@ func manualRefusal(current Goals, active string, manual ManualRequests, now time
 }
 
 // prunedReviews are the reviews beyond the newest keptReviews; a review whose
-// export is still stored stays until a later review deletes the export.
-func prunedReviews(records []ReviewRecord) []string {
+// export is still stored stays until a later review deletes the export, and
+// one with a kept proposal stays with it.
+func prunedReviews(records []ReviewRecord, proposals []ProposalRecord) []string {
 	newestFirst(records)
 	var pruned []string
 	for _, record := range records[min(len(records), keptReviews):] {
-		if record.ended() && (record.Status == ReviewSkipped || record.Export.Deleted) {
+		proposed := slices.ContainsFunc(proposals, func(p ProposalRecord) bool { return p.ReviewID == record.ID })
+		if record.ended() && !proposed && (record.Status == ReviewSkipped || record.Export.Deleted) {
 			pruned = append(pruned, record.ID)
 		}
 	}
@@ -93,10 +96,13 @@ func prunedReviews(records []ReviewRecord) []string {
 }
 
 // recoveredFailure is the failure of a review Step whose retries ran out or
-// that passed its wait limit, by the Step that failed.
+// that passed its wait limit, by the Step that failed: a Session that could
+// not be told of the review within RequestReview's limit is unavailable.
 func recoveredFailure(step string, timedOut bool, detail string) reviewFailure {
 	code := ReasonLiveUnreachable
 	switch {
+	case step == dex.GetFinalStepType[reviewInput](RequestReview{}):
+		code = ReasonSessionUnavailable
 	case timedOut:
 		code = ReasonTimedOut
 	case step == dex.GetFinalStepType[reviewInput](FinishExport{}):
@@ -106,3 +112,7 @@ func recoveredFailure(step string, timedOut bool, detail string) reviewFailure {
 	}
 	return reviewFailure{Code: code, Detail: detail}
 }
+
+// sessionSkips are the reasons a review ends skipped, not failed, when its
+// Session cannot take it.
+var sessionSkips = []ReviewReason{ReasonSessionUnavailable, ReasonRemoteSession, ReasonNoModelKey}

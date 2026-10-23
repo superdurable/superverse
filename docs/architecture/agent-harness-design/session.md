@@ -517,9 +517,11 @@ Bounds, so that automation can never run away:
 | `SubagentsStartedWithoutUser` | Subagents started since the last user-initiated turn | 6 |
 
 A user-initiated turn start resets every automatic counter and `AutomaticTurnsPaused`. When Stop is
-pressed or a cap is reached, `AutomaticTurnsPaused` is set and the Session records once "automatic
-continuation paused; reply to continue"; while paused, notifications are appended to the log but open
-no turn.
+pressed or a cap is reached, `AutomaticTurnsPaused` is set with its cause (`stop` or `cap`) and the
+Session records once "automatic continuation paused; reply to continue"; while paused, notifications
+are appended to the log but open no turn. An `evolve` notification, taken only while the Agent waits
+for the user, resets the task counter and the subagent budget and lifts a `cap` pause, never a `stop`
+one ([notifications](notifications-and-feedback.md)).
 
 ### Model selection
 
@@ -654,7 +656,7 @@ automatically for every Step and RPC.
 | `CreatedAt`, `UpdatedAt` | time.Time | |
 | `SessionModel` | `{Model, Revision, ChangedBy *conversation.Actor}` | The user's model choice ([above](#model-selection)) |
 | `ContextSegment` | struct (about 0.5 KB) | Current segment, last usage, pending bytes, force-compaction flag ([context management](context-management.md#segments)) |
-| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused`, `SubagentsStartedWithoutUser`, `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `StartingExample` (`{ExampleID, Tree, Title, Choice, MatchedOn, FirstBuild}`, under 512 bytes: the example the Project started from, `picked` or `matched` (`agentloop.ExampleChoice`), with at most 12 matched facets; `InitializeSessionAgent` writes it once, and the `starting_example` section is built from it; a matched Session's first build completes it once with `FirstBuild` (`agentloop.StartingExampleBuild{ExampleSteps, BuiltSteps, KeptSteps, Commit}`, [below](#the-first-build-of-a-matched-example))), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
+| `AgentState` | struct | Sequence range (`FirstRetainedSequence`, `CurrentFirstSequence`, `LastSequence`), `Status`, `PendingToolCalls`, `PendingToolIndex`, `HandoffContinuations`, `TurnRequestSequences`, `SourceChangedSinceHandoff`, `Turn`, `Running`, `AutomaticTaskTurns`, `AutomaticPlatformTurns`, `AutomaticTurnsPaused` with `AutomaticTurnsPauseCause` (`stop` or `cap`; absent reads as `stop`), `SubagentsStartedWithoutUser`, `EvolveReview` (`{ReviewID, StartedAt, Usage}`: the agent review taken and the platform model usage of its turns), `AwaitsFirstMessage` (a Session started from an example that has had no message of the person; `StartUserTurn` clears it), `StartingExample` (`{ExampleID, Tree, Title, Choice, MatchedOn, FirstBuild}`, under 512 bytes: the example the Project started from, `picked` or `matched` (`agentloop.ExampleChoice`), with at most 12 matched facets; `InitializeSessionAgent` writes it once, and the `starting_example` section is built from it; a matched Session's first build completes it once with `FirstBuild` (`agentloop.StartingExampleBuild{ExampleSteps, BuiltSteps, KeptSteps, Commit}`, [below](#the-first-build-of-a-matched-example))), `ConnectorSlugs` (every connector slug an admitted `connector_develop` call named, at most 16) |
 | `MessageWindowLock` | bool | Coordination only: serializes every writer of the message maps |
 | `WaitingInputRound` | int64 | Monotonic reconciliation watermark |
 | `PendingUserInput` | struct | `{CallID, Kind, Questions, Requirements, StartedAt}`; Kind is `""`; `requirements` with `Requirements` only on a card a Session waited at before cards stopped waiting, which `SendMessage` answers |

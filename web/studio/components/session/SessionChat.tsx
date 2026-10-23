@@ -16,7 +16,7 @@ import {
   TimerCard,
   TodoProgress,
 } from "@/components/agent";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/Icons";
 import { AgentStatus, hasRunningTasks, hasRunningWork } from "@/lib/session/agent-types";
 import { connectorContributionView } from "@/lib/session/agent-view";
@@ -56,11 +56,11 @@ import { LocalCreationNotice } from "./start/LocalCreationNotice";
 import { useSessionAttachments } from "./use-session-attachments";
 
 /**
- * The Project's conversation, pending actions and composer. A local creation keeps its editable
- * first message here until remote activation; platform creation supplies its message on the server.
- * Live viewing keeps chat active and offers Preview once the requested change appears there.
+ * The Project's conversation, pending actions and composer. A local creation keeps its editable first message here
+ * until remote activation; platform creation supplies its message on the server. Live viewing keeps chat active and
+ * offers Preview once the requested change appears there; `dock`, a proposal card, sits above the pending actions.
  */
-export function SessionChat({ canManage, live }: { canManage: boolean; live?: LiveViewing }) {
+export function SessionChat({ canManage, live, dock }: { canManage: boolean; live?: LiveViewing; dock?: ReactNode }) {
   const state = useProjectSession();
   const mockScenarios = useMockScenarios();
   const [composerText, setComposerText] = useComposerText(state.projectId);
@@ -326,6 +326,7 @@ export function SessionChat({ canManage, live }: { canManage: boolean; live?: Li
           />
         </div>
 
+        {dock}
         <PendingActionDock
           approval={pendingApproval}
           input={pendingInput}

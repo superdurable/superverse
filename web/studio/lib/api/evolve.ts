@@ -12,8 +12,8 @@ import { ApiError } from "./transport/api-error";
 import { readUnary } from "./transport/read-unary";
 import { unary } from "./transport/unary";
 
-// Browser client of EvolveService: a Project's goals, as its Live build's goals file states them, and the reviews
-// that measured its Live runs against them.
+// Browser client of EvolveService: a Project's goals, as its Live build's goals file states them, the reviews that
+// measured its Live runs against them, and the decisions on and documents of the agent's proposals.
 
 /** The Project's goal measurement, or null before its first Live deployment, when nothing measures it yet. */
 export async function getEvolve(
@@ -37,4 +37,29 @@ export function startEvolveReview(
   signal: AbortSignal,
 ): Promise<RpcOutput<"StartEvolveReview">> {
   return unary("StartEvolveReview", input, { signal });
+}
+
+/**
+ * Approve or Decline of an offered proposal, at the revision the page showed. A proposal that moved since answers
+ * the refusal STALE_PROPOSAL; the same decision repeated answers the one recorded, so a retry after an unknown
+ * outcome is safe.
+ */
+export function decideEvolveProposal(
+  input: Required<RpcInput<"DecideEvolveProposal">>,
+  signal: AbortSignal,
+): Promise<RpcOutput<"DecideEvolveProposal">> {
+  return unary("DecideEvolveProposal", input, { signal });
+}
+
+/** The proposal document a review's agent wrote, or null when the review has none. */
+export async function getEvolveProposal(
+  input: Required<RpcInput<"GetEvolveProposal">>,
+  signal: AbortSignal,
+): Promise<string | null> {
+  try {
+    return (await readUnary("GetEvolveProposal", input, { signal })).markdown;
+  } catch (reason) {
+    if (reason instanceof ApiError && reason.status === 404) return null;
+    throw reason;
+  }
 }

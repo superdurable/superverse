@@ -3308,6 +3308,22 @@
       "id": "edge:0089",
       "kind": "resource_read",
       "from": "resource:attribute:agentStateAttribute",
+      "to": "step:ReportSubagentOutcome",
+      "label": "Get",
+      "span": {
+        "startLine": 877,
+        "startColumn": 79,
+        "endLine": 877,
+        "endColumn": 107
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0090",
+      "kind": "resource_read",
+      "from": "resource:attribute:agentStateAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
       "label": "Get",
       "span": {
@@ -3321,7 +3337,7 @@
       }
     },
     {
-      "id": "edge:0090",
+      "id": "edge:0091",
       "kind": "resource_read",
       "from": "resource:attribute:agentStateAttribute",
       "to": "step:RouteSubagentTools",
@@ -3337,7 +3353,7 @@
       }
     },
     {
-      "id": "edge:0091",
+      "id": "edge:0092",
       "kind": "resource_read",
       "from": "resource:attribute:agentStateAttribute",
       "to": "step:SettleSubagentCommand",
@@ -3353,7 +3369,7 @@
       }
     },
     {
-      "id": "edge:0092",
+      "id": "edge:0093",
       "kind": "resource_read",
       "from": "resource:attribute:archivedMessagesAttribute",
       "to": "step:CallSubagentModel",
@@ -3369,7 +3385,7 @@
       }
     },
     {
-      "id": "edge:0093",
+      "id": "edge:0094",
       "kind": "resource_read",
       "from": "resource:attribute:archivedMessagesAttribute",
       "to": "step:CompactSubagentContext",
@@ -3385,7 +3401,7 @@
       }
     },
     {
-      "id": "edge:0094",
+      "id": "edge:0095",
       "kind": "resource_read",
       "from": "resource:attribute:archivedMessagesAttribute",
       "to": "step:PurgeSubagentReplay",
@@ -3403,7 +3419,7 @@
       }
     },
     {
-      "id": "edge:0095",
+      "id": "edge:0096",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -3419,7 +3435,7 @@
       }
     },
     {
-      "id": "edge:0096",
+      "id": "edge:0097",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:AwaitSubagentDeadline",
@@ -3435,7 +3451,7 @@
       }
     },
     {
-      "id": "edge:0097",
+      "id": "edge:0098",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:CompactSubagentContext",
@@ -3453,7 +3469,7 @@
       }
     },
     {
-      "id": "edge:0098",
+      "id": "edge:0099",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:ExecuteSubagentParallelTool",
@@ -3471,7 +3487,7 @@
       }
     },
     {
-      "id": "edge:0099",
+      "id": "edge:0100",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:ExecuteSubagentTool",
@@ -3489,7 +3505,7 @@
       }
     },
     {
-      "id": "edge:0100",
+      "id": "edge:0101",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:RecordSubagentFailure",
@@ -3505,7 +3521,7 @@
       }
     },
     {
-      "id": "edge:0101",
+      "id": "edge:0102",
       "kind": "resource_read",
       "from": "resource:attribute:configAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -3521,7 +3537,7 @@
       }
     },
     {
-      "id": "edge:0102",
+      "id": "edge:0103",
       "kind": "resource_read",
       "from": "resource:attribute:connectorCheckFailuresAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -3537,7 +3553,7 @@
       }
     },
     {
-      "id": "edge:0103",
+      "id": "edge:0104",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:ApplySubagentAdmission",
@@ -3555,7 +3571,7 @@
       }
     },
     {
-      "id": "edge:0104",
+      "id": "edge:0105",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:AwaitSubagentParallelToolResults",
@@ -3573,7 +3589,7 @@
       }
     },
     {
-      "id": "edge:0105",
+      "id": "edge:0106",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:CallSubagentModel",
@@ -3589,7 +3605,7 @@
       }
     },
     {
-      "id": "edge:0106",
+      "id": "edge:0107",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:CompactSubagentContext",
@@ -3605,7 +3621,7 @@
       }
     },
     {
-      "id": "edge:0107",
+      "id": "edge:0108",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:ExecuteSubagentTool",
@@ -3623,7 +3639,7 @@
       }
     },
     {
-      "id": "edge:0108",
+      "id": "edge:0109",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:InitializeSubagent",
@@ -3641,7 +3657,7 @@
       }
     },
     {
-      "id": "edge:0109",
+      "id": "edge:0110",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:PurgeSubagentReplay",
@@ -3659,7 +3675,7 @@
       }
     },
     {
-      "id": "edge:0110",
+      "id": "edge:0111",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:RecordSubagentAdmissionFailure",
@@ -3677,7 +3693,7 @@
       }
     },
     {
-      "id": "edge:0111",
+      "id": "edge:0112",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:RecordSubagentOutcome",
@@ -3695,7 +3711,7 @@
       }
     },
     {
-      "id": "edge:0112",
+      "id": "edge:0113",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:RecordSubagentToolFailure",
@@ -3713,7 +3729,7 @@
       }
     },
     {
-      "id": "edge:0113",
+      "id": "edge:0114",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -3731,7 +3747,7 @@
       }
     },
     {
-      "id": "edge:0114",
+      "id": "edge:0115",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:RouteSubagentTools",
@@ -3749,7 +3765,7 @@
       }
     },
     {
-      "id": "edge:0115",
+      "id": "edge:0116",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentAttribute",
       "to": "step:SettleSubagentCommand",
@@ -3767,7 +3783,7 @@
       }
     },
     {
-      "id": "edge:0116",
+      "id": "edge:0117",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentPromptsAttribute",
       "to": "step:CallSubagentModel",
@@ -3783,7 +3799,7 @@
       }
     },
     {
-      "id": "edge:0117",
+      "id": "edge:0118",
       "kind": "resource_read",
       "from": "resource:attribute:contextSegmentPromptsAttribute",
       "to": "step:CompactSubagentContext",
@@ -3799,7 +3815,7 @@
       }
     },
     {
-      "id": "edge:0118",
+      "id": "edge:0119",
       "kind": "resource_read",
       "from": "resource:attribute:credentialRevisionAttribute",
       "to": "step:CallSubagentModel",
@@ -3809,24 +3825,6 @@
         "startColumn": 17,
         "endLine": 360,
         "endColumn": 60
-      },
-      "metadata": {
-        "function": "subagentModelCredential",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0119",
-      "kind": "resource_read",
-      "from": "resource:attribute:credentialRevisionAttribute",
-      "to": "step:CompactSubagentContext",
-      "label": "Get",
-      "span": {
-        "startLine": 416,
-        "startColumn": 18,
-        "endLine": 416,
-        "endColumn": 51
       },
       "metadata": {
         "function": "subagentModelCredential",
@@ -3838,6 +3836,24 @@
       "id": "edge:0120",
       "kind": "resource_read",
       "from": "resource:attribute:credentialRevisionAttribute",
+      "to": "step:CompactSubagentContext",
+      "label": "Get",
+      "span": {
+        "startLine": 416,
+        "startColumn": 18,
+        "endLine": 416,
+        "endColumn": 51
+      },
+      "metadata": {
+        "function": "subagentModelCredential",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0121",
+      "kind": "resource_read",
+      "from": "resource:attribute:credentialRevisionAttribute",
       "to": "step:RecordSubagentFailure",
       "label": "Get",
       "span": {
@@ -3853,7 +3869,7 @@
       }
     },
     {
-      "id": "edge:0121",
+      "id": "edge:0122",
       "kind": "resource_read",
       "from": "resource:attribute:credentialStopAttribute",
       "to": "step:CallSubagentModel",
@@ -3871,7 +3887,7 @@
       }
     },
     {
-      "id": "edge:0122",
+      "id": "edge:0123",
       "kind": "resource_read",
       "from": "resource:attribute:credentialStopAttribute",
       "to": "step:CompactSubagentContext",
@@ -3889,7 +3905,7 @@
       }
     },
     {
-      "id": "edge:0123",
+      "id": "edge:0124",
       "kind": "resource_read",
       "from": "resource:attribute:credentialStopAttribute",
       "to": "step:RecordSubagentFailure",
@@ -3907,7 +3923,7 @@
       }
     },
     {
-      "id": "edge:0124",
+      "id": "edge:0125",
       "kind": "resource_read",
       "from": "resource:attribute:credentialStopAttribute",
       "to": "step:RecordSubagentOutcome",
@@ -3923,7 +3939,7 @@
       }
     },
     {
-      "id": "edge:0125",
+      "id": "edge:0126",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:AwaitSubagentParallelToolResults",
@@ -3941,7 +3957,7 @@
       }
     },
     {
-      "id": "edge:0126",
+      "id": "edge:0127",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CallSubagentModel",
@@ -3957,7 +3973,7 @@
       }
     },
     {
-      "id": "edge:0127",
+      "id": "edge:0128",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:CompactSubagentContext",
@@ -3973,7 +3989,7 @@
       }
     },
     {
-      "id": "edge:0128",
+      "id": "edge:0129",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:ExecuteSubagentTool",
@@ -3991,7 +4007,7 @@
       }
     },
     {
-      "id": "edge:0129",
+      "id": "edge:0130",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:FinishSubagent",
@@ -4009,7 +4025,7 @@
       }
     },
     {
-      "id": "edge:0130",
+      "id": "edge:0131",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:InitializeSubagent",
@@ -4027,7 +4043,7 @@
       }
     },
     {
-      "id": "edge:0131",
+      "id": "edge:0132",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:PurgeSubagentReplay",
@@ -4045,7 +4061,7 @@
       }
     },
     {
-      "id": "edge:0132",
+      "id": "edge:0133",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RecordSubagentToolFailure",
@@ -4063,7 +4079,7 @@
       }
     },
     {
-      "id": "edge:0133",
+      "id": "edge:0134",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -4081,7 +4097,7 @@
       }
     },
     {
-      "id": "edge:0134",
+      "id": "edge:0135",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:RouteSubagentTools",
@@ -4099,7 +4115,7 @@
       }
     },
     {
-      "id": "edge:0135",
+      "id": "edge:0136",
       "kind": "resource_read",
       "from": "resource:attribute:currentMessagesAttribute",
       "to": "step:SettleSubagentCommand",
@@ -4117,7 +4133,7 @@
       }
     },
     {
-      "id": "edge:0136",
+      "id": "edge:0137",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -4133,7 +4149,7 @@
       }
     },
     {
-      "id": "edge:0137",
+      "id": "edge:0138",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:ApplySubagentAdmission",
@@ -4149,7 +4165,7 @@
       }
     },
     {
-      "id": "edge:0138",
+      "id": "edge:0139",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:ExecuteSubagentParallelTool",
@@ -4167,7 +4183,7 @@
       }
     },
     {
-      "id": "edge:0139",
+      "id": "edge:0140",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:ExecuteSubagentTool",
@@ -4185,7 +4201,7 @@
       }
     },
     {
-      "id": "edge:0140",
+      "id": "edge:0141",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:FinishSubagent",
@@ -4203,7 +4219,7 @@
       }
     },
     {
-      "id": "edge:0141",
+      "id": "edge:0142",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:InitializeSubagent",
@@ -4219,7 +4235,7 @@
       }
     },
     {
-      "id": "edge:0142",
+      "id": "edge:0143",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:RecordUndeliveredReport",
@@ -4235,7 +4251,7 @@
       }
     },
     {
-      "id": "edge:0143",
+      "id": "edge:0144",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:RefreshFinishingWorkspace",
@@ -4251,7 +4267,7 @@
       }
     },
     {
-      "id": "edge:0144",
+      "id": "edge:0145",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:RefreshSubagentWorkspace",
@@ -4267,7 +4283,7 @@
       }
     },
     {
-      "id": "edge:0145",
+      "id": "edge:0146",
       "kind": "resource_read",
       "from": "resource:attribute:identityAttribute",
       "to": "step:ReportSubagentOutcome",
@@ -4283,7 +4299,7 @@
       }
     },
     {
-      "id": "edge:0146",
+      "id": "edge:0147",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyAttribute",
       "to": "step:CallSubagentModel",
@@ -4301,7 +4317,7 @@
       }
     },
     {
-      "id": "edge:0147",
+      "id": "edge:0148",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyAttribute",
       "to": "step:CompactSubagentContext",
@@ -4319,7 +4335,7 @@
       }
     },
     {
-      "id": "edge:0148",
+      "id": "edge:0149",
       "kind": "resource_read",
       "from": "resource:attribute:modelKeyAttribute",
       "to": "step:RecordSubagentFailure",
@@ -4337,7 +4353,7 @@
       }
     },
     {
-      "id": "edge:0149",
+      "id": "edge:0150",
       "kind": "resource_read",
       "from": "resource:attribute:outcomeAttribute",
       "to": "rpc:GetDexDisplay",
@@ -4353,7 +4369,7 @@
       }
     },
     {
-      "id": "edge:0150",
+      "id": "edge:0151",
       "kind": "resource_read",
       "from": "resource:attribute:outcomeAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -4369,7 +4385,7 @@
       }
     },
     {
-      "id": "edge:0151",
+      "id": "edge:0152",
       "kind": "resource_read",
       "from": "resource:attribute:outcomeAttribute",
       "to": "step:RecordUndeliveredReport",
@@ -4385,7 +4401,7 @@
       }
     },
     {
-      "id": "edge:0152",
+      "id": "edge:0153",
       "kind": "resource_read",
       "from": "resource:attribute:outcomeAttribute",
       "to": "step:ReportSubagentOutcome",
@@ -4401,7 +4417,7 @@
       }
     },
     {
-      "id": "edge:0153",
+      "id": "edge:0154",
       "kind": "resource_read",
       "from": "resource:attribute:projectIDAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -4417,7 +4433,7 @@
       }
     },
     {
-      "id": "edge:0154",
+      "id": "edge:0155",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -4433,7 +4449,7 @@
       }
     },
     {
-      "id": "edge:0155",
+      "id": "edge:0156",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "rpc:StopSubagent",
@@ -4451,7 +4467,7 @@
       }
     },
     {
-      "id": "edge:0156",
+      "id": "edge:0157",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:ApplySubagentAdmission",
@@ -4469,7 +4485,7 @@
       }
     },
     {
-      "id": "edge:0157",
+      "id": "edge:0158",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:AwaitSubagentDeadline",
@@ -4487,7 +4503,7 @@
       }
     },
     {
-      "id": "edge:0158",
+      "id": "edge:0159",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:BeginSubagentFinish",
@@ -4505,7 +4521,7 @@
       }
     },
     {
-      "id": "edge:0159",
+      "id": "edge:0160",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:CompactSubagentContext",
@@ -4521,7 +4537,7 @@
       }
     },
     {
-      "id": "edge:0160",
+      "id": "edge:0161",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:FinishSubagent",
@@ -4539,7 +4555,7 @@
       }
     },
     {
-      "id": "edge:0161",
+      "id": "edge:0162",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:InitializeSubagent",
@@ -4555,7 +4571,7 @@
       }
     },
     {
-      "id": "edge:0162",
+      "id": "edge:0163",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:RefreshFinishingWorkspace",
@@ -4573,7 +4589,7 @@
       }
     },
     {
-      "id": "edge:0163",
+      "id": "edge:0164",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:ReportSubagentOutcome",
@@ -4589,7 +4605,7 @@
       }
     },
     {
-      "id": "edge:0164",
+      "id": "edge:0165",
       "kind": "resource_read",
       "from": "resource:attribute:startAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -4607,7 +4623,7 @@
       }
     },
     {
-      "id": "edge:0165",
+      "id": "edge:0166",
       "kind": "resource_read",
       "from": "resource:attribute:statusAttribute",
       "to": "rpc:GetDexDisplay",
@@ -4623,7 +4639,7 @@
       }
     },
     {
-      "id": "edge:0166",
+      "id": "edge:0167",
       "kind": "resource_read",
       "from": "resource:attribute:statusAttribute",
       "to": "rpc:GetSubagentSnapshot",
@@ -4639,7 +4655,7 @@
       }
     },
     {
-      "id": "edge:0167",
+      "id": "edge:0168",
       "kind": "resource_read",
       "from": "resource:attribute:statusAttribute",
       "to": "rpc:StopSubagent",
@@ -4655,7 +4671,7 @@
       }
     },
     {
-      "id": "edge:0168",
+      "id": "edge:0169",
       "kind": "resource_read",
       "from": "resource:attribute:statusAttribute",
       "to": "step:AwaitSubagentDeadline",
@@ -4671,7 +4687,7 @@
       }
     },
     {
-      "id": "edge:0169",
+      "id": "edge:0170",
       "kind": "resource_read",
       "from": "resource:attribute:statusAttribute",
       "to": "step:BeginSubagentFinish",
@@ -4687,7 +4703,7 @@
       }
     },
     {
-      "id": "edge:0170",
+      "id": "edge:0171",
       "kind": "resource_read",
       "from": "resource:attribute:stopRequestAttribute",
       "to": "step:ApplySubagentAdmission",
@@ -4703,7 +4719,7 @@
       }
     },
     {
-      "id": "edge:0171",
+      "id": "edge:0172",
       "kind": "resource_read",
       "from": "resource:attribute:stopRequestAttribute",
       "to": "step:ResumeConnectorAfterCheckFailure",
@@ -4719,7 +4735,7 @@
       }
     },
     {
-      "id": "edge:0172",
+      "id": "edge:0173",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:AwaitSubagentParallelToolResults",
@@ -4737,7 +4753,7 @@
       }
     },
     {
-      "id": "edge:0173",
+      "id": "edge:0174",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:CompactSubagentContext",
@@ -4753,7 +4769,7 @@
       }
     },
     {
-      "id": "edge:0174",
+      "id": "edge:0175",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:ExecuteSubagentParallelTool",
@@ -4771,7 +4787,7 @@
       }
     },
     {
-      "id": "edge:0175",
+      "id": "edge:0176",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:ExecuteSubagentTool",
@@ -4789,7 +4805,7 @@
       }
     },
     {
-      "id": "edge:0176",
+      "id": "edge:0177",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:FinishSubagent",
@@ -4807,7 +4823,7 @@
       }
     },
     {
-      "id": "edge:0177",
+      "id": "edge:0178",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:InitializeSubagent",
@@ -4823,7 +4839,7 @@
       }
     },
     {
-      "id": "edge:0178",
+      "id": "edge:0179",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RefreshFinishingWorkspace",
@@ -4839,7 +4855,7 @@
       }
     },
     {
-      "id": "edge:0179",
+      "id": "edge:0180",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:RefreshSubagentWorkspace",
@@ -4855,7 +4871,7 @@
       }
     },
     {
-      "id": "edge:0180",
+      "id": "edge:0181",
       "kind": "resource_read",
       "from": "resource:attribute:workspaceAttribute",
       "to": "step:SettleSubagentCommand",
@@ -4873,7 +4889,7 @@
       }
     },
     {
-      "id": "edge:0181",
+      "id": "edge:0182",
       "kind": "resource_read",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "step:AwaitSubagentParallelToolResults",
@@ -4889,7 +4905,7 @@
       }
     },
     {
-      "id": "edge:0182",
+      "id": "edge:0183",
       "kind": "resource_read",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "step:RecordSubagentOutcome",
@@ -4905,7 +4921,7 @@
       }
     },
     {
-      "id": "edge:0183",
+      "id": "edge:0184",
       "kind": "resource_read",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "step:RecordSubagentOutcome",
@@ -4921,7 +4937,7 @@
       }
     },
     {
-      "id": "edge:0184",
+      "id": "edge:0185",
       "kind": "wait_condition",
       "from": "resource:channel:parallelToolResultsChannel",
       "to": "wait:AwaitSubagentParallelToolResults:638:9",
@@ -4937,7 +4953,7 @@
       }
     },
     {
-      "id": "edge:0185",
+      "id": "edge:0186",
       "kind": "resource_write",
       "from": "rpc:StopSubagent",
       "to": "resource:attribute:credentialStopAttribute",
@@ -4953,7 +4969,7 @@
       }
     },
     {
-      "id": "edge:0186",
+      "id": "edge:0187",
       "kind": "resource_write",
       "from": "rpc:StopSubagent",
       "to": "resource:attribute:statusAttribute",
@@ -4969,7 +4985,7 @@
       }
     },
     {
-      "id": "edge:0187",
+      "id": "edge:0188",
       "kind": "resource_write",
       "from": "rpc:StopSubagent",
       "to": "resource:attribute:stopRequestAttribute",
@@ -4985,7 +5001,7 @@
       }
     },
     {
-      "id": "edge:0188",
+      "id": "edge:0189",
       "kind": "resource_write",
       "from": "step:ApplySubagentAdmission",
       "to": "resource:attribute:outcomeAttribute",
@@ -5001,7 +5017,7 @@
       }
     },
     {
-      "id": "edge:0189",
+      "id": "edge:0190",
       "kind": "resource_write",
       "from": "step:ApplySubagentAdmission",
       "to": "resource:attribute:statusAttribute",
@@ -5017,7 +5033,7 @@
       }
     },
     {
-      "id": "edge:0190",
+      "id": "edge:0191",
       "kind": "resource_write",
       "from": "step:AwaitSubagentDeadline",
       "to": "resource:attribute:statusAttribute",
@@ -5033,7 +5049,7 @@
       }
     },
     {
-      "id": "edge:0191",
+      "id": "edge:0192",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:agentStateAttribute",
@@ -5051,7 +5067,7 @@
       }
     },
     {
-      "id": "edge:0192",
+      "id": "edge:0193",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -5069,7 +5085,7 @@
       }
     },
     {
-      "id": "edge:0193",
+      "id": "edge:0194",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -5087,7 +5103,7 @@
       }
     },
     {
-      "id": "edge:0194",
+      "id": "edge:0195",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5105,7 +5121,7 @@
       }
     },
     {
-      "id": "edge:0195",
+      "id": "edge:0196",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5123,7 +5139,7 @@
       }
     },
     {
-      "id": "edge:0196",
+      "id": "edge:0197",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:attribute:workspaceAttribute",
@@ -5141,7 +5157,7 @@
       }
     },
     {
-      "id": "edge:0197",
+      "id": "edge:0198",
       "kind": "resource_write",
       "from": "step:AwaitSubagentParallelToolResults",
       "to": "resource:stream:agentActivityStream",
@@ -5162,7 +5178,7 @@
       }
     },
     {
-      "id": "edge:0198",
+      "id": "edge:0199",
       "kind": "resource_write",
       "from": "step:BeginSubagentFinish",
       "to": "resource:attribute:statusAttribute",
@@ -5178,7 +5194,7 @@
       }
     },
     {
-      "id": "edge:0199",
+      "id": "edge:0200",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:attribute:agentStateAttribute",
@@ -5190,13 +5206,13 @@
         "endColumn": 61
       },
       "metadata": {
-        "function": "appendEntry",
+        "function": "recordReply",
         "phase": "execute",
         "via": "helper"
       }
     },
     {
-      "id": "edge:0200",
+      "id": "edge:0201",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -5214,7 +5230,7 @@
       }
     },
     {
-      "id": "edge:0201",
+      "id": "edge:0202",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -5232,7 +5248,7 @@
       }
     },
     {
-      "id": "edge:0202",
+      "id": "edge:0203",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5250,7 +5266,7 @@
       }
     },
     {
-      "id": "edge:0203",
+      "id": "edge:0204",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5268,7 +5284,7 @@
       }
     },
     {
-      "id": "edge:0204",
+      "id": "edge:0205",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:stream:agentActivityStream",
@@ -5289,7 +5305,7 @@
       }
     },
     {
-      "id": "edge:0205",
+      "id": "edge:0206",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:stream:assistantTextStream",
@@ -5308,7 +5324,7 @@
       }
     },
     {
-      "id": "edge:0206",
+      "id": "edge:0207",
       "kind": "resource_write",
       "from": "step:CallSubagentModel",
       "to": "resource:stream:reasoningSummaryStream",
@@ -5327,7 +5343,7 @@
       }
     },
     {
-      "id": "edge:0207",
+      "id": "edge:0208",
       "kind": "failure_transition",
       "from": "step:CallSubagentModel",
       "to": "step:RecordSubagentFailure",
@@ -5343,7 +5359,7 @@
       }
     },
     {
-      "id": "edge:0208",
+      "id": "edge:0209",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:agentStateAttribute",
@@ -5361,7 +5377,7 @@
       }
     },
     {
-      "id": "edge:0209",
+      "id": "edge:0210",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -5379,7 +5395,7 @@
       }
     },
     {
-      "id": "edge:0210",
+      "id": "edge:0211",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -5397,7 +5413,7 @@
       }
     },
     {
-      "id": "edge:0211",
+      "id": "edge:0212",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -5415,7 +5431,7 @@
       }
     },
     {
-      "id": "edge:0212",
+      "id": "edge:0213",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -5433,7 +5449,7 @@
       }
     },
     {
-      "id": "edge:0213",
+      "id": "edge:0214",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5451,7 +5467,7 @@
       }
     },
     {
-      "id": "edge:0214",
+      "id": "edge:0215",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5469,7 +5485,7 @@
       }
     },
     {
-      "id": "edge:0215",
+      "id": "edge:0216",
       "kind": "resource_write",
       "from": "step:CompactSubagentContext",
       "to": "resource:stream:agentActivityStream",
@@ -5488,7 +5504,7 @@
       }
     },
     {
-      "id": "edge:0216",
+      "id": "edge:0217",
       "kind": "failure_transition",
       "from": "step:CompactSubagentContext",
       "to": "step:RecordSubagentFailure",
@@ -5504,7 +5520,7 @@
       }
     },
     {
-      "id": "edge:0217",
+      "id": "edge:0218",
       "kind": "resource_publish",
       "from": "step:ExecuteSubagentParallelTool",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -5520,7 +5536,7 @@
       }
     },
     {
-      "id": "edge:0218",
+      "id": "edge:0219",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentParallelTool",
       "to": "resource:stream:agentActivityStream",
@@ -5541,7 +5557,7 @@
       }
     },
     {
-      "id": "edge:0219",
+      "id": "edge:0220",
       "kind": "failure_transition",
       "from": "step:ExecuteSubagentParallelTool",
       "to": "step:RecoverSubagentParallelToolExecution",
@@ -5557,7 +5573,7 @@
       }
     },
     {
-      "id": "edge:0220",
+      "id": "edge:0221",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:agentStateAttribute",
@@ -5575,7 +5591,7 @@
       }
     },
     {
-      "id": "edge:0221",
+      "id": "edge:0222",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -5593,7 +5609,7 @@
       }
     },
     {
-      "id": "edge:0222",
+      "id": "edge:0223",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -5611,7 +5627,7 @@
       }
     },
     {
-      "id": "edge:0223",
+      "id": "edge:0224",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5629,7 +5645,7 @@
       }
     },
     {
-      "id": "edge:0224",
+      "id": "edge:0225",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5647,7 +5663,7 @@
       }
     },
     {
-      "id": "edge:0225",
+      "id": "edge:0226",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:attribute:workspaceAttribute",
@@ -5665,7 +5681,7 @@
       }
     },
     {
-      "id": "edge:0226",
+      "id": "edge:0227",
       "kind": "resource_write",
       "from": "step:ExecuteSubagentTool",
       "to": "resource:stream:agentActivityStream",
@@ -5686,7 +5702,7 @@
       }
     },
     {
-      "id": "edge:0227",
+      "id": "edge:0228",
       "kind": "failure_transition",
       "from": "step:ExecuteSubagentTool",
       "to": "step:RecordSubagentToolFailure",
@@ -5702,7 +5718,7 @@
       }
     },
     {
-      "id": "edge:0228",
+      "id": "edge:0229",
       "kind": "failure_transition",
       "from": "step:ExecuteSubagentTool",
       "to": "step:SettleSubagentCommand",
@@ -5718,7 +5734,7 @@
       }
     },
     {
-      "id": "edge:0229",
+      "id": "edge:0230",
       "kind": "failure_transition",
       "from": "step:FinishSubagent",
       "to": "step:RecordSubagentOutcome",
@@ -5734,7 +5750,7 @@
       }
     },
     {
-      "id": "edge:0230",
+      "id": "edge:0231",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:agentStateAttribute",
@@ -5750,7 +5766,7 @@
       }
     },
     {
-      "id": "edge:0231",
+      "id": "edge:0232",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -5768,7 +5784,7 @@
       }
     },
     {
-      "id": "edge:0232",
+      "id": "edge:0233",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:configAttribute",
@@ -5784,7 +5800,7 @@
       }
     },
     {
-      "id": "edge:0233",
+      "id": "edge:0234",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -5802,7 +5818,7 @@
       }
     },
     {
-      "id": "edge:0234",
+      "id": "edge:0235",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:contextSegmentPromptsAttribute",
@@ -5820,7 +5836,7 @@
       }
     },
     {
-      "id": "edge:0235",
+      "id": "edge:0236",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5838,7 +5854,7 @@
       }
     },
     {
-      "id": "edge:0236",
+      "id": "edge:0237",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -5856,7 +5872,7 @@
       }
     },
     {
-      "id": "edge:0237",
+      "id": "edge:0238",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:messageWindowLockAttribute",
@@ -5872,7 +5888,7 @@
       }
     },
     {
-      "id": "edge:0238",
+      "id": "edge:0239",
       "kind": "resource_write",
       "from": "step:InitializeSubagent",
       "to": "resource:attribute:workspaceAttribute",
@@ -5888,7 +5904,7 @@
       }
     },
     {
-      "id": "edge:0239",
+      "id": "edge:0240",
       "kind": "failure_transition",
       "from": "step:InitializeSubagent",
       "to": "step:RecordSubagentAdmissionFailure",
@@ -5904,28 +5920,10 @@
       }
     },
     {
-      "id": "edge:0240",
-      "kind": "resource_write",
-      "from": "step:PurgeSubagentReplay",
-      "to": "resource:attribute:archivedMessagesAttribute",
-      "label": "Set",
-      "span": {
-        "startLine": 924,
-        "startColumn": 2,
-        "endLine": 924,
-        "endColumn": 24
-      },
-      "metadata": {
-        "function": "purgeClosedReplay",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
       "id": "edge:0241",
       "kind": "resource_write",
       "from": "step:PurgeSubagentReplay",
-      "to": "resource:attribute:currentMessagesAttribute",
+      "to": "resource:attribute:archivedMessagesAttribute",
       "label": "Set",
       "span": {
         "startLine": 924,
@@ -5942,6 +5940,24 @@
     {
       "id": "edge:0242",
       "kind": "resource_write",
+      "from": "step:PurgeSubagentReplay",
+      "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Set",
+      "span": {
+        "startLine": 924,
+        "startColumn": 2,
+        "endLine": 924,
+        "endColumn": 24
+      },
+      "metadata": {
+        "function": "purgeClosedReplay",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0243",
+      "kind": "resource_write",
       "from": "step:RecordSubagentAdmissionFailure",
       "to": "resource:attribute:outcomeAttribute",
       "label": "Set",
@@ -5956,7 +5972,7 @@
       }
     },
     {
-      "id": "edge:0243",
+      "id": "edge:0244",
       "kind": "resource_write",
       "from": "step:RecordSubagentAdmissionFailure",
       "to": "resource:attribute:statusAttribute",
@@ -5972,7 +5988,7 @@
       }
     },
     {
-      "id": "edge:0244",
+      "id": "edge:0245",
       "kind": "resource_write",
       "from": "step:RecordSubagentOutcome",
       "to": "resource:attribute:modelKeyAttribute",
@@ -5988,7 +6004,7 @@
       }
     },
     {
-      "id": "edge:0245",
+      "id": "edge:0246",
       "kind": "resource_write",
       "from": "step:RecordSubagentOutcome",
       "to": "resource:attribute:outcomeAttribute",
@@ -6004,7 +6020,7 @@
       }
     },
     {
-      "id": "edge:0246",
+      "id": "edge:0247",
       "kind": "resource_write",
       "from": "step:RecordSubagentOutcome",
       "to": "resource:attribute:statusAttribute",
@@ -6020,7 +6036,7 @@
       }
     },
     {
-      "id": "edge:0247",
+      "id": "edge:0248",
       "kind": "resource_write",
       "from": "step:RecordSubagentOutcome",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -6036,7 +6052,7 @@
       }
     },
     {
-      "id": "edge:0248",
+      "id": "edge:0249",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:attribute:agentStateAttribute",
@@ -6054,7 +6070,7 @@
       }
     },
     {
-      "id": "edge:0249",
+      "id": "edge:0250",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -6072,7 +6088,7 @@
       }
     },
     {
-      "id": "edge:0250",
+      "id": "edge:0251",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -6090,7 +6106,7 @@
       }
     },
     {
-      "id": "edge:0251",
+      "id": "edge:0252",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6108,7 +6124,7 @@
       }
     },
     {
-      "id": "edge:0252",
+      "id": "edge:0253",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6126,7 +6142,7 @@
       }
     },
     {
-      "id": "edge:0253",
+      "id": "edge:0254",
       "kind": "resource_write",
       "from": "step:RecordSubagentToolFailure",
       "to": "resource:stream:agentActivityStream",
@@ -6147,7 +6163,7 @@
       }
     },
     {
-      "id": "edge:0254",
+      "id": "edge:0255",
       "kind": "resource_write",
       "from": "step:RecordUndeliveredReport",
       "to": "resource:attribute:outcomeAttribute",
@@ -6163,7 +6179,7 @@
       }
     },
     {
-      "id": "edge:0255",
+      "id": "edge:0256",
       "kind": "resource_publish",
       "from": "step:RecoverSubagentParallelToolExecution",
       "to": "resource:channel:parallelToolResultsChannel",
@@ -6179,7 +6195,7 @@
       }
     },
     {
-      "id": "edge:0256",
+      "id": "edge:0257",
       "kind": "resource_write",
       "from": "step:RefreshFinishingWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -6195,7 +6211,7 @@
       }
     },
     {
-      "id": "edge:0257",
+      "id": "edge:0258",
       "kind": "failure_transition",
       "from": "step:RefreshFinishingWorkspace",
       "to": "step:RecordSubagentOutcome",
@@ -6211,7 +6227,7 @@
       }
     },
     {
-      "id": "edge:0258",
+      "id": "edge:0259",
       "kind": "resource_write",
       "from": "step:RefreshSubagentWorkspace",
       "to": "resource:attribute:workspaceAttribute",
@@ -6227,7 +6243,7 @@
       }
     },
     {
-      "id": "edge:0259",
+      "id": "edge:0260",
       "kind": "failure_transition",
       "from": "step:RefreshSubagentWorkspace",
       "to": "step:RecordSubagentFailure",
@@ -6243,7 +6259,7 @@
       }
     },
     {
-      "id": "edge:0260",
+      "id": "edge:0261",
       "kind": "resource_write",
       "from": "step:ReportSubagentOutcome",
       "to": "resource:attribute:outcomeAttribute",
@@ -6259,7 +6275,7 @@
       }
     },
     {
-      "id": "edge:0261",
+      "id": "edge:0262",
       "kind": "failure_transition",
       "from": "step:ReportSubagentOutcome",
       "to": "step:RecordUndeliveredReport",
@@ -6275,7 +6291,7 @@
       }
     },
     {
-      "id": "edge:0262",
+      "id": "edge:0263",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:agentStateAttribute",
@@ -6291,7 +6307,7 @@
       }
     },
     {
-      "id": "edge:0263",
+      "id": "edge:0264",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -6309,7 +6325,7 @@
       }
     },
     {
-      "id": "edge:0264",
+      "id": "edge:0265",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:connectorCheckFailuresAttribute",
@@ -6325,7 +6341,7 @@
       }
     },
     {
-      "id": "edge:0265",
+      "id": "edge:0266",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -6343,7 +6359,7 @@
       }
     },
     {
-      "id": "edge:0266",
+      "id": "edge:0267",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6361,7 +6377,7 @@
       }
     },
     {
-      "id": "edge:0267",
+      "id": "edge:0268",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6379,7 +6395,7 @@
       }
     },
     {
-      "id": "edge:0268",
+      "id": "edge:0269",
       "kind": "resource_write",
       "from": "step:ResumeConnectorAfterCheckFailure",
       "to": "resource:attribute:statusAttribute",
@@ -6395,7 +6411,7 @@
       }
     },
     {
-      "id": "edge:0269",
+      "id": "edge:0270",
       "kind": "resource_write",
       "from": "step:RouteSubagentTools",
       "to": "resource:attribute:agentStateAttribute",
@@ -6413,7 +6429,7 @@
       }
     },
     {
-      "id": "edge:0270",
+      "id": "edge:0271",
       "kind": "resource_write",
       "from": "step:RouteSubagentTools",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -6431,7 +6447,7 @@
       }
     },
     {
-      "id": "edge:0271",
+      "id": "edge:0272",
       "kind": "resource_write",
       "from": "step:RouteSubagentTools",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -6444,24 +6460,6 @@
       },
       "metadata": {
         "function": "appendEntry",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0272",
-      "kind": "resource_write",
-      "from": "step:RouteSubagentTools",
-      "to": "resource:attribute:currentMessagesAttribute",
-      "label": "Delete",
-      "span": {
-        "startLine": 466,
-        "startColumn": 18,
-        "endLine": 466,
-        "endColumn": 32
-      },
-      "metadata": {
-        "function": "archiveEntryChunk",
         "phase": "execute",
         "via": "helper"
       }
@@ -6471,6 +6469,24 @@
       "kind": "resource_write",
       "from": "step:RouteSubagentTools",
       "to": "resource:attribute:currentMessagesAttribute",
+      "label": "Delete",
+      "span": {
+        "startLine": 466,
+        "startColumn": 18,
+        "endLine": 466,
+        "endColumn": 32
+      },
+      "metadata": {
+        "function": "archiveEntryChunk",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0274",
+      "kind": "resource_write",
+      "from": "step:RouteSubagentTools",
+      "to": "resource:attribute:currentMessagesAttribute",
       "label": "Set",
       "span": {
         "startLine": 466,
@@ -6485,7 +6501,7 @@
       }
     },
     {
-      "id": "edge:0274",
+      "id": "edge:0275",
       "kind": "resource_write",
       "from": "step:RouteSubagentTools",
       "to": "resource:stream:agentActivityStream",
@@ -6506,7 +6522,7 @@
       }
     },
     {
-      "id": "edge:0275",
+      "id": "edge:0276",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:attribute:agentStateAttribute",
@@ -6524,7 +6540,7 @@
       }
     },
     {
-      "id": "edge:0276",
+      "id": "edge:0277",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:attribute:archivedMessagesAttribute",
@@ -6542,7 +6558,7 @@
       }
     },
     {
-      "id": "edge:0277",
+      "id": "edge:0278",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:attribute:contextSegmentAttribute",
@@ -6560,7 +6576,7 @@
       }
     },
     {
-      "id": "edge:0278",
+      "id": "edge:0279",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6578,7 +6594,7 @@
       }
     },
     {
-      "id": "edge:0279",
+      "id": "edge:0280",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:attribute:currentMessagesAttribute",
@@ -6596,7 +6612,7 @@
       }
     },
     {
-      "id": "edge:0280",
+      "id": "edge:0281",
       "kind": "resource_write",
       "from": "step:SettleSubagentCommand",
       "to": "resource:stream:agentActivityStream",
@@ -6617,7 +6633,7 @@
       }
     },
     {
-      "id": "edge:0281",
+      "id": "edge:0282",
       "kind": "failure_transition",
       "from": "step:SettleSubagentCommand",
       "to": "step:RecordSubagentToolFailure",

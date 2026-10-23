@@ -24,7 +24,8 @@ import (
 
 // A Session notification is a fact for the model from outside its own turn: a
 // background command or a subagent that ended, with the subagent's report and
-// changes, a delivery outcome or a connector event. It reaches the Session only through the Channel
+// changes, a delivery outcome, a connector event or an agent review of the
+// Project's goals. It reaches the Session only through the Channel
 // SessionNotifications and is appended to the conversation as one user-role
 // entry. The source keeps the authority; a notification is a historical copy.
 
@@ -47,11 +48,15 @@ const (
 	NotificationSourceRelease    NotificationSource = "release"
 	NotificationSourceDeployment NotificationSource = "deployment"
 	NotificationSourceConnector  NotificationSource = "connector"
+	// NotificationSourceEvolve is the Project's goal measurement: a review
+	// that waits for the agent, or a person's decision on its proposal. It is
+	// taken only while the Agent waits for the user, never inside a turn.
+	NotificationSourceEvolve NotificationSource = "evolve"
 )
 
 // notificationSources are the sources of each kind.
 var notificationSources = map[NotificationKind][]NotificationSource{
-	NotificationKindTask:      {NotificationSourceSubagent, NotificationSourceCommand},
+	NotificationKindTask:      {NotificationSourceSubagent, NotificationSourceCommand, NotificationSourceEvolve},
 	NotificationKindDelivery:  {NotificationSourcePreview, NotificationSourceRelease, NotificationSourceDeployment},
 	NotificationKindConnector: {NotificationSourceConnector},
 }
@@ -77,6 +82,15 @@ func (source NotificationSource) validate() error {
 		}
 	}
 	return NewEnumValidationError("NotificationSource", string(source))
+}
+
+// ValidateNotificationSource refuses a source that produces no notification
+// of kind.
+func ValidateNotificationSource(kind NotificationKind, source NotificationSource) error {
+	if !slices.Contains(notificationSources[kind], source) {
+		return fmt.Errorf("a %s notification does not come from %s", kind, source)
+	}
+	return nil
 }
 
 // UnmarshalJSON decodes and validates a source.
@@ -137,6 +151,44 @@ type SessionNotification struct {
 	// contribution, for a connector notification.
 	Slug  string         `json:"slug,omitempty"`
 	Event ConnectorEvent `json:"event,omitzero"`
+	// Evolve is what an evolve notification reports; nil for every other.
+	Evolve *EvolveNotice `json:"evolve,omitempty"`
+	// Usage is the platform model usage of a subagent's run, by model, which
+	// an agent review's report sums; empty for every other notification.
+	Usage []ModelUsage `json:"usage,omitempty"`
+}
+
+// EvolveNotice is what an evolve notification reports: a review of the
+// Project's goals that waits for the agent's report, or a person's decision
+// on the proposal of a review, at the proposal's revision, with the change
+// subagent's agent ID and the decline reason.
+type EvolveNotice struct {
+	ReviewID string      `json:"review_id"`
+	Phase    EvolvePhase `json:"phase"`
+	Decision string      `json:"decision,omitempty"`
+	Revision uint64      `json:"revision,omitempty"`
+	AgentID  string      `json:"agent_id,omitempty"`
+	Reason   string      `json:"reason,omitempty"`
+}
+
+// EvolvePhase is what an evolve notification reports: a review or a
+// decision. A struct like DeliveryOutcome; the zero EvolvePhase is none.
+type EvolvePhase struct{ name string }
+
+var (
+	EvolvePhaseReview   = EvolvePhase{"review"}
+	EvolvePhaseDecision = EvolvePhase{"decision"}
+)
+
+func (phase EvolvePhase) String() string               { return phase.name }
+func (phase EvolvePhase) MarshalText() ([]byte, error) { return []byte(phase.name), nil }
+func (phase *EvolvePhase) UnmarshalText(text []byte) error {
+	return comm.UnmarshalName(text, phase, EvolvePhase.String, EvolvePhaseReview, EvolvePhaseDecision)
+}
+
+// IsEvolve reports an evolve notification, which only an idle Agent takes.
+func (notification SessionNotification) IsEvolve() bool {
+	return notification.Source == NotificationSourceEvolve
 }
 
 // ConnectorEvent is what a connector notification reports of a contribution:
@@ -233,7 +285,11 @@ func (notification SessionNotification) Validate() error {
 		return fmt.Errorf("a %s notification does not come from %s", notification.Kind, notification.Source)
 	case notification.OccurredAt.IsZero():
 		return errors.New("a notification needs the time it occurred")
-	case notification.Kind == NotificationKindTask && (notification.TaskID == "" || notification.TaskStatus == "" || notification.Summary == ""):
+	case notification.IsEvolve() != (notification.Evolve != nil):
+		return errors.New("an evolve notification, and only one, carries its review")
+	case notification.IsEvolve() && (notification.Evolve.ReviewID == "" || notification.Evolve.Phase == EvolvePhase{} || notification.Summary == ""):
+		return errors.New("an evolve notification names its review, phase and summary")
+	case notification.Kind == NotificationKindTask && !notification.IsEvolve() && (notification.TaskID == "" || notification.TaskStatus == "" || notification.Summary == ""):
 		return errors.New("a task notification names its task, status and summary")
 	case notification.Kind == NotificationKindConnector && (notification.Slug == "" || notification.Event == ConnectorEvent{} || notification.Summary == ""):
 		return errors.New("a connector notification names its connector, event and summary")

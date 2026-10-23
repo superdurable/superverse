@@ -58,22 +58,25 @@ function RemedyButton({ problem, actions }: { problem: Problem; actions: RemedyA
 /**
  * A problem in the one format Studio shows everywhere: what happened, why, one button that fixes it
  * with the configuration it lacks, and the technical details folded. It never shows a bare code or
- * a commit hash outside the details.
+ * a commit hash outside the details. It is an alert unless `announce` is false, as for a copy of a
+ * problem that another place on the page announces.
  */
 export function ProblemPanel({
   problem,
   actions = {},
   className,
+  announce = true,
 }: {
   problem: Problem;
   actions?: RemedyActions;
   className?: string;
+  announce?: boolean;
 }) {
   const { code, phase, cause, commit, at } = problem.details;
   const configuration = problem.remedy === "FAILURE_REMEDY_OPEN_SETUP";
   return (
     <section
-      role="alert"
+      role={announce ? "alert" : undefined}
       aria-label={problem.title}
       data-testid="problem-panel"
       data-remedy={problem.remedy}

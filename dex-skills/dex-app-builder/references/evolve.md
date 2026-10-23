@@ -3,8 +3,9 @@
 Use this reference when the person asks to set, change or fix the
 application's goals, when Studio's Goals tab hands you "Help me set goals for
 this app" or the problems of a goals file, or when someone asks how the
-application is doing against its goals. It covers the goals file, the metric
-language and how the platform measures them.
+application is doing against its goals, and when an `evolve` notification
+asks you to review them. It covers the goals file, the metric language, how
+the platform measures them and the agent review's procedure.
 
 ## Only Live published runs count
 
@@ -145,5 +146,124 @@ zero. A value that rests on fewer than 20 runs is marked "few runs".
 
 ## Check a goals file
 
-Check the file against the rules above before you commit it. The platform
-reads it only once it is Live; then the Goals tab lists any problem by line.
+Check the file against the rules above before you commit it, with
+`superverse-evolve check` in the Sandbox (every problem with its line). The
+platform reads it only once it is Live; then the Goals tab lists any problem by
+line.
+
+## Agent reviews
+
+On the platform, each review of the goals that a builder's Project has agent
+reviews for waits for you: an `evolve` notification (phase `review`) names the
+review `r-N`, the window, the run count, the goals commit (the Live build's),
+each goal's value and change, and the newest proposals with their decisions. It
+arrives only while you are idle and opens its own turn. Within 24 hours,
+report the review once, with at most one proposal; otherwise it expires.
+
+Only runs of the Live, published process count (above). In a review that means
+the folder `place_evolve_export` places and nothing else.
+
+### The procedure
+
+1. Call `place_evolve_export` with the review ID. It places, read-only, in
+   `.local/superverse-evolve/<review>/`: `runs.jsonl` (the review's export of the
+   Live runs, one run per FlowID, newest first), `manifest.json` (with
+   `runs_sha256` and `goals_commit`), `metrics.json` (every goal's value as the
+   review measured it) and `goals.md` (the goals of the Live build). Read
+   `goals.md` and `metrics.json`. The workspace's `.superverse/goals.md` is a
+   draft and never feeds a review. The folder never enters the repository:
+   `commit_and_push` refuses it.
+2. Discard the results of earlier proposals that were declined, superseded or
+   stale and are still open (`merge_agent_changes discard`), and report each
+   with `report_evolve_review` phase `discarded`.
+3. Start an `investigate` subagent with `inputs: [".local/superverse-evolve/<review>"]`,
+   which links the folder read-only at the same path in its worktree. Give it
+   the goals, the metrics, the past decisions and the rule that only this
+   folder counts. It reports at most five findings, each with the goal it bears
+   on, the segment, the numbers (from scripts over `runs.jsonl` or
+   `superverse-evolve`, never estimated by eye), the run count, three example
+   FlowIDs and whether a change could be checked exactly.
+4. If a finding is worth a change that keeps the guardrails and the off-limits
+   prose of the placed `goals.md`, start one `change` subagent with the same
+   input. It makes the change, runs the backtest and the open-run check below
+   and writes `.superverse/evolve/<review>/proposal.md`, `backtest.json` and
+   `open-runs.json`, tracked paths that are committed with the change. It never
+   edits `.superverse/goals.md`, keeps the Dex Go SDK at or above the Live
+   release's, and does not run the application's tests: the commit gate runs
+   them when the approved change is pushed.
+5. Call `report_evolve_review` with phase `reported` and the verdict:
+   `proposal` with the change subagent's `agent_id` and a `title` in the goal's
+   words (and `kind` `trial` when a gate requires one), or `no_change`. Put
+   findings without a proposal in the `summary` as noticed. Then send one short
+   chat message: the verdict, and that the proposal waits on the Goals tab.
+   Never paste the proposal into the chat.
+6. On the `evolve` notification of phase `decision`: for an approval,
+   `merge_agent_changes apply` the change subagent's result, resolve conflicts
+   with the work done since, `commit_and_push` (the Preview deploys it), then
+   `report_evolve_review` phase `applied` with the pushed commit. For a decline,
+   `merge_agent_changes discard` and phase `discarded`. You never publish: the
+   person publishes from the Publish popover.
+
+### The backtest
+
+Decision replay: the application's own decision code, before and after the
+change, over the review's Live runs. A decision that sits inside a Step moves
+first, without a change of behavior, into a plain function of the run's
+recorded facts ([measurable runs](backend-implementation.md#runs-that-can-be-measured-and-improved)).
+
+- **Before** is the Live build's code: the folder's manifest names its
+  `goals_commit`. Take it from `git archive <goals_commit>` into a directory of
+  `/tmp`, and compare it with your worktree's base (`git diff <goals_commit> HEAD
+  -- <the files the change touches>`); when they differ, the "before" side still
+  comes from the Live commit, and the proposal's Risks name the unpublished
+  difference. **After** is the change's tree.
+- Write a small Go program under `.superverse/evolve/<review>/backtest/` that
+  reads `runs.jsonl` and, for each run, calls the decision functions with the
+  run's recorded facts and writes one JSON line:
+  `{"flow_id", "decisions": {"<name>": <scalar>}, "points": {"<name>": {"step":
+  "<Step>", "entry": <n>}}, "numbers": {"steps.<Step>": <n>, "ai.calls": <n>, ...}}`.
+  A point is the entry into the Step where the run takes the decision. Give
+  every number a goal's metric reads, so a changed run is known exactly. Run it
+  with `go run .superverse/evolve/<review>/backtest/main.go <runs> <out>` in
+  both trees and write the lines under `.local/`, never under `.superverse/`.
+- `superverse-evolve compare --review <review> --before <before lines> --after
+  <after lines> [--strata <fields>] [--target <goal>] --out
+  .superverse/evolve/<review>/backtest.json` labels every run `same`,
+  `changed_exact`, `changed_estimated` or `unknown`, checks the calibration
+  (the "before" numbers against history, at least 98%) and evaluates every goal
+  at the review's own time, so its "before" values are the review's.
+- `superverse-evolve open-runs --review <review> --before-defs <defs> --after-defs
+  <defs> --out .superverse/evolve/<review>/open-runs.json` compares the Live
+  build's and the change's Flow definitions
+  (`python3 scripts/render-flow-definitions.py --output <file>` in each tree)
+  with every open run's current Steps: a Step an open run is in that the change
+  removes or renames, or an Attribute whose value type changes, refuses it.
+- Both write an `export` binding: the review, the goals commit, the runs'
+  SHA-256 and count, the before commit and your base. `superverse-evolve`
+  refuses a folder whose manifest is not the review's Live export or whose
+  `runs.jsonl` does not match its digest, and has no command that reads other
+  runs: `export`, `--runs`, `--goals` and `--dex` are not commands of it.
+
+The review refuses a report, without storing a proposal, with a code:
+
+| Code | When |
+| --- | --- |
+| `stale_review` | The review no longer waits: it ended, expired or was skipped |
+| `stale_proposal` | An `applied` or `discarded` report that does not follow the proposal's state |
+| `invalid_backtest` | A file is missing or does not decode, the calibration is under 98%, a guardrail breaks over the runs known exactly, an open run blocks the change, or a trial is required (the gate is in the message) |
+| `export_mismatch` | `backtest.json` or `open-runs.json` is not bound to this review's placed export, before commit and goals: another review's folder, edited runs, the workspace's goals or a left-out goal |
+| `evolve_result_too_large` | `proposal.md` over 32 KiB, `backtest.json` over 256 KiB or `open-runs.json` over 64 KiB |
+
+### The proposal
+
+`proposal.md` carries aggregates only, no FlowIDs and no per-run values, since
+it is committed: **Title** (one line in the goal's words), **Why** (the
+findings, each with its numbers and run counts), **What changes** (in plain
+words, then the files), **Goals** (each goal before and after, known and
+estimated, and the guardrails), **Backtest** (the run labels, the calibration,
+the estimation's method and sample sizes), **Open runs** (the open runs by
+current Step and what the change does to each), **Risks** (what could go wrong,
+what the next review watches, the off-limits list and that nothing in it
+changed) and **Undo** (roll Live back to the release before; the next review
+proposes the code revert). The numbers come from `backtest.json` and
+`open-runs.json`; Studio shows them from those files, never from your text.

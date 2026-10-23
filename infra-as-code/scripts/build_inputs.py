@@ -78,9 +78,17 @@ def component_inputs(component):
     if component == "coding":
         # Skills are Markdown read by the Agent; the template manifests and every example's archive prewarm the
         # modules and seed the image's build caches; the BuildProfile selects the Go and Node base images.
-        return (files_under("sandbox/coding") | files_under("dex-skills", documents=True) | template_cache_inputs()
+        return (files_under("sandbox/coding") | files_under("dex-skills", documents=True) | template_cache_inputs() | evolve_measurement_sources()
                 | {"scripts/install-pinned-binary.sh", "internal/dexai/delivery/releases/build/build-profiles/go-react-v1/profile.json"})
     raise ValueError("Unknown image component: " + component)
+
+
+def evolve_measurement_sources():
+    """The goals evaluator and run record the image's superverse-evolve compiles from the source tree, without the
+    Dex history reader below runexport (sandbox/coding/Dockerfile, image-commands)."""
+    directories = ("internal/dexai/delivery/evolve/goals", "internal/dexai/delivery/evolve/runexport")
+    return {path.relative_to(ROOT).as_posix() for directory in directories for path in (ROOT / directory).glob("*.go")
+            if not path.name.endswith("_test.go")}
 
 
 def template_cache_inputs():

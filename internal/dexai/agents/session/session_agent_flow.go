@@ -561,7 +561,7 @@ type CheckSteered struct {
 func (CheckSteered) GetStepOptions() *dex.StepOptions { return checkSteeredStepOptions }
 
 // WaitFor takes every steered message and, before a model continuation inside the turn or
-// with steering, at most 16 notifications, which precede the steered text; a Stop takes none.
+// with steering, at most 16 notifications (evolve ones are put back); a Stop takes none.
 func (CheckSteered) WaitFor(ctx dex.Context, next agentloop.Continuation) (*dex.Wait, error) {
 	state, interrupt := comm.Must(agentStateAttribute.Get(ctx)), dexflow.OptionalValue(agentInterruptAttribute.Get(ctx))
 	steered := steeredUserMessagesChannel.AtMost(agentloop.AllPendingChannelMessages)
@@ -583,7 +583,12 @@ func (step CheckSteered) Execute(ctx dex.Context, next agentloop.Continuation) (
 			return dex.GoTo(AwaitUser{}, nil), nil
 		}
 	}
-	step.flow.appendNotifications(ctx, comm.Must(sessionNotificationsChannel.GetConditionResults(ctx)))
+	// An evolve notification opens its own turn at AwaitUser; this boundary puts it back.
+	taken, deferred := agentloop.SplitTurnNotifications(comm.Must(sessionNotificationsChannel.GetConditionResults(ctx)))
+	for _, notification := range deferred {
+		comm.MustDo(sessionNotificationsChannel.Publish(ctx, notification))
+	}
+	step.flow.appendNotifications(ctx, taken)
 	if len(steered) > 0 {
 		next = applySteering(ctx, steered)
 	}

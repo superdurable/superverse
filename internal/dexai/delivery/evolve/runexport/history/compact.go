@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-package runexport
+package history
 
 import (
 	"sort"
@@ -16,10 +16,17 @@ import (
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
 
 	"github.com/superdurable/superversev2/internal/comm"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
 )
 
-// maxFieldBytes bounds a string field's value in a record.
-const maxFieldBytes = 256
+// Bounds of a record: a string field's value, and its path, of which the newest entries are kept.
+const (
+	maxFieldBytes  = 256
+	maxPathEntries = 200
+)
+
+// variantAttribute is the Attribute a trial sets once at Flow start; the export always reads it.
+const variantAttribute = "evolve-variant"
 
 // runIdentity is a run's identity and times as the engine's search reports them.
 type runIdentity struct {
@@ -45,7 +52,7 @@ type Settings struct {
 	// Prices are keyed by the model ID a model connector reports.
 	Prices map[string]Price
 	// Timeline lists the Live releases in order of their Live time.
-	Timeline []Release
+	Timeline []runexport.Release
 	// At is the export time, which bounds the waits and durations of open runs.
 	At time.Time
 }
@@ -53,10 +60,10 @@ type Settings struct {
 // compact turns a run's history, in event order, into its record; values
 // decodes a Dex value, loading a blob within its budget, and answers false for
 // a value it will not read.
-func compact(run runIdentity, events []*dexpb.FlowHistoryEvent, values *engineValues, s Settings) Record {
+func compact(run runIdentity, events []*dexpb.FlowHistoryEvent, values *engineValues, s Settings) runexport.Record {
 	c := compaction{
 		settings: s, values: values,
-		record: Record{
+		record: runexport.Record{
 			FlowType: run.flowType, FlowID: run.FlowID, Status: statusName(run.status),
 			StartedAt: run.StartedAt.UTC(), ClosedAt: run.closedAt,
 			Fields: map[string]any{}, Steps: map[string]int{}, Actions: map[string]int{}, WaitHours: map[string]float64{},
@@ -81,7 +88,7 @@ type execution struct {
 type compaction struct {
 	settings   Settings
 	values     *engineValues
-	record     Record
+	record     runexport.Record
 	executions map[string]execution
 	responses  map[string]bool
 	tokens     map[string][2]int64
@@ -135,7 +142,7 @@ func (c *compaction) enter(context *dexpb.StepMethodEventContext, at time.Time) 
 	}
 	c.executions[id] = execution{stepType: context.GetStepType(), firstAt: first}
 	c.record.Steps[context.GetStepType()]++
-	c.record.Path = append(c.record.Path, pathEntry{Step: context.GetStepType(), At: first.UTC()})
+	c.record.Path = append(c.record.Path, runexport.PathEntry{Step: context.GetStepType(), At: first.UTC()})
 	return first
 }
 
@@ -300,7 +307,7 @@ func (c *compaction) finish() {
 	if c.record.ClosedAt != nil {
 		end = *c.record.ClosedAt
 	}
-	if !c.record.closed() {
+	if c.record.ClosedAt == nil {
 		active := map[string]bool{}
 		for _, e := range c.executions {
 			if e.waits && !e.waited {

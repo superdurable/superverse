@@ -15,6 +15,12 @@ import { PaneRail } from "@/components/ui/pane/ListColumn";
 import { PaneResizeHandle, type CollapsibleColumn } from "@/components/ui/pane/PaneResizeHandle";
 
 /**
+ * The ID of the chat's heading, a visible place for the focus that content of the chat moves it to when the element
+ * that held it leaves; a chat that is the whole page has no heading.
+ */
+export const CHAT_HEADING_ID = "project-chat-heading";
+
+/**
  * The Project's chat, the same conversation on every surface. Dragged narrow it folds to a 40px rail
  * that holds only the chat's icon, which opens it again; the conversation stays mounted while folded,
  * so a draft and the scroll position survive. Alone, in a new Project's first conversation, it is the
@@ -61,7 +67,15 @@ export function ChatColumn({
             alone ? "justify-end" : "border-b border-line-faint",
           )}
         >
-          {!alone && <h2 className="text-[13px] font-semibold text-ink">Project chat</h2>}
+          {!alone && (
+            <h2
+              id={CHAT_HEADING_ID}
+              tabIndex={-1}
+              className="rounded-sm text-[13px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Project chat
+            </h2>
+          )}
           {status}
           {!alone && (
             <button

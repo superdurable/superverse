@@ -369,9 +369,14 @@ older commit, held in Deploy).
 
 Goals (`store/delivery/goal-measurement.ts`) answer only once the Project has a Live deployment, as the
 server does: `/p/<project>/goals?v=live&publishFixture=published` shows example goals of an invented
-outreach application with three reviews, and Review now measures eight seconds later.
-`?goalsFixture=invalid` shows a goals file with parser problems, `none` one without goals, `valid` the
-example again.
+outreach application with three reviews, the newest with the agent's proposal, and Review now ends eight
+seconds later with no change. `?goalsFixture=invalid` shows a goals file with parser problems, `none` one
+without goals, `valid` the example again. The proposal (`store/delivery/evolve-proposals.ts`) moves on
+Approve or Decline through the mock clock and Publish, and `?proposalFixture=<status>` seeds it in any state;
+`notify-failed` and `notify-failed-declined` are an approval and a decline the agent was not told of. Applying it, the
+mock agent pushes the change to main as the Session's head, a version ahead of Live that Preview ran, so its
+**Publish…** opens the bar's popover on that version; the proposal goes live once Live runs that version or a newer
+one, recording the release Live ran before for Undo, and a later rollback to an older one undoes it.
 
 ## Runs, Inbox and fixtures
 

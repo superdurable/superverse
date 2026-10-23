@@ -49,9 +49,17 @@ type LiveTarget struct {
 	Deployment    Snapshot
 }
 
-// LiveRelease is the target's deployment as its Live announcement carries it,
-// so goal measurement can compare it with the Live it was told of.
-func (t LiveTarget) LiveRelease() evolve.LiveRelease { return liveChange(t.Deployment) }
+// LiveRelease returns the target's deployment as its Live announcement
+// carries it, so goal measurement can compare it with the Live it was told
+// of. It reads the deployment's Flow, since the read model does not sync the
+// ReplacedLive generation that names the revision it replaced (decision 0025).
+func (c *ProjectDeployFlowClient) LiveRelease(ctx context.Context, target LiveTarget) (evolve.LiveRelease, error) {
+	deployment, err := c.readSnapshot(ctx, target.Deployment.ProjectID, target.Deployment.DeploymentID)
+	if err != nil {
+		return evolve.LiveRelease{}, fmt.Errorf("read Live deployment %s: %w", target.Deployment.DeploymentID, err)
+	}
+	return liveChange(deployment), nil
+}
 
 // ReadProjection returns the read model's deployment of a Project whose
 // access the caller checked. The row of a deployment started a moment ago is

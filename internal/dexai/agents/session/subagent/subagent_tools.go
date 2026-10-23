@@ -272,7 +272,7 @@ func (flow *SubagentFlow) stopRunningCommand(ctx dex.Context) error {
 // lease the transport proved unreachable is sandboxtools.ErrWorkspaceUnavailable.
 func (flow *SubagentFlow) finishWorktree(ctx dex.Context) (*conversation.TaskChanges, string, error) {
 	identity, ws := comm.Must(identityAttribute.Get(ctx)), comm.Must(workspaceAttribute.Get(ctx))
-	call := sandboxtools.Call{Tool: string(conversation.ToolStartAgent), Arguments: sandboxtools.AgentWorktreeArguments(identity.AgentID, nil), Lease: &ws.Lease,
+	call := sandboxtools.Call{Tool: string(conversation.ToolStartAgent), Arguments: sandboxtools.AgentWorktreeArguments(identity.AgentID, nil, nil), Lease: &ws.Lease,
 		Root: sandboxd.WorkspaceRoot, Mutating: true, Identity: sandboxd.InvocationIdentity{FlowID: ctx.FlowID(), CallID: "finish"}, Progress: func(string) {}}
 	defer dexflow.KeepAlive(ctx, agentloop.ToolHeartbeat{Phase: agentloop.HeartbeatPhaseToolCall, ToolName: conversation.ToolStartAgent})()
 	result, err := flow.sandbox.Run(ctx, sandboxtools.FinishAgentWorktree, call)

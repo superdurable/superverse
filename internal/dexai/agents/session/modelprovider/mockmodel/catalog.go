@@ -48,7 +48,9 @@ type Scenario struct {
 	SubagentKinds []agenttasks.SubagentKind
 	// Notifications are the kinds of the notifications the scenario's replies
 	// answer; the mock model rejects such a reply's call without one.
-	Notifications []conversation.NotificationKind
+	// NotificationSources are the sources the replies name with their kind.
+	Notifications       []conversation.NotificationKind
+	NotificationSources []conversation.NotificationSource
 }
 
 // ScenarioCategory is the group Studio lists a scenario under, which its
@@ -148,7 +150,7 @@ var projectChangingTools = []conversation.ToolName{conversation.ToolEdit, conver
 // describe is the public description of a script.
 func (s *script) describe() Scenario {
 	scenario := Scenario{Name: s.Name, Title: s.Title, Description: s.Description, Category: s.Category, TestAction: s.TestAction}
-	notifications := map[conversation.NotificationKind]bool{}
+	notifications, sources := map[conversation.NotificationKind]bool{}, map[conversation.NotificationSource]bool{}
 	for _, name := range slices.Sorted(maps.Keys(s.Arguments)) {
 		if _, set := messageArguments[name]; !set {
 			scenario.Arguments = append(scenario.Arguments, Argument{Name: name, Default: s.Arguments[name]})
@@ -171,6 +173,9 @@ func (s *script) describe() Scenario {
 			if reply.Notification != "" {
 				notifications[reply.Notification] = true
 			}
+			if reply.NotificationSource != "" {
+				sources[reply.NotificationSource] = true
+			}
 		}
 	}
 	kinds := map[string]agenttasks.SubagentKind{}
@@ -187,6 +192,7 @@ func (s *script) describe() Scenario {
 	}
 	scenario.Tools = slices.Sorted(maps.Keys(tools))
 	scenario.Notifications = slices.Sorted(maps.Keys(notifications))
+	scenario.NotificationSources = slices.Sorted(maps.Keys(sources))
 	return scenario
 }
 

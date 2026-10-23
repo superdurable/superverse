@@ -3,14 +3,15 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The shared Agent UI's single entry `index.ts`; Studio reaches the conversation and interaction presentation only through this entry.
 
-Importers: `components/session` imports this directory.
+Importers: `components/project/goals` and `components/session` import this directory.
 
 Imports: it imports `components/agent/attachments`, `components/agent/conversation` and `components/agent/interaction`.
 
 ```mermaid
 flowchart LR
   self["components/agent"]
-  c0["components/session"] --> self
+  c0["components/project/goals"] --> self
+  c1["components/session"] --> self
   self --> d0["components/agent/attachments"]
   self --> d1["components/agent/conversation"]
   self --> d2["components/agent/interaction"]

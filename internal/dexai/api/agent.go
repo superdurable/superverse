@@ -510,6 +510,9 @@ func agentMessage(value conversation.SequencedMessage) *pb.AgentSequencedMessage
 			Commit: n.Commit, ResourceId: n.ResourceID, ResolvedNoticeId: n.ResolvedNoticeID, Url: n.URL, Gaps: n.Gaps, GapCount: int32(n.GapCount), Message: n.Message, //nolint:gosec // a notification names a bounded number of gaps
 			Remedy: boundary.Enum[pb.FailureRemedy](n.Remedy.String()),
 			Slug:   n.Slug, ConnectorEvent: boundary.Enum[pb.AgentNotification_ConnectorEvent](n.Event.String()), Version: boundary.CommitVersionSnapshot(n.Version)}
+		if evolve := n.Evolve; evolve != nil {
+			message.Notification.ReviewId, message.Notification.EvolvePhase = evolve.ReviewID, boundary.Enum[pb.AgentNotification_EvolvePhase](evolve.Phase.String())
+		}
 	}
 	return &pb.AgentSequencedMessage{Sequence: int64(value.Sequence), Message: message}
 }

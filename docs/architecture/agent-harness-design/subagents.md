@@ -51,7 +51,9 @@ effort with `set_effort`; the main agent and the rules for it are in
 
 Input (non-strict schema until the live strict-tool test measures it,
 [strict schemas](tool-orchestration.md#strict-schemas)): `description` (1 to 80 characters,
-shown to the user), `prompt` (at most 32 KiB) and `kind`.
+shown to the user), `prompt` (at most 32 KiB), `kind` and, for `investigate` and `change`,
+`inputs`: at most one workspace-relative ignored directory, and only an agent review's placed
+folder `.local/superverse-evolve/<review>` ([agent reviews](#agent-review-inputs-and-pinned-results)).
 
 1. **Admission** (`RouteTool`). At most 6 subagents are started without user input
    (`AgentState.SubagentsStartedWithoutUser`, reset when a user-initiated turn begins) and
@@ -64,7 +66,8 @@ shown to the user), `prompt` (at most 32 KiB) and `kind`.
    subagents it has or ask the user.
    When the 50 finished records are full, admission evicts only the oldest finished record
    and stores its agent ID in `PendingSubagentWorktreeCleanup` in the same commit. A pending
-   ID defers further eviction. An unfinished record is never selected.
+   ID defers further eviction. An unfinished record is never selected, and neither is a
+   record pinned for an agent review's proposal.
 2. **Execution** (`ExecuteTool`, serial and SYNC: 2 minutes per attempt, retried after a
    transient fault, and not interruptible by Stop mid-call). It creates the worktree
    ([below](#worktrees)) and starts the `SubagentFlow` through the Service (the
@@ -270,6 +273,29 @@ call, of either action, returns its receipt. A merge of selected paths leaves th
 changes mergeable. The outcome is `merged_with_conflicts` when any file is a conflict,
 `merged` when files were applied and none conflicts, `nothing_to_merge` otherwise, and
 `discarded` for a discard.
+
+### Agent review inputs and pinned results
+
+An agent review ([notifications](notifications-and-feedback.md)) gives its subagents the review's
+placed export of the Live runs as `inputs`. Creating the worktree checks that each input exists
+and that Git ignores it with no tracked file, so the snapshot never holds it
+(`subagent_input_missing` otherwise), and hard-links every file of it at the same path in the
+worktree, where an ignored directory would otherwise be missing; the links share the files'
+read-only inodes, so they are no protection against a subagent that changes their mode: the
+review's digest checks are the guard (`superverse-evolve` refuses a folder whose `runs.jsonl` does
+not match its manifest, and the review refuses a backtest not bound to its export). The helper
+records the inputs and removes those directories before `add -A` in the save, so they never enter
+the result, whatever the worktree's `.gitignore` says.
+
+A subagent record named by an offered or approved proposal is pinned (`PinnedFor`, the review):
+eviction past 50 finished records skips it, so the approved change can still be merged.
+`report_evolve_review` pins the change subagent's record when the review offers its proposal and
+unpins every record of the review on `applied` or `discarded`. The report's answer names the
+reviews whose proposals are still offered or approved: pinning unpins any record pinned for
+another review, such as the proposal the new one superseded, and at most two records stay pinned,
+past which the oldest open review's is unpinned. A subagent's end reports its platform model usage
+(`Usage`), which the review's report adds to the usage of the review's own turns for the subagents
+started in them.
 
 ## Lease hand-over and refresh
 

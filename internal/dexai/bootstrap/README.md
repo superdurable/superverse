@@ -5,7 +5,7 @@ Purpose: Assembles and runs the single Superverse server process for `cmd/superv
 
 Callers: `cmd/superverse-server` and `cmd/tools/check-flow-registry` import this package.
 
-Dependencies: it imports `cmd/superverse-server/config`, `internal/comm/**` (15) and `internal/dexai/**` (61) and calls the AWS S3, AWS STS and Dex Flow APIs.
+Dependencies: it imports `cmd/superverse-server/config`, `internal/comm/**` (15) and `internal/dexai/**` (62) and calls the AWS S3, AWS STS and Dex Flow APIs.
 
 ```mermaid
 flowchart LR
@@ -14,7 +14,7 @@ flowchart LR
   c1["cmd/tools/check-flow-registry"] --> self
   self --> d0["cmd/superverse-server/config"]
   self --> d1["internal/comm/** (15)"]
-  self --> d2["internal/dexai/** (61)"]
+  self --> d2["internal/dexai/** (62)"]
   self --> e0(["AWS S3 API"])
   self --> e1(["AWS STS API"])
   self --> e2(["Dex Flow API"])

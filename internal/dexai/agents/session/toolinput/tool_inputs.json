@@ -56,6 +56,12 @@
     "PlaceAttachmentInput": {
       "$ref": "#/$defs/PlaceAttachmentInput"
     },
+    "PlaceEvolveExportInput": {
+      "$ref": "#/$defs/PlaceEvolveExportInput"
+    },
+    "ReportEvolveReviewInput": {
+      "$ref": "#/$defs/ReportEvolveReviewInput"
+    },
     "RequestUserInputInput": {
       "$ref": "#/$defs/RequestUserInputInput"
     },
@@ -137,6 +143,12 @@
     },
     "PlaceAttachmentInput": {
       "$ref": "schema/place_attachment.json"
+    },
+    "PlaceEvolveExportInput": {
+      "$ref": "schema/place_evolve_export.json"
+    },
+    "ReportEvolveReviewInput": {
+      "$ref": "schema/report_evolve_review.json"
     },
     "RequestUserInputInput": {
       "$ref": "schema/request_user_input.json"

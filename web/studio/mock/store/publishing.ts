@@ -361,10 +361,14 @@ export function recoverMockBuild(
   finishAutoDeploy(store, projectId, release, build);
 }
 
-/** An ordinary turn pushes one commit to main, which Publishing then lists. */
-export function recordAgentCommit(store: MockStore, session: MockSession, title: string) {
+/** An ordinary turn pushes one commit to main, which Publishing then lists; a caller may name the commit. */
+export function recordAgentCommit(
+  store: MockStore,
+  session: MockSession,
+  title: string,
+  sourceCommitSha: string = randomHex(40),
+) {
   const committedAt = nowIso();
-  const sourceCommitSha = randomHex(40);
   session.headCommitSha = sourceCommitSha;
   session.revision += 1;
   session.updatedAt = committedAt;

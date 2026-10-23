@@ -9,13 +9,26 @@
     "name": "EvolveFlow",
     "startStepId": "step:ReadGoals",
     "span": {
-      "startLine": 59,
+      "startLine": 61,
       "startColumn": 1,
-      "endLine": 66,
+      "endLine": 69,
       "endColumn": 2
     }
   },
   "nodes": [
+    {
+      "id": "decision-dispatch:rpc:DecideProposal",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:DecideProposal",
+      "phase": "rpc",
+      "span": {
+        "startLine": 238,
+        "startColumn": 1,
+        "endLine": 249,
+        "endColumn": 2
+      }
+    },
     {
       "id": "decision-dispatch:rpc:LiveChanged",
       "kind": "decision_dispatch",
@@ -23,9 +36,22 @@
       "parentId": "rpc:LiveChanged",
       "phase": "rpc",
       "span": {
-        "startLine": 146,
+        "startLine": 155,
         "startColumn": 1,
-        "endLine": 153,
+        "endLine": 164,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:rpc:ReportReview",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "rpc:ReportReview",
+      "phase": "rpc",
+      "span": {
+        "startLine": 191,
+        "startColumn": 1,
+        "endLine": 234,
         "endColumn": 2
       }
     },
@@ -36,9 +62,9 @@
       "parentId": "rpc:StartReview",
       "phase": "rpc",
       "span": {
-        "startLine": 156,
+        "startLine": 167,
         "startColumn": 1,
-        "endLine": 171,
+        "endLine": 182,
         "endColumn": 2
       }
     },
@@ -49,9 +75,9 @@
       "parentId": "step:AwaitSchedule",
       "phase": "execute",
       "span": {
-        "startLine": 258,
+        "startLine": 355,
         "startColumn": 1,
-        "endLine": 274,
+        "endLine": 371,
         "endColumn": 2
       }
     },
@@ -62,9 +88,9 @@
       "parentId": "step:CommitGoals",
       "phase": "execute",
       "span": {
-        "startLine": 217,
+        "startLine": 313,
         "startColumn": 1,
-        "endLine": 242,
+        "endLine": 339,
         "endColumn": 2
       }
     },
@@ -75,9 +101,9 @@
       "parentId": "step:ComputeMetrics",
       "phase": "execute",
       "span": {
-        "startLine": 409,
+        "startLine": 519,
         "startColumn": 1,
-        "endLine": 420,
+        "endLine": 534,
         "endColumn": 2
       }
     },
@@ -88,9 +114,35 @@
       "parentId": "step:ExportRuns",
       "phase": "execute",
       "span": {
-        "startLine": 354,
+        "startLine": 464,
         "startColumn": 1,
-        "endLine": 374,
+        "endLine": 484,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:GateReview",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:GateReview",
+      "phase": "execute",
+      "span": {
+        "startLine": 545,
+        "startColumn": 1,
+        "endLine": 556,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision-dispatch:step:NotifyDecision",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:NotifyDecision",
+      "phase": "execute",
+      "span": {
+        "startLine": 646,
+        "startColumn": 1,
+        "endLine": 662,
         "endColumn": 2
       }
     },
@@ -101,9 +153,9 @@
       "parentId": "step:ReadGoals",
       "phase": "execute",
       "span": {
-        "startLine": 192,
+        "startLine": 272,
         "startColumn": 1,
-        "endLine": 206,
+        "endLine": 302,
         "endColumn": 2
       }
     },
@@ -114,23 +166,36 @@
       "parentId": "step:RecordReviewStart",
       "phase": "execute",
       "span": {
-        "startLine": 312,
+        "startLine": 412,
         "startColumn": 1,
-        "endLine": 341,
+        "endLine": 451,
         "endColumn": 2
       }
     },
     {
-      "id": "decision:rpc:CompleteProjectEvolve:175:9",
+      "id": "decision-dispatch:step:RequestReview",
+      "kind": "decision_dispatch",
+      "name": "Decision",
+      "parentId": "step:RequestReview",
+      "phase": "execute",
+      "span": {
+        "startLine": 571,
+        "startColumn": 1,
+        "endLine": 589,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "decision:rpc:CompleteProjectEvolve:253:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:CompleteProjectEvolve",
       "phase": "rpc",
       "span": {
-        "startLine": 175,
+        "startLine": 253,
         "startColumn": 9,
-        "endLine": 176,
-        "endColumn": 168
+        "endLine": 255,
+        "endColumn": 87
       },
       "decision": {
         "type": "rpcResult",
@@ -172,22 +237,89 @@
             "scope": "all"
           },
           {
+            "stepId": "step:RequestReview",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:AwaitReviewReport",
+            "scope": "all"
+          },
+          {
             "stepId": "step:RecordReviewFailure",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:NotifyDecision",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:RecordNotifyFailure",
             "scope": "all"
           }
         ]
       }
     },
     {
-      "id": "decision:rpc:GetDexDisplay:133:9",
+      "id": "decision:rpc:DecideProposal:241:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:DecideProposal",
+      "condition": "proposal == nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 241,
+        "startColumn": 10,
+        "endLine": 241,
+        "endColumn": 96
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:DecideProposal:245:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:DecideProposal",
+      "condition": "!(proposal == nil) and refusal != \"\" || next.Revision == proposal.Revision",
+      "phase": "rpc",
+      "span": {
+        "startLine": 245,
+        "startColumn": 10,
+        "endLine": 245,
+        "endColumn": 99
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:DecideProposal:248:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:DecideProposal",
+      "condition": "!(proposal == nil) and !(refusal != \"\" || next.Revision == proposal.Revision)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 248,
+        "startColumn": 9,
+        "endLine": 248,
+        "endColumn": 164
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:GetDexDisplay:142:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexDisplay",
       "phase": "rpc",
       "span": {
-        "startLine": 133,
+        "startLine": 142,
         "startColumn": 9,
-        "endLine": 135,
+        "endLine": 144,
         "endColumn": 4
       },
       "decision": {
@@ -195,15 +327,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetDexSummary:126:9",
+      "id": "decision:rpc:GetDexSummary:135:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetDexSummary",
       "phase": "rpc",
       "span": {
-        "startLine": 126,
+        "startLine": 135,
         "startColumn": 9,
-        "endLine": 126,
+        "endLine": 135,
         "endColumn": 65
       },
       "decision": {
@@ -211,15 +343,15 @@
       }
     },
     {
-      "id": "decision:rpc:GetEvolve:142:9",
+      "id": "decision:rpc:GetEvolve:151:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:GetEvolve",
       "phase": "rpc",
       "span": {
-        "startLine": 142,
+        "startLine": 151,
         "startColumn": 9,
-        "endLine": 142,
+        "endLine": 151,
         "endColumn": 60
       },
       "decision": {
@@ -227,16 +359,32 @@
       }
     },
     {
-      "id": "decision:rpc:LiveChanged:148:10",
+      "id": "decision:rpc:GetProposal:186:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:GetProposal",
+      "phase": "rpc",
+      "span": {
+        "startLine": 186,
+        "startColumn": 9,
+        "endLine": 186,
+        "endColumn": 98
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:LiveChanged:158:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:LiveChanged",
-      "condition": "in.Revision \u003c= comm.Must(LiveAttribute.Get(ctx)).Revision",
+      "condition": "in.Revision \u003c= previous.Revision",
       "phase": "rpc",
       "span": {
-        "startLine": 148,
+        "startLine": 158,
         "startColumn": 10,
-        "endLine": 148,
+        "endLine": 158,
         "endColumn": 45
       },
       "decision": {
@@ -244,16 +392,16 @@
       }
     },
     {
-      "id": "decision:rpc:LiveChanged:152:9",
+      "id": "decision:rpc:LiveChanged:163:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:LiveChanged",
-      "condition": "!(in.Revision \u003c= comm.Must(LiveAttribute.Get(ctx)).Revision)",
+      "condition": "!(in.Revision \u003c= previous.Revision)",
       "phase": "rpc",
       "span": {
-        "startLine": 152,
+        "startLine": 163,
         "startColumn": 9,
-        "endLine": 152,
+        "endLine": 163,
         "endColumn": 80
       },
       "decision": {
@@ -261,16 +409,145 @@
       }
     },
     {
-      "id": "decision:rpc:StartReview:159:10",
+      "id": "decision:rpc:ReportReview:195:11",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped and proposal == nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 195,
+        "startColumn": 11,
+        "endLine": 195,
+        "endColumn": 91
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:201:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped and !(proposal == nil)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 201,
+        "startColumn": 10,
+        "endLine": 201,
+        "endColumn": 95
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:206:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "!(in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped) and  == record != nil \u0026\u0026 repeats(*record, proposal, in)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 206,
+        "startColumn": 10,
+        "endLine": 206,
+        "endColumn": 123
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:208:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "!(in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped) and  == record == nil || record.Status != ReviewWaitingAgent || comm.Must(ActiveReview.Get(ctx)) != in.ReviewID",
+      "phase": "rpc",
+      "span": {
+        "startLine": 208,
+        "startColumn": 10,
+        "endLine": 208,
+        "endColumn": 88
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:210:10",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "!(in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped) and  == in.Defect != nil",
+      "phase": "rpc",
+      "span": {
+        "startLine": 210,
+        "startColumn": 10,
+        "endLine": 210,
+        "endColumn": 114
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:214:11",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "!(in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped) and in.Proposal != nil and refusal != \"\"",
+      "phase": "rpc",
+      "span": {
+        "startLine": 214,
+        "startColumn": 11,
+        "endLine": 214,
+        "endColumn": 95
+      },
+      "decision": {
+        "type": "rpcResult"
+      }
+    },
+    {
+      "id": "decision:rpc:ReportReview:233:9",
+      "kind": "decision",
+      "name": "rpcResult",
+      "parentId": "rpc:ReportReview",
+      "condition": "!(in.Phase != ReportReported \u0026\u0026 in.Phase != ReportSkipped)",
+      "phase": "rpc",
+      "span": {
+        "startLine": 233,
+        "startColumn": 9,
+        "endLine": 233,
+        "endColumn": 105
+      },
+      "decision": {
+        "type": "rpcResult",
+        "cancellations": [
+          {
+            "stepId": "step:RequestReview",
+            "scope": "all"
+          },
+          {
+            "stepId": "step:AwaitReviewReport",
+            "scope": "all"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision:rpc:StartReview:170:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StartReview",
       "condition": "slices.Contains(manual.RequestIDs, in.RequestID)",
       "phase": "rpc",
       "span": {
-        "startLine": 159,
+        "startLine": 170,
         "startColumn": 10,
-        "endLine": 159,
+        "endLine": 170,
         "endColumn": 112
       },
       "decision": {
@@ -278,16 +555,16 @@
       }
     },
     {
-      "id": "decision:rpc:StartReview:163:10",
+      "id": "decision:rpc:StartReview:174:10",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StartReview",
       "condition": "!(slices.Contains(manual.RequestIDs, in.RequestID)) and refusal != \"\"",
       "phase": "rpc",
       "span": {
-        "startLine": 163,
+        "startLine": 174,
         "startColumn": 10,
-        "endLine": 163,
+        "endLine": 174,
         "endColumn": 84
       },
       "decision": {
@@ -295,16 +572,16 @@
       }
     },
     {
-      "id": "decision:rpc:StartReview:170:9",
+      "id": "decision:rpc:StartReview:181:9",
       "kind": "decision",
       "name": "rpcResult",
       "parentId": "rpc:StartReview",
       "condition": "!(slices.Contains(manual.RequestIDs, in.RequestID)) and !(refusal != \"\")",
       "phase": "rpc",
       "span": {
-        "startLine": 170,
+        "startLine": 181,
         "startColumn": 9,
-        "endLine": 170,
+        "endLine": 181,
         "endColumn": 124
       },
       "decision": {
@@ -312,16 +589,32 @@
       }
     },
     {
-      "id": "decision:step:AwaitSchedule:262:10",
+      "id": "decision:step:AwaitReviewReport:608:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:AwaitReviewReport",
+      "phase": "execute",
+      "span": {
+        "startLine": 608,
+        "startColumn": 9,
+        "endLine": 608,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:AwaitSchedule:359:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:AwaitSchedule",
       "condition": " == !schedule.Active",
       "phase": "execute",
       "span": {
-        "startLine": 262,
+        "startLine": 359,
         "startColumn": 10,
-        "endLine": 262,
+        "endLine": 359,
         "endColumn": 23
       },
       "decision": {
@@ -329,16 +622,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSchedule:264:10",
+      "id": "decision:step:AwaitSchedule:361:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSchedule",
       "condition": " == now.Before(schedule.NextAt)",
       "phase": "execute",
       "span": {
-        "startLine": 264,
+        "startLine": 361,
         "startColumn": 10,
-        "endLine": 264,
+        "endLine": 361,
         "endColumn": 46
       },
       "decision": {
@@ -346,16 +639,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSchedule:270:10",
+      "id": "decision:step:AwaitSchedule:367:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:AwaitSchedule",
       "condition": "comm.Must(ActiveReview.Get(ctx)) != \"\"",
       "phase": "execute",
       "span": {
-        "startLine": 270,
+        "startLine": 367,
         "startColumn": 10,
-        "endLine": 270,
+        "endLine": 367,
         "endColumn": 46
       },
       "decision": {
@@ -363,16 +656,16 @@
       }
     },
     {
-      "id": "decision:step:AwaitSchedule:273:9",
+      "id": "decision:step:AwaitSchedule:370:9",
       "kind": "decision",
       "name": "goToMany",
       "parentId": "step:AwaitSchedule",
       "condition": "!(comm.Must(ActiveReview.Get(ctx)) != \"\")",
       "phase": "execute",
       "span": {
-        "startLine": 273,
+        "startLine": 370,
         "startColumn": 9,
-        "endLine": 273,
+        "endLine": 370,
         "endColumn": 136
       },
       "decision": {
@@ -380,15 +673,15 @@
       }
     },
     {
-      "id": "decision:step:BeginReview:300:9",
+      "id": "decision:step:BeginReview:400:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:BeginReview",
       "phase": "execute",
       "span": {
-        "startLine": 300,
+        "startLine": 400,
         "startColumn": 9,
-        "endLine": 300,
+        "endLine": 400,
         "endColumn": 48
       },
       "decision": {
@@ -396,16 +689,16 @@
       }
     },
     {
-      "id": "decision:step:CommitGoals:220:11",
+      "id": "decision:step:CommitGoals:316:11",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:CommitGoals",
       "condition": "comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision and in.ReviewID != \"\"",
       "phase": "execute",
       "span": {
-        "startLine": 220,
+        "startLine": 316,
         "startColumn": 11,
-        "endLine": 220,
+        "endLine": 316,
         "endColumn": 76
       },
       "decision": {
@@ -413,16 +706,16 @@
       }
     },
     {
-      "id": "decision:step:CommitGoals:222:10",
+      "id": "decision:step:CommitGoals:318:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:CommitGoals",
       "condition": "comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision and !(in.ReviewID != \"\")",
       "phase": "execute",
       "span": {
-        "startLine": 222,
+        "startLine": 318,
         "startColumn": 10,
-        "endLine": 222,
+        "endLine": 318,
         "endColumn": 23
       },
       "decision": {
@@ -430,16 +723,16 @@
       }
     },
     {
-      "id": "decision:step:CommitGoals:239:10",
+      "id": "decision:step:CommitGoals:336:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:CommitGoals",
       "condition": "!(comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision) and len(next) == 0",
       "phase": "execute",
       "span": {
-        "startLine": 239,
+        "startLine": 336,
         "startColumn": 10,
-        "endLine": 239,
+        "endLine": 336,
         "endColumn": 52
       },
       "decision": {
@@ -453,16 +746,16 @@
       }
     },
     {
-      "id": "decision:step:CommitGoals:241:9",
+      "id": "decision:step:CommitGoals:338:9",
       "kind": "decision",
       "name": "goToMany",
       "parentId": "step:CommitGoals",
       "condition": "!(comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision) and !(len(next) == 0)",
       "phase": "execute",
       "span": {
-        "startLine": 241,
+        "startLine": 338,
         "startColumn": 9,
-        "endLine": 241,
+        "endLine": 338,
         "endColumn": 59
       },
       "decision": {
@@ -476,15 +769,15 @@
       }
     },
     {
-      "id": "decision:step:CompleteEvolve:469:9",
+      "id": "decision:step:CompleteEvolve:689:9",
       "kind": "decision",
       "name": "gracefulComplete",
       "parentId": "step:CompleteEvolve",
       "phase": "execute",
       "span": {
-        "startLine": 469,
+        "startLine": 689,
         "startColumn": 9,
-        "endLine": 469,
+        "endLine": 689,
         "endColumn": 35
       },
       "decision": {
@@ -492,16 +785,16 @@
       }
     },
     {
-      "id": "decision:step:ComputeMetrics:414:10",
+      "id": "decision:step:ComputeMetrics:525:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ComputeMetrics",
       "condition": "failure != nil",
       "phase": "execute",
       "span": {
-        "startLine": 414,
+        "startLine": 525,
         "startColumn": 10,
-        "endLine": 414,
+        "endLine": 525,
         "endColumn": 51
       },
       "decision": {
@@ -509,16 +802,16 @@
       }
     },
     {
-      "id": "decision:step:ComputeMetrics:419:9",
+      "id": "decision:step:ComputeMetrics:533:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ComputeMetrics",
       "condition": "otherwise",
       "phase": "execute",
       "span": {
-        "startLine": 419,
+        "startLine": 533,
         "startColumn": 9,
-        "endLine": 419,
+        "endLine": 533,
         "endColumn": 41
       },
       "decision": {
@@ -526,16 +819,16 @@
       }
     },
     {
-      "id": "decision:step:ExportRuns:365:10",
+      "id": "decision:step:ExportRuns:475:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExportRuns",
       "condition": "errors.As(err, \u0026tooLarge)",
       "phase": "execute",
       "span": {
-        "startLine": 365,
+        "startLine": 475,
         "startColumn": 10,
-        "endLine": 365,
+        "endLine": 475,
         "endColumn": 51
       },
       "decision": {
@@ -543,16 +836,16 @@
       }
     },
     {
-      "id": "decision:step:ExportRuns:371:10",
+      "id": "decision:step:ExportRuns:481:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExportRuns",
       "condition": "done",
       "phase": "execute",
       "span": {
-        "startLine": 371,
+        "startLine": 481,
         "startColumn": 10,
-        "endLine": 371,
+        "endLine": 481,
         "endColumn": 44
       },
       "decision": {
@@ -560,16 +853,16 @@
       }
     },
     {
-      "id": "decision:step:ExportRuns:373:9",
+      "id": "decision:step:ExportRuns:483:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ExportRuns",
       "condition": "!(done)",
       "phase": "execute",
       "span": {
-        "startLine": 373,
+        "startLine": 483,
         "startColumn": 9,
-        "endLine": 373,
+        "endLine": 483,
         "endColumn": 41
       },
       "decision": {
@@ -577,15 +870,15 @@
       }
     },
     {
-      "id": "decision:step:FinishExport:395:9",
+      "id": "decision:step:FinishExport:505:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:FinishExport",
       "phase": "execute",
       "span": {
-        "startLine": 395,
+        "startLine": 505,
         "startColumn": 9,
-        "endLine": 395,
+        "endLine": 505,
         "endColumn": 45
       },
       "decision": {
@@ -593,15 +886,67 @@
       }
     },
     {
-      "id": "decision:step:GateReview:436:9",
+      "id": "decision:step:GateReview:551:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:GateReview",
+      "condition": "!in.ReviewsOn",
       "phase": "execute",
       "span": {
-        "startLine": 436,
+        "startLine": 551,
+        "startColumn": 10,
+        "endLine": 551,
+        "endColumn": 23
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:GateReview:555:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:GateReview",
+      "condition": "!(!in.ReviewsOn)",
+      "phase": "execute",
+      "span": {
+        "startLine": 555,
         "startColumn": 9,
-        "endLine": 436,
+        "endLine": 555,
+        "endColumn": 44
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:NotifyDecision:659:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:NotifyDecision",
+      "condition": " == skip != \"\"",
+      "phase": "execute",
+      "span": {
+        "startLine": 659,
+        "startColumn": 10,
+        "endLine": 659,
+        "endColumn": 45
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:NotifyDecision:661:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:NotifyDecision",
+      "condition": "otherwise",
+      "phase": "execute",
+      "span": {
+        "startLine": 661,
+        "startColumn": 9,
+        "endLine": 661,
         "endColumn": 22
       },
       "decision": {
@@ -609,16 +954,16 @@
       }
     },
     {
-      "id": "decision:step:ReadGoals:195:11",
+      "id": "decision:step:ReadGoals:275:11",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReadGoals",
       "condition": "comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision and in.ReviewID != \"\"",
       "phase": "execute",
       "span": {
-        "startLine": 195,
+        "startLine": 275,
         "startColumn": 11,
-        "endLine": 195,
+        "endLine": 275,
         "endColumn": 76
       },
       "decision": {
@@ -626,16 +971,16 @@
       }
     },
     {
-      "id": "decision:step:ReadGoals:197:10",
+      "id": "decision:step:ReadGoals:277:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:ReadGoals",
       "condition": "comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision and !(in.ReviewID != \"\")",
       "phase": "execute",
       "span": {
-        "startLine": 197,
+        "startLine": 277,
         "startColumn": 10,
-        "endLine": 197,
+        "endLine": 277,
         "endColumn": 23
       },
       "decision": {
@@ -643,16 +988,16 @@
       }
     },
     {
-      "id": "decision:step:ReadGoals:205:9",
+      "id": "decision:step:ReadGoals:301:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:ReadGoals",
       "condition": "!(comm.Must(LiveAttribute.Get(ctx)).Revision != in.Revision)",
       "phase": "execute",
       "span": {
-        "startLine": 205,
+        "startLine": 301,
         "startColumn": 9,
-        "endLine": 205,
+        "endLine": 301,
         "endColumn": 42
       },
       "decision": {
@@ -660,15 +1005,15 @@
       }
     },
     {
-      "id": "decision:step:RecordReviewFailure:457:9",
+      "id": "decision:step:RecordNotifyFailure:677:9",
       "kind": "decision",
       "name": "deadEnd",
-      "parentId": "step:RecordReviewFailure",
+      "parentId": "step:RecordNotifyFailure",
       "phase": "execute",
       "span": {
-        "startLine": 457,
+        "startLine": 677,
         "startColumn": 9,
-        "endLine": 457,
+        "endLine": 677,
         "endColumn": 22
       },
       "decision": {
@@ -676,33 +1021,49 @@
       }
     },
     {
-      "id": "decision:step:RecordReviewStart:330:10",
+      "id": "decision:step:RecordReviewFailure:632:9",
+      "kind": "decision",
+      "name": "deadEnd",
+      "parentId": "step:RecordReviewFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 632,
+        "startColumn": 9,
+        "endLine": 632,
+        "endColumn": 22
+      },
+      "decision": {
+        "type": "deadEnd"
+      }
+    },
+    {
+      "id": "decision:step:RecordReviewStart:440:10",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReviewStart",
-      "condition": "in.Skip == \"\" \u0026\u0026 current.Commit != live.BuildCommit",
+      "condition": "in.Skip == \"\" \u0026\u0026 (adopted || current.Commit != live.BuildCommit)",
       "phase": "execute",
       "span": {
-        "startLine": 330,
+        "startLine": 440,
         "startColumn": 10,
-        "endLine": 330,
-        "endColumn": 125
+        "endLine": 440,
+        "endColumn": 46
       },
       "decision": {
         "type": "goTo"
       }
     },
     {
-      "id": "decision:step:RecordReviewStart:335:10",
+      "id": "decision:step:RecordReviewStart:445:10",
       "kind": "decision",
       "name": "deadEnd",
       "parentId": "step:RecordReviewStart",
-      "condition": "!(in.Skip == \"\" \u0026\u0026 current.Commit != live.BuildCommit) and reason != \"\"",
+      "condition": "!(in.Skip == \"\" \u0026\u0026 (adopted || current.Commit != live.BuildCommit)) and reason != \"\"",
       "phase": "execute",
       "span": {
-        "startLine": 335,
+        "startLine": 445,
         "startColumn": 10,
-        "endLine": 335,
+        "endLine": 445,
         "endColumn": 23
       },
       "decision": {
@@ -710,17 +1071,51 @@
       }
     },
     {
-      "id": "decision:step:RecordReviewStart:340:9",
+      "id": "decision:step:RecordReviewStart:450:9",
       "kind": "decision",
       "name": "goTo",
       "parentId": "step:RecordReviewStart",
-      "condition": "!(in.Skip == \"\" \u0026\u0026 current.Commit != live.BuildCommit) and !(reason != \"\")",
+      "condition": "!(in.Skip == \"\" \u0026\u0026 (adopted || current.Commit != live.BuildCommit)) and !(reason != \"\")",
       "phase": "execute",
       "span": {
-        "startLine": 340,
+        "startLine": 450,
         "startColumn": 9,
-        "endLine": 340,
+        "endLine": 450,
         "endColumn": 104
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RequestReview:586:10",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RequestReview",
+      "condition": "skip != \"\"",
+      "phase": "execute",
+      "span": {
+        "startLine": 586,
+        "startColumn": 10,
+        "endLine": 586,
+        "endColumn": 51
+      },
+      "decision": {
+        "type": "goTo"
+      }
+    },
+    {
+      "id": "decision:step:RequestReview:588:9",
+      "kind": "decision",
+      "name": "goTo",
+      "parentId": "step:RequestReview",
+      "condition": "!(skip != \"\")",
+      "phase": "execute",
+      "span": {
+        "startLine": 588,
+        "startColumn": 9,
+        "endLine": 588,
+        "endColumn": 42
       },
       "decision": {
         "type": "goTo"
@@ -731,9 +1126,9 @@
       "kind": "attribute",
       "name": "Active",
       "span": {
-        "startLine": 34,
+        "startLine": 35,
         "startColumn": 2,
-        "endLine": 34,
+        "endLine": 35,
         "endColumn": 65
       },
       "resource": {
@@ -745,9 +1140,9 @@
       "kind": "attribute",
       "name": "CommandLock",
       "span": {
-        "startLine": 38,
+        "startLine": 40,
         "startColumn": 2,
-        "endLine": 38,
+        "endLine": 40,
         "endColumn": 56
       },
       "resource": {
@@ -759,9 +1154,9 @@
       "kind": "attribute",
       "name": "Goals",
       "span": {
-        "startLine": 31,
+        "startLine": 32,
         "startColumn": 2,
-        "endLine": 31,
+        "endLine": 32,
         "endColumn": 63
       },
       "resource": {
@@ -773,9 +1168,9 @@
       "kind": "attribute",
       "name": "Live",
       "span": {
-        "startLine": 30,
+        "startLine": 31,
         "startColumn": 2,
-        "endLine": 30,
+        "endLine": 31,
         "endColumn": 68
       },
       "resource": {
@@ -787,9 +1182,9 @@
       "kind": "attribute",
       "name": "ManualRequests",
       "span": {
-        "startLine": 35,
+        "startLine": 36,
         "startColumn": 2,
-        "endLine": 35,
+        "endLine": 36,
         "endColumn": 81
       },
       "resource": {
@@ -801,9 +1196,9 @@
       "kind": "attribute",
       "name": "ProjectID",
       "span": {
-        "startLine": 29,
+        "startLine": 30,
         "startColumn": 2,
-        "endLine": 29,
+        "endLine": 30,
         "endColumn": 68
       },
       "resource": {
@@ -811,13 +1206,28 @@
       }
     },
     {
+      "id": "resource:attribute:Proposals",
+      "kind": "attribute",
+      "name": "Proposals",
+      "span": {
+        "startLine": 39,
+        "startColumn": 2,
+        "endLine": 39,
+        "endColumn": 67
+      },
+      "resource": {
+        "valueType": "ProposalRecord",
+        "map": true
+      }
+    },
+    {
       "id": "resource:attribute:ReviewSeq",
       "kind": "attribute",
       "name": "ReviewSeq",
       "span": {
-        "startLine": 33,
+        "startLine": 34,
         "startColumn": 2,
-        "endLine": 33,
+        "endLine": 34,
         "endColumn": 67
       },
       "resource": {
@@ -829,9 +1239,9 @@
       "kind": "attribute",
       "name": "Reviews",
       "span": {
-        "startLine": 37,
+        "startLine": 38,
         "startColumn": 2,
-        "endLine": 37,
+        "endLine": 38,
         "endColumn": 63
       },
       "resource": {
@@ -844,9 +1254,9 @@
       "kind": "attribute",
       "name": "Schedule",
       "span": {
-        "startLine": 32,
+        "startLine": 33,
         "startColumn": 2,
-        "endLine": 32,
+        "endLine": 33,
         "endColumn": 69
       },
       "resource": {
@@ -858,9 +1268,20 @@
       "kind": "rpc",
       "name": "CompleteProjectEvolve",
       "span": {
-        "startLine": 174,
+        "startLine": 252,
         "startColumn": 1,
-        "endLine": 177,
+        "endLine": 256,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:DecideProposal",
+      "kind": "rpc",
+      "name": "DecideProposal",
+      "span": {
+        "startLine": 238,
+        "startColumn": 1,
+        "endLine": 249,
         "endColumn": 2
       }
     },
@@ -869,9 +1290,9 @@
       "kind": "rpc",
       "name": "GetDexDisplay",
       "span": {
-        "startLine": 132,
+        "startLine": 141,
         "startColumn": 1,
-        "endLine": 136,
+        "endLine": 145,
         "endColumn": 2
       }
     },
@@ -880,9 +1301,9 @@
       "kind": "rpc",
       "name": "GetDexSummary",
       "span": {
-        "startLine": 125,
+        "startLine": 134,
         "startColumn": 1,
-        "endLine": 127,
+        "endLine": 136,
         "endColumn": 2
       }
     },
@@ -891,9 +1312,20 @@
       "kind": "rpc",
       "name": "GetEvolve",
       "span": {
-        "startLine": 139,
+        "startLine": 148,
         "startColumn": 1,
-        "endLine": 143,
+        "endLine": 152,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:GetProposal",
+      "kind": "rpc",
+      "name": "GetProposal",
+      "span": {
+        "startLine": 185,
+        "startColumn": 1,
+        "endLine": 187,
         "endColumn": 2
       }
     },
@@ -902,9 +1334,20 @@
       "kind": "rpc",
       "name": "LiveChanged",
       "span": {
-        "startLine": 146,
+        "startLine": 155,
         "startColumn": 1,
-        "endLine": 153,
+        "endLine": 164,
+        "endColumn": 2
+      }
+    },
+    {
+      "id": "rpc:ReportReview",
+      "kind": "rpc",
+      "name": "ReportReview",
+      "span": {
+        "startLine": 191,
+        "startColumn": 1,
+        "endLine": 234,
         "endColumn": 2
       }
     },
@@ -913,10 +1356,25 @@
       "kind": "rpc",
       "name": "StartReview",
       "span": {
-        "startLine": 156,
+        "startLine": 167,
         "startColumn": 1,
-        "endLine": 171,
+        "endLine": 182,
         "endColumn": 2
+      }
+    },
+    {
+      "id": "step:AwaitReviewReport",
+      "kind": "step",
+      "name": "AwaitReviewReport",
+      "phase": "wait_for+execute",
+      "span": {
+        "startLine": 65,
+        "startColumn": 112,
+        "endLine": 65,
+        "endColumn": 147
+      },
+      "metadata": {
+        "explanation": "Wait up to 24 hours for the agent's report, which cancels the wait; without it the review expires."
       }
     },
     {
@@ -925,9 +1383,9 @@
       "name": "AwaitSchedule",
       "phase": "wait_for+execute",
       "span": {
-        "startLine": 61,
+        "startLine": 63,
         "startColumn": 76,
-        "endLine": 61,
+        "endLine": 63,
         "endColumn": 111
       },
       "metadata": {
@@ -940,13 +1398,13 @@
       "name": "BeginReview",
       "phase": "execute",
       "span": {
-        "startLine": 62,
+        "startLine": 64,
         "startColumn": 3,
-        "endLine": 62,
+        "endLine": 64,
         "endColumn": 36
       },
       "metadata": {
-        "explanation": "Read the Project's current Live deployment, and with valid goals of its build delete the exports of earlier reviews beyond the kept ones."
+        "explanation": "Read the Project's current Live deployment, and with valid goals of its build delete the exports of earlier reviews beyond the kept ones; delete the stored documents of pruned proposals."
       }
     },
     {
@@ -955,13 +1413,13 @@
       "name": "CommitGoals",
       "phase": "execute",
       "span": {
-        "startLine": 61,
+        "startLine": 63,
         "startColumn": 41,
-        "endLine": 61,
+        "endLine": 63,
         "endColumn": 74
       },
       "metadata": {
-        "explanation": "Store the goals of the newest Live revision, or the read failure, restart the schedule they set, and begin again the review that waited for them."
+        "explanation": "Store the goals of the newest Live revision, or the read failure, restart the schedule they set, move proposals live or undone by the commits the build holds, and begin again the review that waited for them."
       }
     },
     {
@@ -970,10 +1428,10 @@
       "name": "CompleteEvolve",
       "phase": "execute",
       "span": {
-        "startLine": 64,
-        "startColumn": 3,
-        "endLine": 64,
-        "endColumn": 35
+        "startLine": 67,
+        "startColumn": 80,
+        "endLine": 67,
+        "endColumn": 112
       },
       "metadata": {
         "explanation": "Complete the Flow of a deleting Project after its Steps were cancelled; the Project's deletion removes the evolve objects."
@@ -985,9 +1443,9 @@
       "name": "ComputeMetrics",
       "phase": "execute",
       "span": {
-        "startLine": 63,
+        "startLine": 65,
         "startColumn": 3,
-        "endLine": 63,
+        "endLine": 65,
         "endColumn": 39
       },
       "metadata": {
@@ -1000,9 +1458,9 @@
       "name": "ExportRuns",
       "phase": "execute",
       "span": {
-        "startLine": 62,
+        "startLine": 64,
         "startColumn": 79,
-        "endLine": 62,
+        "endLine": 64,
         "endColumn": 111
       },
       "metadata": {
@@ -1015,9 +1473,9 @@
       "name": "FinishExport",
       "phase": "execute",
       "span": {
-        "startLine": 62,
+        "startLine": 64,
         "startColumn": 113,
-        "endLine": 62,
+        "endLine": 64,
         "endColumn": 147
       },
       "metadata": {
@@ -1030,13 +1488,28 @@
       "name": "GateReview",
       "phase": "execute",
       "span": {
-        "startLine": 63,
+        "startLine": 65,
         "startColumn": 41,
-        "endLine": 63,
+        "endLine": 65,
         "endColumn": 73
       },
       "metadata": {
-        "explanation": "Record the review measured with its export and goal values and clear the active review; agent reviews are not part of measurement."
+        "explanation": "Record the export and goal values; outside review access the review ends measured, otherwise it waits for the agent."
+      }
+    },
+    {
+      "id": "step:NotifyDecision",
+      "kind": "step",
+      "name": "NotifyDecision",
+      "phase": "execute",
+      "span": {
+        "startLine": 67,
+        "startColumn": 3,
+        "endLine": 67,
+        "endColumn": 39
+      },
+      "metadata": {
+        "explanation": "Tell the Project's Session of a person's decision on a proposal; one it cannot take goes to RecordNotifyFailure."
       }
     },
     {
@@ -1046,13 +1519,28 @@
       "phase": "execute",
       "start": true,
       "span": {
-        "startLine": 61,
+        "startLine": 63,
         "startColumn": 3,
-        "endLine": 61,
+        "endLine": 63,
         "endColumn": 39
       },
       "metadata": {
-        "explanation": "Read .superverse/goals.md at the Live build's commit through the repository host and parse it; an absent file means no goals. A superseded revision begins again the review that waited."
+        "explanation": "Read .superverse/goals.md at the Live build's commit through the repository host and parse it, check which applied or live proposals the build holds, and whether the build Live ran before held those going live. A superseded revision begins again the review that waited."
+      }
+    },
+    {
+      "id": "step:RecordNotifyFailure",
+      "kind": "step",
+      "name": "RecordNotifyFailure",
+      "phase": "execute",
+      "span": {
+        "startLine": 67,
+        "startColumn": 41,
+        "endLine": 67,
+        "endColumn": 78
+      },
+      "metadata": {
+        "explanation": "Mark a decision the Session could not take, so Studio asks the person to tell the agent in the chat."
       }
     },
     {
@@ -1061,13 +1549,13 @@
       "name": "RecordReviewFailure",
       "phase": "execute",
       "span": {
-        "startLine": 63,
-        "startColumn": 75,
-        "endLine": 63,
-        "endColumn": 116
+        "startLine": 66,
+        "startColumn": 3,
+        "endLine": 66,
+        "endColumn": 44
       },
       "metadata": {
-        "explanation": "Record a review whose Step failed or ran past its wait limit as failed, with its code and the redacted cause, and clear the active review."
+        "explanation": "Record a review whose Step failed or ran past its wait limit as failed, or skipped when its Session cannot take it, with its code and the redacted cause, and clear the active review."
       }
     },
     {
@@ -1076,25 +1564,70 @@
       "name": "RecordReviewStart",
       "phase": "execute",
       "span": {
-        "startLine": 62,
+        "startLine": 64,
         "startColumn": 38,
-        "endLine": 62,
+        "endLine": 64,
         "endColumn": 77
       },
       "metadata": {
-        "explanation": "Mark the deleted exports; adopt a newer current Live and read its goals first; record the review skipped, or copy the goals and the window into it and start the export."
+        "explanation": "Remove the pruned proposals and make long-undone approvals stale; mark the deleted exports; adopt a newer current Live and read its goals first; record the review skipped, or copy the goals and the window into it and start the export."
       }
     },
     {
-      "id": "wait:AwaitSchedule:255:9",
+      "id": "step:RequestReview",
+      "kind": "step",
+      "name": "RequestReview",
+      "phase": "execute",
+      "span": {
+        "startLine": 65,
+        "startColumn": 75,
+        "endLine": 65,
+        "endColumn": 110
+      },
+      "metadata": {
+        "explanation": "Tell the Project's Session that the review waits for the agent, polling while its queue is full; a Session that cannot take it skips the review."
+      }
+    },
+    {
+      "id": "wait:AwaitReviewReport:600:9",
+      "kind": "wait",
+      "name": "until",
+      "parentId": "step:AwaitReviewReport",
+      "phase": "wait_for",
+      "span": {
+        "startLine": 600,
+        "startColumn": 9,
+        "endLine": 600,
+        "endColumn": 47
+      },
+      "wait": {
+        "type": "until",
+        "conditions": [
+          {
+            "index": 0,
+            "kind": "timer",
+            "label": "reviewReportWait timer",
+            "expression": "reviewReportWait",
+            "span": {
+              "startLine": 600,
+              "startColumn": 19,
+              "endLine": 600,
+              "endColumn": 46
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait:AwaitSchedule:352:9",
       "kind": "wait",
       "name": "until",
       "parentId": "step:AwaitSchedule",
       "phase": "wait_for",
       "span": {
-        "startLine": 255,
+        "startLine": 352,
         "startColumn": 9,
-        "endLine": 255,
+        "endLine": 352,
         "endColumn": 81
       },
       "wait": {
@@ -1106,9 +1639,9 @@
             "label": "max(nextAt.Sub(ctx.FirstAttemptAt()), time.Second) timer",
             "expression": "max(nextAt.Sub(ctx.FirstAttemptAt()), time.Second)",
             "span": {
-              "startLine": 255,
+              "startLine": 352,
               "startColumn": 19,
-              "endLine": 255,
+              "endLine": 352,
               "endColumn": 80
             }
           }
@@ -1120,418 +1653,561 @@
     {
       "id": "edge:0001",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:AwaitSchedule",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:AwaitReviewReport",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 31,
-        "endLine": 176,
-        "endColumn": 46
+        "startLine": 255,
+        "startColumn": 3,
+        "endLine": 255,
+        "endColumn": 22
       }
     },
     {
       "id": "edge:0002",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:BeginReview",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:AwaitSchedule",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 48,
-        "endLine": 176,
-        "endColumn": 61
+        "startLine": 254,
+        "startColumn": 31,
+        "endLine": 254,
+        "endColumn": 46
       }
     },
     {
       "id": "edge:0003",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:CommitGoals",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:BeginReview",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 16,
-        "endLine": 176,
-        "endColumn": 29
+        "startLine": 254,
+        "startColumn": 48,
+        "endLine": 254,
+        "endColumn": 61
       }
     },
     {
       "id": "edge:0004",
-      "kind": "transition",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:CompleteEvolve",
-      "label": "fan-out",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:CommitGoals",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 175,
-        "startColumn": 75,
-        "endLine": 175,
-        "endColumn": 112
+        "startLine": 254,
+        "startColumn": 16,
+        "endLine": 254,
+        "endColumn": 29
       }
     },
     {
       "id": "edge:0005",
-      "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:ComputeMetrics",
-      "label": "CancelSteps",
+      "kind": "transition",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:CompleteEvolve",
+      "label": "fan-out",
       "span": {
-        "startLine": 176,
-        "startColumn": 114,
-        "endLine": 176,
-        "endColumn": 130
+        "startLine": 253,
+        "startColumn": 75,
+        "endLine": 253,
+        "endColumn": 112
       }
     },
     {
       "id": "edge:0006",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:ExportRuns",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:ComputeMetrics",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 84,
-        "endLine": 176,
-        "endColumn": 96
+        "startLine": 254,
+        "startColumn": 114,
+        "endLine": 254,
+        "endColumn": 130
       }
     },
     {
       "id": "edge:0007",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:FinishExport",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:ExportRuns",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 98,
-        "endLine": 176,
-        "endColumn": 112
+        "startLine": 254,
+        "startColumn": 84,
+        "endLine": 254,
+        "endColumn": 96
       }
     },
     {
       "id": "edge:0008",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:GateReview",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:FinishExport",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 132,
-        "endLine": 176,
-        "endColumn": 144
+        "startLine": 254,
+        "startColumn": 98,
+        "endLine": 254,
+        "endColumn": 112
       }
     },
     {
       "id": "edge:0009",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:ReadGoals",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:GateReview",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 3,
-        "endLine": 176,
-        "endColumn": 14
+        "startLine": 254,
+        "startColumn": 132,
+        "endLine": 254,
+        "endColumn": 144
       }
     },
     {
       "id": "edge:0010",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:RecordReviewFailure",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:NotifyDecision",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 146,
-        "endLine": 176,
-        "endColumn": 167
+        "startLine": 255,
+        "startColumn": 47,
+        "endLine": 255,
+        "endColumn": 63
       }
     },
     {
       "id": "edge:0011",
       "kind": "cancel",
-      "from": "decision:rpc:CompleteProjectEvolve:175:9",
-      "to": "step:RecordReviewStart",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:ReadGoals",
       "label": "CancelSteps",
       "span": {
-        "startLine": 176,
-        "startColumn": 63,
-        "endLine": 176,
-        "endColumn": 82
+        "startLine": 254,
+        "startColumn": 3,
+        "endLine": 254,
+        "endColumn": 14
       }
     },
     {
       "id": "edge:0012",
-      "kind": "transition",
-      "from": "decision:step:AwaitSchedule:264:10",
-      "to": "step:AwaitSchedule",
-      "label": "GoTo",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:RecordNotifyFailure",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 264,
-        "startColumn": 10,
-        "endLine": 264,
-        "endColumn": 46
+        "startLine": 255,
+        "startColumn": 65,
+        "endLine": 255,
+        "endColumn": 86
       }
     },
     {
       "id": "edge:0013",
-      "kind": "transition",
-      "from": "decision:step:AwaitSchedule:270:10",
-      "to": "step:AwaitSchedule",
-      "label": "GoTo",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:RecordReviewFailure",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 270,
-        "startColumn": 10,
-        "endLine": 270,
-        "endColumn": 46
+        "startLine": 255,
+        "startColumn": 24,
+        "endLine": 255,
+        "endColumn": 45
       }
     },
     {
       "id": "edge:0014",
-      "kind": "transition",
-      "from": "decision:step:AwaitSchedule:273:9",
-      "to": "step:AwaitSchedule",
-      "label": "fan-out",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:RecordReviewStart",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 273,
-        "startColumn": 93,
-        "endLine": 273,
-        "endColumn": 135
+        "startLine": 254,
+        "startColumn": 63,
+        "endLine": 254,
+        "endColumn": 82
       }
     },
     {
       "id": "edge:0015",
-      "kind": "transition",
-      "from": "decision:step:AwaitSchedule:273:9",
-      "to": "step:BeginReview",
-      "label": "fan-out",
+      "kind": "cancel",
+      "from": "decision:rpc:CompleteProjectEvolve:253:9",
+      "to": "step:RequestReview",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 273,
-        "startColumn": 22,
-        "endLine": 273,
-        "endColumn": 91
+        "startLine": 254,
+        "startColumn": 146,
+        "endLine": 254,
+        "endColumn": 161
       }
     },
     {
       "id": "edge:0016",
       "kind": "transition",
-      "from": "decision:step:BeginReview:300:9",
-      "to": "step:RecordReviewStart",
-      "label": "GoTo",
+      "from": "decision:rpc:DecideProposal:248:9",
+      "to": "step:NotifyDecision",
+      "label": "fan-out",
       "span": {
-        "startLine": 300,
-        "startColumn": 9,
-        "endLine": 300,
-        "endColumn": 48
+        "startLine": 248,
+        "startColumn": 111,
+        "endLine": 248,
+        "endColumn": 162
       }
     },
     {
       "id": "edge:0017",
-      "kind": "transition",
-      "from": "decision:step:CommitGoals:220:11",
-      "to": "step:BeginReview",
-      "label": "GoTo",
+      "kind": "cancel",
+      "from": "decision:rpc:ReportReview:233:9",
+      "to": "step:AwaitReviewReport",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 220,
-        "startColumn": 11,
-        "endLine": 220,
-        "endColumn": 76
+        "startLine": 233,
+        "startColumn": 85,
+        "endLine": 233,
+        "endColumn": 104
       }
     },
     {
       "id": "edge:0018",
       "kind": "cancel",
-      "from": "decision:step:CommitGoals:239:10",
-      "to": "step:AwaitSchedule",
+      "from": "decision:rpc:ReportReview:233:9",
+      "to": "step:RequestReview",
       "label": "CancelSteps",
       "span": {
-        "startLine": 239,
-        "startColumn": 36,
-        "endLine": 239,
-        "endColumn": 51
+        "startLine": 233,
+        "startColumn": 68,
+        "endLine": 233,
+        "endColumn": 83
       }
     },
     {
       "id": "edge:0019",
-      "kind": "cancel",
-      "from": "decision:step:CommitGoals:241:9",
+      "kind": "transition",
+      "from": "decision:step:AwaitSchedule:361:10",
       "to": "step:AwaitSchedule",
-      "label": "CancelSteps",
+      "label": "GoTo",
       "span": {
-        "startLine": 241,
-        "startColumn": 43,
-        "endLine": 241,
-        "endColumn": 58
+        "startLine": 361,
+        "startColumn": 10,
+        "endLine": 361,
+        "endColumn": 46
       }
     },
     {
       "id": "edge:0020",
       "kind": "transition",
-      "from": "decision:step:CommitGoals:241:9",
+      "from": "decision:step:AwaitSchedule:367:10",
       "to": "step:AwaitSchedule",
-      "label": "fan-out",
-      "multiplicity": "×N",
+      "label": "GoTo",
       "span": {
-        "startLine": 236,
-        "startColumn": 23,
-        "endLine": 236,
-        "endColumn": 65
+        "startLine": 367,
+        "startColumn": 10,
+        "endLine": 367,
+        "endColumn": 46
       }
     },
     {
       "id": "edge:0021",
       "kind": "transition",
-      "from": "decision:step:CommitGoals:241:9",
-      "to": "step:BeginReview",
+      "from": "decision:step:AwaitSchedule:370:9",
+      "to": "step:AwaitSchedule",
       "label": "fan-out",
-      "multiplicity": "×N",
       "span": {
-        "startLine": 233,
-        "startColumn": 23,
-        "endLine": 233,
-        "endColumn": 94
+        "startLine": 370,
+        "startColumn": 93,
+        "endLine": 370,
+        "endColumn": 135
       }
     },
     {
       "id": "edge:0022",
       "kind": "transition",
-      "from": "decision:step:ComputeMetrics:414:10",
-      "to": "step:RecordReviewFailure",
-      "label": "GoTo",
+      "from": "decision:step:AwaitSchedule:370:9",
+      "to": "step:BeginReview",
+      "label": "fan-out",
       "span": {
-        "startLine": 414,
-        "startColumn": 10,
-        "endLine": 414,
-        "endColumn": 51
+        "startLine": 370,
+        "startColumn": 22,
+        "endLine": 370,
+        "endColumn": 91
       }
     },
     {
       "id": "edge:0023",
       "kind": "transition",
-      "from": "decision:step:ComputeMetrics:419:9",
-      "to": "step:GateReview",
+      "from": "decision:step:BeginReview:400:9",
+      "to": "step:RecordReviewStart",
       "label": "GoTo",
       "span": {
-        "startLine": 419,
+        "startLine": 400,
         "startColumn": 9,
-        "endLine": 419,
-        "endColumn": 41
+        "endLine": 400,
+        "endColumn": 48
       }
     },
     {
       "id": "edge:0024",
       "kind": "transition",
-      "from": "decision:step:ExportRuns:365:10",
-      "to": "step:RecordReviewFailure",
+      "from": "decision:step:CommitGoals:316:11",
+      "to": "step:BeginReview",
       "label": "GoTo",
       "span": {
-        "startLine": 365,
-        "startColumn": 10,
-        "endLine": 365,
-        "endColumn": 51
+        "startLine": 316,
+        "startColumn": 11,
+        "endLine": 316,
+        "endColumn": 76
       }
     },
     {
       "id": "edge:0025",
-      "kind": "transition",
-      "from": "decision:step:ExportRuns:371:10",
-      "to": "step:FinishExport",
-      "label": "GoTo",
+      "kind": "cancel",
+      "from": "decision:step:CommitGoals:336:10",
+      "to": "step:AwaitSchedule",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 371,
-        "startColumn": 10,
-        "endLine": 371,
-        "endColumn": 44
+        "startLine": 336,
+        "startColumn": 36,
+        "endLine": 336,
+        "endColumn": 51
       }
     },
     {
       "id": "edge:0026",
-      "kind": "transition",
-      "from": "decision:step:ExportRuns:373:9",
-      "to": "step:ExportRuns",
-      "label": "GoTo",
+      "kind": "cancel",
+      "from": "decision:step:CommitGoals:338:9",
+      "to": "step:AwaitSchedule",
+      "label": "CancelSteps",
       "span": {
-        "startLine": 373,
-        "startColumn": 9,
-        "endLine": 373,
-        "endColumn": 41
+        "startLine": 338,
+        "startColumn": 43,
+        "endLine": 338,
+        "endColumn": 58
       }
     },
     {
       "id": "edge:0027",
       "kind": "transition",
-      "from": "decision:step:FinishExport:395:9",
-      "to": "step:ComputeMetrics",
-      "label": "GoTo",
+      "from": "decision:step:CommitGoals:338:9",
+      "to": "step:AwaitSchedule",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 395,
-        "startColumn": 9,
-        "endLine": 395,
-        "endColumn": 45
+        "startLine": 333,
+        "startColumn": 23,
+        "endLine": 333,
+        "endColumn": 65
       }
     },
     {
       "id": "edge:0028",
       "kind": "transition",
-      "from": "decision:step:ReadGoals:195:11",
+      "from": "decision:step:CommitGoals:338:9",
       "to": "step:BeginReview",
-      "label": "GoTo",
+      "label": "fan-out",
+      "multiplicity": "×N",
       "span": {
-        "startLine": 195,
-        "startColumn": 11,
-        "endLine": 195,
-        "endColumn": 76
+        "startLine": 330,
+        "startColumn": 23,
+        "endLine": 330,
+        "endColumn": 94
       }
     },
     {
       "id": "edge:0029",
       "kind": "transition",
-      "from": "decision:step:ReadGoals:205:9",
-      "to": "step:CommitGoals",
+      "from": "decision:step:ComputeMetrics:525:10",
+      "to": "step:RecordReviewFailure",
       "label": "GoTo",
       "span": {
-        "startLine": 205,
-        "startColumn": 9,
-        "endLine": 205,
-        "endColumn": 42
+        "startLine": 525,
+        "startColumn": 10,
+        "endLine": 525,
+        "endColumn": 51
       }
     },
     {
       "id": "edge:0030",
       "kind": "transition",
-      "from": "decision:step:RecordReviewStart:330:10",
-      "to": "step:ReadGoals",
+      "from": "decision:step:ComputeMetrics:533:9",
+      "to": "step:GateReview",
       "label": "GoTo",
       "span": {
-        "startLine": 330,
-        "startColumn": 10,
-        "endLine": 330,
-        "endColumn": 125
+        "startLine": 533,
+        "startColumn": 9,
+        "endLine": 533,
+        "endColumn": 41
       }
     },
     {
       "id": "edge:0031",
       "kind": "transition",
-      "from": "decision:step:RecordReviewStart:340:9",
-      "to": "step:ExportRuns",
+      "from": "decision:step:ExportRuns:475:10",
+      "to": "step:RecordReviewFailure",
       "label": "GoTo",
       "span": {
-        "startLine": 340,
-        "startColumn": 9,
-        "endLine": 340,
-        "endColumn": 104
+        "startLine": 475,
+        "startColumn": 10,
+        "endLine": 475,
+        "endColumn": 51
       }
     },
     {
       "id": "edge:0032",
+      "kind": "transition",
+      "from": "decision:step:ExportRuns:481:10",
+      "to": "step:FinishExport",
+      "label": "GoTo",
+      "span": {
+        "startLine": 481,
+        "startColumn": 10,
+        "endLine": 481,
+        "endColumn": 44
+      }
+    },
+    {
+      "id": "edge:0033",
+      "kind": "transition",
+      "from": "decision:step:ExportRuns:483:9",
+      "to": "step:ExportRuns",
+      "label": "GoTo",
+      "span": {
+        "startLine": 483,
+        "startColumn": 9,
+        "endLine": 483,
+        "endColumn": 41
+      }
+    },
+    {
+      "id": "edge:0034",
+      "kind": "transition",
+      "from": "decision:step:FinishExport:505:9",
+      "to": "step:ComputeMetrics",
+      "label": "GoTo",
+      "span": {
+        "startLine": 505,
+        "startColumn": 9,
+        "endLine": 505,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0035",
+      "kind": "transition",
+      "from": "decision:step:GateReview:555:9",
+      "to": "step:RequestReview",
+      "label": "GoTo",
+      "span": {
+        "startLine": 555,
+        "startColumn": 9,
+        "endLine": 555,
+        "endColumn": 44
+      }
+    },
+    {
+      "id": "edge:0036",
+      "kind": "transition",
+      "from": "decision:step:NotifyDecision:659:10",
+      "to": "step:RecordNotifyFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 659,
+        "startColumn": 10,
+        "endLine": 659,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "edge:0037",
+      "kind": "transition",
+      "from": "decision:step:ReadGoals:275:11",
+      "to": "step:BeginReview",
+      "label": "GoTo",
+      "span": {
+        "startLine": 275,
+        "startColumn": 11,
+        "endLine": 275,
+        "endColumn": 76
+      }
+    },
+    {
+      "id": "edge:0038",
+      "kind": "transition",
+      "from": "decision:step:ReadGoals:301:9",
+      "to": "step:CommitGoals",
+      "label": "GoTo",
+      "span": {
+        "startLine": 301,
+        "startColumn": 9,
+        "endLine": 301,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0039",
+      "kind": "transition",
+      "from": "decision:step:RecordReviewStart:440:10",
+      "to": "step:ReadGoals",
+      "label": "GoTo",
+      "span": {
+        "startLine": 440,
+        "startColumn": 10,
+        "endLine": 440,
+        "endColumn": 46
+      }
+    },
+    {
+      "id": "edge:0040",
+      "kind": "transition",
+      "from": "decision:step:RecordReviewStart:450:9",
+      "to": "step:ExportRuns",
+      "label": "GoTo",
+      "span": {
+        "startLine": 450,
+        "startColumn": 9,
+        "endLine": 450,
+        "endColumn": 104
+      }
+    },
+    {
+      "id": "edge:0041",
+      "kind": "transition",
+      "from": "decision:step:RequestReview:586:10",
+      "to": "step:RecordReviewFailure",
+      "label": "GoTo",
+      "span": {
+        "startLine": 586,
+        "startColumn": 10,
+        "endLine": 586,
+        "endColumn": 51
+      }
+    },
+    {
+      "id": "edge:0042",
+      "kind": "transition",
+      "from": "decision:step:RequestReview:588:9",
+      "to": "step:AwaitReviewReport",
+      "label": "GoTo",
+      "span": {
+        "startLine": 588,
+        "startColumn": 9,
+        "endLine": 588,
+        "endColumn": 42
+      }
+    },
+    {
+      "id": "edge:0043",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 134,
+        "startLine": 143,
         "startColumn": 119,
-        "endLine": 134,
+        "endLine": 143,
         "endColumn": 140
       },
       "metadata": {
@@ -1539,15 +2215,15 @@
       }
     },
     {
-      "id": "edge:0033",
+      "id": "edge:0044",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 481,
+        "startLine": 702,
         "startColumn": 112,
-        "endLine": 481,
+        "endLine": 702,
         "endColumn": 133
       },
       "metadata": {
@@ -1557,15 +2233,31 @@
       }
     },
     {
-      "id": "edge:0034",
+      "id": "edge:0045",
+      "kind": "resource_read",
+      "from": "resource:attribute:ActiveReview",
+      "to": "rpc:ReportReview",
+      "label": "Get",
+      "span": {
+        "startLine": 207,
+        "startColumn": 73,
+        "endLine": 207,
+        "endColumn": 94
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0046",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "rpc:StartReview",
       "label": "Get",
       "span": {
-        "startLine": 162,
+        "startLine": 173,
         "startColumn": 76,
-        "endLine": 162,
+        "endLine": 173,
         "endColumn": 97
       },
       "metadata": {
@@ -1573,15 +2265,33 @@
       }
     },
     {
-      "id": "edge:0035",
+      "id": "edge:0047",
+      "kind": "resource_read",
+      "from": "resource:attribute:ActiveReview",
+      "to": "step:AwaitReviewReport",
+      "label": "Get",
+      "span": {
+        "startLine": 753,
+        "startColumn": 15,
+        "endLine": 753,
+        "endColumn": 36
+      },
+      "metadata": {
+        "function": "endReview",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0048",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "step:AwaitSchedule",
       "label": "Get",
       "span": {
-        "startLine": 268,
+        "startLine": 365,
         "startColumn": 15,
-        "endLine": 268,
+        "endLine": 365,
         "endColumn": 36
       },
       "metadata": {
@@ -1589,15 +2299,15 @@
       }
     },
     {
-      "id": "edge:0036",
+      "id": "edge:0049",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "step:GateReview",
       "label": "Get",
       "span": {
-        "startLine": 515,
+        "startLine": 753,
         "startColumn": 15,
-        "endLine": 515,
+        "endLine": 753,
         "endColumn": 36
       },
       "metadata": {
@@ -1607,15 +2317,15 @@
       }
     },
     {
-      "id": "edge:0037",
+      "id": "edge:0050",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "step:RecordReviewFailure",
       "label": "Get",
       "span": {
-        "startLine": 515,
+        "startLine": 753,
         "startColumn": 15,
-        "endLine": 515,
+        "endLine": 753,
         "endColumn": 36
       },
       "metadata": {
@@ -1625,15 +2335,15 @@
       }
     },
     {
-      "id": "edge:0038",
+      "id": "edge:0051",
       "kind": "resource_read",
       "from": "resource:attribute:ActiveReview",
       "to": "step:RecordReviewStart",
       "label": "Get",
       "span": {
-        "startLine": 515,
+        "startLine": 753,
         "startColumn": 15,
-        "endLine": 515,
+        "endLine": 753,
         "endColumn": 36
       },
       "metadata": {
@@ -1643,15 +2353,15 @@
       }
     },
     {
-      "id": "edge:0039",
+      "id": "edge:0052",
       "kind": "resource_read",
       "from": "resource:attribute:CommandLock",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 141,
+        "startLine": 150,
         "startColumn": 16,
-        "endLine": 141,
+        "endLine": 150,
         "endColumn": 36
       },
       "metadata": {
@@ -1659,15 +2369,15 @@
       }
     },
     {
-      "id": "edge:0040",
+      "id": "edge:0053",
       "kind": "resource_read",
       "from": "resource:attribute:GoalsAttribute",
       "to": "rpc:GetDexDisplay",
       "label": "Get",
       "span": {
-        "startLine": 134,
+        "startLine": 143,
         "startColumn": 22,
-        "endLine": 134,
+        "endLine": 143,
         "endColumn": 45
       },
       "metadata": {
@@ -1675,15 +2385,15 @@
       }
     },
     {
-      "id": "edge:0041",
+      "id": "edge:0054",
       "kind": "resource_read",
       "from": "resource:attribute:GoalsAttribute",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 480,
+        "startLine": 701,
         "startColumn": 103,
-        "endLine": 480,
+        "endLine": 701,
         "endColumn": 126
       },
       "metadata": {
@@ -1693,15 +2403,15 @@
       }
     },
     {
-      "id": "edge:0042",
+      "id": "edge:0055",
       "kind": "resource_read",
       "from": "resource:attribute:GoalsAttribute",
       "to": "rpc:StartReview",
       "label": "Get",
       "span": {
-        "startLine": 162,
+        "startLine": 173,
         "startColumn": 40,
-        "endLine": 162,
+        "endLine": 173,
         "endColumn": 63
       },
       "metadata": {
@@ -1709,15 +2419,15 @@
       }
     },
     {
-      "id": "edge:0043",
+      "id": "edge:0056",
       "kind": "resource_read",
       "from": "resource:attribute:GoalsAttribute",
       "to": "step:BeginReview",
       "label": "Get",
       "span": {
-        "startLine": 289,
+        "startLine": 386,
         "startColumn": 65,
-        "endLine": 289,
+        "endLine": 386,
         "endColumn": 88
       },
       "metadata": {
@@ -1725,15 +2435,15 @@
       }
     },
     {
-      "id": "edge:0044",
+      "id": "edge:0057",
       "kind": "resource_read",
       "from": "resource:attribute:GoalsAttribute",
       "to": "step:RecordReviewStart",
       "label": "Get",
       "span": {
-        "startLine": 313,
+        "startLine": 413,
         "startColumn": 78,
-        "endLine": 313,
+        "endLine": 413,
         "endColumn": 101
       },
       "metadata": {
@@ -1741,15 +2451,15 @@
       }
     },
     {
-      "id": "edge:0045",
+      "id": "edge:0058",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 480,
+        "startLine": 701,
         "startColumn": 61,
-        "endLine": 480,
+        "endLine": 701,
         "endColumn": 83
       },
       "metadata": {
@@ -1759,31 +2469,31 @@
       }
     },
     {
-      "id": "edge:0046",
+      "id": "edge:0059",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "rpc:LiveChanged",
       "label": "Get",
       "span": {
-        "startLine": 147,
-        "startColumn": 30,
-        "endLine": 147,
-        "endColumn": 52
+        "startLine": 156,
+        "startColumn": 24,
+        "endLine": 156,
+        "endColumn": 46
       },
       "metadata": {
         "phase": "rpc"
       }
     },
     {
-      "id": "edge:0047",
+      "id": "edge:0060",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "step:BeginReview",
       "label": "Get",
       "span": {
-        "startLine": 295,
+        "startLine": 392,
         "startColumn": 90,
-        "endLine": 295,
+        "endLine": 392,
         "endColumn": 112
       },
       "metadata": {
@@ -1791,15 +2501,15 @@
       }
     },
     {
-      "id": "edge:0048",
+      "id": "edge:0061",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "step:CommitGoals",
       "label": "Get",
       "span": {
-        "startLine": 218,
+        "startLine": 314,
         "startColumn": 15,
-        "endLine": 218,
+        "endLine": 314,
         "endColumn": 37
       },
       "metadata": {
@@ -1807,15 +2517,15 @@
       }
     },
     {
-      "id": "edge:0049",
+      "id": "edge:0062",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "step:ReadGoals",
       "label": "Get",
       "span": {
-        "startLine": 193,
+        "startLine": 273,
         "startColumn": 15,
-        "endLine": 193,
+        "endLine": 273,
         "endColumn": 37
       },
       "metadata": {
@@ -1823,15 +2533,15 @@
       }
     },
     {
-      "id": "edge:0050",
+      "id": "edge:0063",
       "kind": "resource_read",
       "from": "resource:attribute:LiveAttribute",
       "to": "step:RecordReviewStart",
       "label": "Get",
       "span": {
-        "startLine": 323,
+        "startLine": 429,
         "startColumn": 25,
-        "endLine": 323,
+        "endLine": 429,
         "endColumn": 47
       },
       "metadata": {
@@ -1839,15 +2549,15 @@
       }
     },
     {
-      "id": "edge:0051",
+      "id": "edge:0064",
       "kind": "resource_read",
       "from": "resource:attribute:ManualRequestsAttribute",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 482,
+        "startLine": 703,
         "startColumn": 27,
-        "endLine": 482,
+        "endLine": 703,
         "endColumn": 59
       },
       "metadata": {
@@ -1857,15 +2567,15 @@
       }
     },
     {
-      "id": "edge:0052",
+      "id": "edge:0065",
       "kind": "resource_read",
       "from": "resource:attribute:ManualRequestsAttribute",
       "to": "rpc:StartReview",
       "label": "Get",
       "span": {
-        "startLine": 157,
+        "startLine": 168,
         "startColumn": 22,
-        "endLine": 157,
+        "endLine": 168,
         "endColumn": 54
       },
       "metadata": {
@@ -1873,15 +2583,15 @@
       }
     },
     {
-      "id": "edge:0053",
+      "id": "edge:0066",
       "kind": "resource_read",
       "from": "resource:attribute:ProjectID",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 480,
+        "startLine": 701,
         "startColumn": 24,
-        "endLine": 480,
+        "endLine": 701,
         "endColumn": 42
       },
       "metadata": {
@@ -1891,15 +2601,15 @@
       }
     },
     {
-      "id": "edge:0054",
+      "id": "edge:0067",
       "kind": "resource_read",
       "from": "resource:attribute:ProjectID",
       "to": "step:BeginReview",
       "label": "Get",
       "span": {
-        "startLine": 289,
+        "startLine": 386,
         "startColumn": 34,
-        "endLine": 289,
+        "endLine": 386,
         "endColumn": 52
       },
       "metadata": {
@@ -1907,31 +2617,31 @@
       }
     },
     {
-      "id": "edge:0055",
+      "id": "edge:0068",
       "kind": "resource_read",
       "from": "resource:attribute:ProjectID",
       "to": "step:ComputeMetrics",
       "label": "Get",
       "span": {
-        "startLine": 411,
-        "startColumn": 52,
-        "endLine": 411,
-        "endColumn": 70
+        "startLine": 521,
+        "startColumn": 25,
+        "endLine": 521,
+        "endColumn": 43
       },
       "metadata": {
         "phase": "execute"
       }
     },
     {
-      "id": "edge:0056",
+      "id": "edge:0069",
       "kind": "resource_read",
       "from": "resource:attribute:ProjectID",
       "to": "step:ExportRuns",
       "label": "Get",
       "span": {
-        "startLine": 361,
+        "startLine": 471,
         "startColumn": 53,
-        "endLine": 361,
+        "endLine": 471,
         "endColumn": 71
       },
       "metadata": {
@@ -1939,246 +2649,16 @@
       }
     },
     {
-      "id": "edge:0057",
+      "id": "edge:0070",
       "kind": "resource_read",
       "from": "resource:attribute:ProjectID",
       "to": "step:FinishExport",
       "label": "Get",
       "span": {
-        "startLine": 390,
+        "startLine": 500,
         "startColumn": 47,
-        "endLine": 390,
+        "endLine": 500,
         "endColumn": 65
-      },
-      "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0058",
-      "kind": "resource_read",
-      "from": "resource:attribute:ProjectID",
-      "to": "step:ReadGoals",
-      "label": "Get",
-      "span": {
-        "startLine": 199,
-        "startColumn": 55,
-        "endLine": 199,
-        "endColumn": 73
-      },
-      "metadata": {
-        "phase": "execute"
-      }
-    },
-    {
-      "id": "edge:0059",
-      "kind": "resource_read",
-      "from": "resource:attribute:ReviewSeq",
-      "to": "rpc:GetEvolve",
-      "label": "Get",
-      "span": {
-        "startLine": 481,
-        "startColumn": 73,
-        "endLine": 481,
-        "endColumn": 91
-      },
-      "metadata": {
-        "function": "readSnapshot",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0060",
-      "kind": "resource_read",
-      "from": "resource:attribute:ReviewSeq",
-      "to": "rpc:StartReview",
-      "label": "Get",
-      "span": {
-        "startLine": 498,
-        "startColumn": 19,
-        "endLine": 498,
-        "endColumn": 37
-      },
-      "metadata": {
-        "function": "allocateReview",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0061",
-      "kind": "resource_read",
-      "from": "resource:attribute:ReviewSeq",
-      "to": "step:AwaitSchedule",
-      "label": "Get",
-      "span": {
-        "startLine": 498,
-        "startColumn": 19,
-        "endLine": 498,
-        "endColumn": 37
-      },
-      "metadata": {
-        "function": "allocateReview",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0062",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "rpc:GetEvolve",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 488,
-        "startColumn": 10,
-        "endLine": 488,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0063",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "rpc:GetEvolve",
-      "label": "Get",
-      "span": {
-        "startLine": 491,
-        "startColumn": 39,
-        "endLine": 491,
-        "endColumn": 60
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0064",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "rpc:StartReview",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 488,
-        "startColumn": 10,
-        "endLine": 488,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0065",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "rpc:StartReview",
-      "label": "Get",
-      "span": {
-        "startLine": 491,
-        "startColumn": 39,
-        "endLine": 491,
-        "endColumn": 60
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "rpc",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0066",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:AwaitSchedule",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 488,
-        "startColumn": 10,
-        "endLine": 488,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0067",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:AwaitSchedule",
-      "label": "Get",
-      "span": {
-        "startLine": 491,
-        "startColumn": 39,
-        "endLine": 491,
-        "endColumn": 60
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0068",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:BeginReview",
-      "label": "AllInstanceKeys",
-      "span": {
-        "startLine": 488,
-        "startColumn": 10,
-        "endLine": 488,
-        "endColumn": 38
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0069",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:BeginReview",
-      "label": "Get",
-      "span": {
-        "startLine": 491,
-        "startColumn": 39,
-        "endLine": 491,
-        "endColumn": 60
-      },
-      "metadata": {
-        "function": "loadedReviews",
-        "phase": "execute",
-        "via": "helper"
-      }
-    },
-    {
-      "id": "edge:0070",
-      "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:ComputeMetrics",
-      "label": "Get",
-      "span": {
-        "startLine": 411,
-        "startColumn": 83,
-        "endLine": 411,
-        "endColumn": 112
       },
       "metadata": {
         "phase": "execute"
@@ -2187,13 +2667,13 @@
     {
       "id": "edge:0071",
       "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:ExportRuns",
+      "from": "resource:attribute:ProjectID",
+      "to": "step:NotifyDecision",
       "label": "Get",
       "span": {
-        "startLine": 360,
-        "startColumn": 22,
-        "endLine": 360,
+        "startLine": 647,
+        "startColumn": 33,
+        "endLine": 647,
         "endColumn": 51
       },
       "metadata": {
@@ -2203,14 +2683,14 @@
     {
       "id": "edge:0072",
       "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:FinishExport",
+      "from": "resource:attribute:ProjectID",
+      "to": "step:ReadGoals",
       "label": "Get",
       "span": {
-        "startLine": 390,
-        "startColumn": 78,
-        "endLine": 390,
-        "endColumn": 107
+        "startLine": 279,
+        "startColumn": 56,
+        "endLine": 279,
+        "endColumn": 74
       },
       "metadata": {
         "phase": "execute"
@@ -2219,14 +2699,14 @@
     {
       "id": "edge:0073",
       "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:GateReview",
+      "from": "resource:attribute:ProjectID",
+      "to": "step:RequestReview",
       "label": "Get",
       "span": {
-        "startLine": 432,
-        "startColumn": 22,
-        "endLine": 432,
-        "endColumn": 51
+        "startLine": 572,
+        "startColumn": 25,
+        "endLine": 572,
+        "endColumn": 43
       },
       "metadata": {
         "phase": "execute"
@@ -2235,45 +2715,65 @@
     {
       "id": "edge:0074",
       "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:RecordReviewFailure",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:DecideProposal",
       "label": "Get",
       "span": {
-        "startLine": 449,
-        "startColumn": 22,
-        "endLine": 449,
-        "endColumn": 51
+        "startLine": 239,
+        "startColumn": 36,
+        "endLine": 239,
+        "endColumn": 67
       },
       "metadata": {
-        "phase": "execute"
+        "phase": "rpc"
       }
     },
     {
       "id": "edge:0075",
       "kind": "resource_read",
-      "from": "resource:attribute:Reviews",
-      "to": "step:RecordReviewStart",
-      "label": "Get",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:GetEvolve",
+      "label": "AllInstanceKeys",
       "span": {
-        "startLine": 313,
-        "startColumn": 36,
-        "endLine": 313,
-        "endColumn": 65
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
       },
       "metadata": {
-        "phase": "execute"
+        "function": "loadedProposals",
+        "phase": "rpc",
+        "via": "helper"
       }
     },
     {
       "id": "edge:0076",
       "kind": "resource_read",
-      "from": "resource:attribute:ScheduleAttribute",
-      "to": "rpc:GetDexDisplay",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 134,
-        "startColumn": 70,
-        "endLine": 134,
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0077",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:GetProposal",
+      "label": "Get",
+      "span": {
+        "startLine": 186,
+        "startColumn": 68,
+        "endLine": 186,
         "endColumn": 96
       },
       "metadata": {
@@ -2281,15 +2781,691 @@
       }
     },
     {
-      "id": "edge:0077",
+      "id": "edge:0078",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:ReportReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0079",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:ReportReview",
+      "label": "Get",
+      "span": {
+        "startLine": 192,
+        "startColumn": 59,
+        "endLine": 192,
+        "endColumn": 90
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0080",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:StartReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0081",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "rpc:StartReview",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0082",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:AwaitSchedule",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0083",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:AwaitSchedule",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0084",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:BeginReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0085",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:BeginReview",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0086",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:CommitGoals",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0087",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:CommitGoals",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0088",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:ReadGoals",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0089",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:ReadGoals",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0090",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:RecordNotifyFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 673,
+        "startColumn": 39,
+        "endLine": 673,
+        "endColumn": 70
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0091",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:RecordReviewStart",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0092",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:RecordReviewStart",
+      "label": "Get",
+      "span": {
+        "startLine": 415,
+        "startColumn": 28,
+        "endLine": 415,
+        "endColumn": 50
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0093",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:RequestReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 709,
+        "startColumn": 10,
+        "endLine": 709,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0094",
+      "kind": "resource_read",
+      "from": "resource:attribute:Proposals",
+      "to": "step:RequestReview",
+      "label": "Get",
+      "span": {
+        "startLine": 712,
+        "startColumn": 39,
+        "endLine": 712,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "loadedProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0095",
+      "kind": "resource_read",
+      "from": "resource:attribute:ReviewSeq",
+      "to": "rpc:GetEvolve",
+      "label": "Get",
+      "span": {
+        "startLine": 702,
+        "startColumn": 73,
+        "endLine": 702,
+        "endColumn": 91
+      },
+      "metadata": {
+        "function": "readSnapshot",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0096",
+      "kind": "resource_read",
+      "from": "resource:attribute:ReviewSeq",
+      "to": "rpc:StartReview",
+      "label": "Get",
+      "span": {
+        "startLine": 736,
+        "startColumn": 19,
+        "endLine": 736,
+        "endColumn": 37
+      },
+      "metadata": {
+        "function": "allocateReview",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0097",
+      "kind": "resource_read",
+      "from": "resource:attribute:ReviewSeq",
+      "to": "step:AwaitSchedule",
+      "label": "Get",
+      "span": {
+        "startLine": 736,
+        "startColumn": 19,
+        "endLine": 736,
+        "endColumn": 37
+      },
+      "metadata": {
+        "function": "allocateReview",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0098",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "rpc:GetEvolve",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 726,
+        "startColumn": 10,
+        "endLine": 726,
+        "endColumn": 38
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0099",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "rpc:GetEvolve",
+      "label": "Get",
+      "span": {
+        "startLine": 729,
+        "startColumn": 39,
+        "endLine": 729,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0100",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "rpc:ReportReview",
+      "label": "Get",
+      "span": {
+        "startLine": 203,
+        "startColumn": 34,
+        "endLine": 203,
+        "endColumn": 63
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0101",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "rpc:StartReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 726,
+        "startColumn": 10,
+        "endLine": 726,
+        "endColumn": 38
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0102",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "rpc:StartReview",
+      "label": "Get",
+      "span": {
+        "startLine": 729,
+        "startColumn": 39,
+        "endLine": 729,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0103",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:AwaitReviewReport",
+      "label": "Get",
+      "span": {
+        "startLine": 604,
+        "startColumn": 25,
+        "endLine": 604,
+        "endColumn": 54
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0104",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:AwaitSchedule",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 726,
+        "startColumn": 10,
+        "endLine": 726,
+        "endColumn": 38
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0105",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:AwaitSchedule",
+      "label": "Get",
+      "span": {
+        "startLine": 729,
+        "startColumn": 39,
+        "endLine": 729,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0106",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:BeginReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 726,
+        "startColumn": 10,
+        "endLine": 726,
+        "endColumn": 38
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0107",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:BeginReview",
+      "label": "Get",
+      "span": {
+        "startLine": 729,
+        "startColumn": 39,
+        "endLine": 729,
+        "endColumn": 60
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0108",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:ComputeMetrics",
+      "label": "Get",
+      "span": {
+        "startLine": 522,
+        "startColumn": 71,
+        "endLine": 522,
+        "endColumn": 100
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0109",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:ExportRuns",
+      "label": "Get",
+      "span": {
+        "startLine": 470,
+        "startColumn": 22,
+        "endLine": 470,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0110",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:FinishExport",
+      "label": "Get",
+      "span": {
+        "startLine": 500,
+        "startColumn": 78,
+        "endLine": 500,
+        "endColumn": 107
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0111",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:GateReview",
+      "label": "Get",
+      "span": {
+        "startLine": 546,
+        "startColumn": 22,
+        "endLine": 546,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0112",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:RecordReviewFailure",
+      "label": "Get",
+      "span": {
+        "startLine": 621,
+        "startColumn": 22,
+        "endLine": 621,
+        "endColumn": 51
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0113",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:RecordReviewStart",
+      "label": "Get",
+      "span": {
+        "startLine": 413,
+        "startColumn": 36,
+        "endLine": 413,
+        "endColumn": 65
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0114",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:RequestReview",
+      "label": "AllInstanceKeys",
+      "span": {
+        "startLine": 726,
+        "startColumn": 10,
+        "endLine": 726,
+        "endColumn": 38
+      },
+      "metadata": {
+        "function": "loadedReviews",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0115",
+      "kind": "resource_read",
+      "from": "resource:attribute:Reviews",
+      "to": "step:RequestReview",
+      "label": "Get",
+      "span": {
+        "startLine": 573,
+        "startColumn": 35,
+        "endLine": 573,
+        "endColumn": 64
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0116",
+      "kind": "resource_read",
+      "from": "resource:attribute:ScheduleAttribute",
+      "to": "rpc:GetDexDisplay",
+      "label": "Get",
+      "span": {
+        "startLine": 143,
+        "startColumn": 70,
+        "endLine": 143,
+        "endColumn": 96
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0117",
       "kind": "resource_read",
       "from": "resource:attribute:ScheduleAttribute",
       "to": "rpc:GetEvolve",
       "label": "Get",
       "span": {
-        "startLine": 481,
+        "startLine": 702,
         "startColumn": 23,
-        "endLine": 481,
+        "endLine": 702,
         "endColumn": 49
       },
       "metadata": {
@@ -2299,15 +3475,15 @@
       }
     },
     {
-      "id": "edge:0078",
+      "id": "edge:0118",
       "kind": "resource_read",
       "from": "resource:attribute:ScheduleAttribute",
       "to": "step:AwaitSchedule",
       "label": "Get",
       "span": {
-        "startLine": 259,
+        "startLine": 356,
         "startColumn": 29,
-        "endLine": 259,
+        "endLine": 356,
         "endColumn": 55
       },
       "metadata": {
@@ -2315,15 +3491,15 @@
       }
     },
     {
-      "id": "edge:0079",
+      "id": "edge:0119",
       "kind": "resource_read",
       "from": "resource:attribute:ScheduleAttribute",
       "to": "step:AwaitSchedule",
       "label": "Get",
       "span": {
-        "startLine": 254,
+        "startLine": 351,
         "startColumn": 22,
-        "endLine": 254,
+        "endLine": 351,
         "endColumn": 48
       },
       "metadata": {
@@ -2331,15 +3507,15 @@
       }
     },
     {
-      "id": "edge:0080",
+      "id": "edge:0120",
       "kind": "resource_read",
       "from": "resource:attribute:ScheduleAttribute",
       "to": "step:CommitGoals",
       "label": "Get",
       "span": {
-        "startLine": 229,
+        "startLine": 326,
         "startColumn": 37,
-        "endLine": 229,
+        "endLine": 326,
         "endColumn": 63
       },
       "metadata": {
@@ -2347,15 +3523,31 @@
       }
     },
     {
-      "id": "edge:0081",
+      "id": "edge:0121",
+      "kind": "resource_write",
+      "from": "rpc:DecideProposal",
+      "to": "resource:attribute:Proposals",
+      "label": "Set",
+      "span": {
+        "startLine": 247,
+        "startColumn": 14,
+        "endLine": 247,
+        "endColumn": 53
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0122",
       "kind": "resource_write",
       "from": "rpc:LiveChanged",
       "to": "resource:attribute:LiveAttribute",
       "label": "Set",
       "span": {
-        "startLine": 150,
+        "startLine": 160,
         "startColumn": 14,
-        "endLine": 150,
+        "endLine": 160,
         "endColumn": 40
       },
       "metadata": {
@@ -2363,15 +3555,67 @@
       }
     },
     {
-      "id": "edge:0082",
+      "id": "edge:0123",
+      "kind": "resource_write",
+      "from": "rpc:ReportReview",
+      "to": "resource:attribute:ActiveReview",
+      "label": "Set",
+      "span": {
+        "startLine": 754,
+        "startColumn": 15,
+        "endLine": 754,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "endReview",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0124",
+      "kind": "resource_write",
+      "from": "rpc:ReportReview",
+      "to": "resource:attribute:Proposals",
+      "label": "Set",
+      "span": {
+        "startLine": 199,
+        "startColumn": 16,
+        "endLine": 199,
+        "endColumn": 55
+      },
+      "metadata": {
+        "phase": "rpc"
+      }
+    },
+    {
+      "id": "edge:0125",
+      "kind": "resource_write",
+      "from": "rpc:ReportReview",
+      "to": "resource:attribute:Reviews",
+      "label": "Set",
+      "span": {
+        "startLine": 752,
+        "startColumn": 14,
+        "endLine": 752,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "endReview",
+        "phase": "rpc",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0126",
       "kind": "resource_write",
       "from": "rpc:StartReview",
       "to": "resource:attribute:ActiveReview",
       "label": "Set",
       "span": {
-        "startLine": 503,
+        "startLine": 741,
         "startColumn": 15,
-        "endLine": 503,
+        "endLine": 741,
         "endColumn": 47
       },
       "metadata": {
@@ -2381,15 +3625,15 @@
       }
     },
     {
-      "id": "edge:0083",
+      "id": "edge:0127",
       "kind": "resource_write",
       "from": "rpc:StartReview",
       "to": "resource:attribute:ManualRequestsAttribute",
       "label": "Set",
       "span": {
-        "startLine": 167,
+        "startLine": 178,
         "startColumn": 14,
-        "endLine": 167,
+        "endLine": 178,
         "endColumn": 54
       },
       "metadata": {
@@ -2397,15 +3641,15 @@
       }
     },
     {
-      "id": "edge:0084",
+      "id": "edge:0128",
       "kind": "resource_write",
       "from": "rpc:StartReview",
       "to": "resource:attribute:ReviewSeq",
       "label": "Set",
       "span": {
-        "startLine": 499,
+        "startLine": 737,
         "startColumn": 14,
-        "endLine": 499,
+        "endLine": 737,
         "endColumn": 37
       },
       "metadata": {
@@ -2415,15 +3659,15 @@
       }
     },
     {
-      "id": "edge:0085",
+      "id": "edge:0129",
       "kind": "resource_write",
       "from": "rpc:StartReview",
       "to": "resource:attribute:Reviews",
       "label": "Delete",
       "span": {
-        "startLine": 506,
+        "startLine": 744,
         "startColumn": 15,
-        "endLine": 506,
+        "endLine": 744,
         "endColumn": 39
       },
       "metadata": {
@@ -2433,15 +3677,15 @@
       }
     },
     {
-      "id": "edge:0086",
+      "id": "edge:0130",
       "kind": "resource_write",
       "from": "rpc:StartReview",
       "to": "resource:attribute:Reviews",
       "label": "Set",
       "span": {
-        "startLine": 501,
+        "startLine": 739,
         "startColumn": 14,
-        "endLine": 501,
+        "endLine": 739,
         "endColumn": 49
       },
       "metadata": {
@@ -2451,15 +3695,51 @@
       }
     },
     {
-      "id": "edge:0087",
+      "id": "edge:0131",
+      "kind": "resource_write",
+      "from": "step:AwaitReviewReport",
+      "to": "resource:attribute:ActiveReview",
+      "label": "Set",
+      "span": {
+        "startLine": 754,
+        "startColumn": 15,
+        "endLine": 754,
+        "endColumn": 40
+      },
+      "metadata": {
+        "function": "endReview",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0132",
+      "kind": "resource_write",
+      "from": "step:AwaitReviewReport",
+      "to": "resource:attribute:Reviews",
+      "label": "Set",
+      "span": {
+        "startLine": 752,
+        "startColumn": 14,
+        "endLine": 752,
+        "endColumn": 49
+      },
+      "metadata": {
+        "function": "endReview",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0133",
       "kind": "resource_write",
       "from": "step:AwaitSchedule",
       "to": "resource:attribute:ActiveReview",
       "label": "Set",
       "span": {
-        "startLine": 503,
+        "startLine": 741,
         "startColumn": 15,
-        "endLine": 503,
+        "endLine": 741,
         "endColumn": 47
       },
       "metadata": {
@@ -2469,15 +3749,15 @@
       }
     },
     {
-      "id": "edge:0088",
+      "id": "edge:0134",
       "kind": "resource_write",
       "from": "step:AwaitSchedule",
       "to": "resource:attribute:ReviewSeq",
       "label": "Set",
       "span": {
-        "startLine": 499,
+        "startLine": 737,
         "startColumn": 14,
-        "endLine": 499,
+        "endLine": 737,
         "endColumn": 37
       },
       "metadata": {
@@ -2487,15 +3767,15 @@
       }
     },
     {
-      "id": "edge:0089",
+      "id": "edge:0135",
       "kind": "resource_write",
       "from": "step:AwaitSchedule",
       "to": "resource:attribute:Reviews",
       "label": "Delete",
       "span": {
-        "startLine": 506,
+        "startLine": 744,
         "startColumn": 15,
-        "endLine": 506,
+        "endLine": 744,
         "endColumn": 39
       },
       "metadata": {
@@ -2505,15 +3785,15 @@
       }
     },
     {
-      "id": "edge:0090",
+      "id": "edge:0136",
       "kind": "resource_write",
       "from": "step:AwaitSchedule",
       "to": "resource:attribute:Reviews",
       "label": "Set",
       "span": {
-        "startLine": 501,
+        "startLine": 739,
         "startColumn": 14,
-        "endLine": 501,
+        "endLine": 739,
         "endColumn": 49
       },
       "metadata": {
@@ -2523,15 +3803,15 @@
       }
     },
     {
-      "id": "edge:0091",
+      "id": "edge:0137",
       "kind": "resource_write",
       "from": "step:AwaitSchedule",
       "to": "resource:attribute:ScheduleAttribute",
       "label": "Set",
       "span": {
-        "startLine": 267,
+        "startLine": 364,
         "startColumn": 14,
-        "endLine": 267,
+        "endLine": 364,
         "endColumn": 50
       },
       "metadata": {
@@ -2539,15 +3819,15 @@
       }
     },
     {
-      "id": "edge:0092",
+      "id": "edge:0138",
       "kind": "resource_write",
       "from": "step:CommitGoals",
       "to": "resource:attribute:GoalsAttribute",
       "label": "Set",
       "span": {
-        "startLine": 228,
+        "startLine": 324,
         "startColumn": 14,
-        "endLine": 228,
+        "endLine": 324,
         "endColumn": 43
       },
       "metadata": {
@@ -2555,15 +3835,33 @@
       }
     },
     {
-      "id": "edge:0093",
+      "id": "edge:0139",
+      "kind": "resource_write",
+      "from": "step:CommitGoals",
+      "to": "resource:attribute:Proposals",
+      "label": "Set",
+      "span": {
+        "startLine": 720,
+        "startColumn": 15,
+        "endLine": 720,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "storeProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0140",
       "kind": "resource_write",
       "from": "step:CommitGoals",
       "to": "resource:attribute:ScheduleAttribute",
       "label": "Set",
       "span": {
-        "startLine": 230,
+        "startLine": 327,
         "startColumn": 14,
-        "endLine": 230,
+        "endLine": 327,
         "endColumn": 50
       },
       "metadata": {
@@ -2571,15 +3869,15 @@
       }
     },
     {
-      "id": "edge:0094",
+      "id": "edge:0141",
       "kind": "failure_transition",
       "from": "step:FinishExport",
       "to": "step:RecordReviewFailure",
       "label": "Execute failure",
       "span": {
-        "startLine": 384,
+        "startLine": 494,
         "startColumn": 35,
-        "endLine": 384,
+        "endLine": 494,
         "endColumn": 98
       },
       "metadata": {
@@ -2587,15 +3885,15 @@
       }
     },
     {
-      "id": "edge:0095",
+      "id": "edge:0142",
       "kind": "resource_write",
       "from": "step:GateReview",
       "to": "resource:attribute:ActiveReview",
       "label": "Set",
       "span": {
-        "startLine": 516,
+        "startLine": 754,
         "startColumn": 15,
-        "endLine": 516,
+        "endLine": 754,
         "endColumn": 40
       },
       "metadata": {
@@ -2605,33 +3903,47 @@
       }
     },
     {
-      "id": "edge:0096",
+      "id": "edge:0143",
       "kind": "resource_write",
       "from": "step:GateReview",
       "to": "resource:attribute:Reviews",
       "label": "Set",
       "span": {
-        "startLine": 514,
+        "startLine": 554,
         "startColumn": 14,
-        "endLine": 514,
-        "endColumn": 49
+        "endLine": 554,
+        "endColumn": 51
       },
       "metadata": {
-        "function": "endReview",
-        "phase": "execute",
-        "via": "helper"
+        "phase": "execute"
       }
     },
     {
-      "id": "edge:0097",
+      "id": "edge:0144",
+      "kind": "failure_transition",
+      "from": "step:NotifyDecision",
+      "to": "step:RecordNotifyFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 643,
+        "startColumn": 57,
+        "endLine": 643,
+        "endColumn": 114
+      },
+      "metadata": {
+        "skipWaitFor": true
+      }
+    },
+    {
+      "id": "edge:0145",
       "kind": "failure_transition",
       "from": "step:ReadGoals",
       "to": "step:CommitGoals",
       "label": "Execute failure",
       "span": {
-        "startLine": 187,
+        "startLine": 266,
         "startColumn": 35,
-        "endLine": 187,
+        "endLine": 266,
         "endColumn": 90
       },
       "metadata": {
@@ -2639,15 +3951,31 @@
       }
     },
     {
-      "id": "edge:0098",
+      "id": "edge:0146",
+      "kind": "resource_write",
+      "from": "step:RecordNotifyFailure",
+      "to": "resource:attribute:Proposals",
+      "label": "Set",
+      "span": {
+        "startLine": 675,
+        "startColumn": 15,
+        "endLine": 675,
+        "endColumn": 57
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0147",
       "kind": "resource_write",
       "from": "step:RecordReviewFailure",
       "to": "resource:attribute:ActiveReview",
       "label": "Set",
       "span": {
-        "startLine": 516,
+        "startLine": 754,
         "startColumn": 15,
-        "endLine": 516,
+        "endLine": 754,
         "endColumn": 40
       },
       "metadata": {
@@ -2657,15 +3985,15 @@
       }
     },
     {
-      "id": "edge:0099",
+      "id": "edge:0148",
       "kind": "resource_write",
       "from": "step:RecordReviewFailure",
       "to": "resource:attribute:Reviews",
       "label": "Set",
       "span": {
-        "startLine": 514,
+        "startLine": 752,
         "startColumn": 14,
-        "endLine": 514,
+        "endLine": 752,
         "endColumn": 49
       },
       "metadata": {
@@ -2675,15 +4003,15 @@
       }
     },
     {
-      "id": "edge:0100",
+      "id": "edge:0149",
       "kind": "resource_write",
       "from": "step:RecordReviewStart",
       "to": "resource:attribute:ActiveReview",
       "label": "Set",
       "span": {
-        "startLine": 516,
+        "startLine": 754,
         "startColumn": 15,
-        "endLine": 516,
+        "endLine": 754,
         "endColumn": 40
       },
       "metadata": {
@@ -2693,15 +4021,15 @@
       }
     },
     {
-      "id": "edge:0101",
+      "id": "edge:0150",
       "kind": "resource_write",
       "from": "step:RecordReviewStart",
       "to": "resource:attribute:LiveAttribute",
       "label": "Set",
       "span": {
-        "startLine": 326,
+        "startLine": 433,
         "startColumn": 15,
-        "endLine": 326,
+        "endLine": 433,
         "endColumn": 43
       },
       "metadata": {
@@ -2709,19 +4037,69 @@
       }
     },
     {
-      "id": "edge:0102",
+      "id": "edge:0151",
+      "kind": "resource_write",
+      "from": "step:RecordReviewStart",
+      "to": "resource:attribute:Proposals",
+      "label": "Delete",
+      "span": {
+        "startLine": 416,
+        "startColumn": 16,
+        "endLine": 416,
+        "endColumn": 41
+      },
+      "metadata": {
+        "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0152",
+      "kind": "resource_write",
+      "from": "step:RecordReviewStart",
+      "to": "resource:attribute:Proposals",
+      "label": "Set",
+      "span": {
+        "startLine": 720,
+        "startColumn": 15,
+        "endLine": 720,
+        "endColumn": 62
+      },
+      "metadata": {
+        "function": "storeProposals",
+        "phase": "execute",
+        "via": "helper"
+      }
+    },
+    {
+      "id": "edge:0153",
       "kind": "resource_write",
       "from": "step:RecordReviewStart",
       "to": "resource:attribute:Reviews",
       "label": "Set",
       "span": {
-        "startLine": 321,
+        "startLine": 427,
         "startColumn": 15,
-        "endLine": 321,
+        "endLine": 427,
         "endColumn": 40
       },
       "metadata": {
         "phase": "execute"
+      }
+    },
+    {
+      "id": "edge:0154",
+      "kind": "failure_transition",
+      "from": "step:RequestReview",
+      "to": "step:RecordReviewFailure",
+      "label": "Execute failure",
+      "span": {
+        "startLine": 566,
+        "startColumn": 54,
+        "endLine": 566,
+        "endColumn": 117
+      },
+      "metadata": {
+        "skipWaitFor": true
       }
     }
   ],
@@ -2752,7 +4130,17 @@
         "step:FinishExport",
         "step:ComputeMetrics",
         "step:GateReview",
+        "step:RequestReview",
+        "step:AwaitReviewReport",
         "step:RecordReviewFailure"
+      ]
+    },
+    {
+      "id": "decision",
+      "label": "Decision",
+      "stepIds": [
+        "step:NotifyDecision",
+        "step:RecordNotifyFailure"
       ]
     },
     {
@@ -2810,6 +4198,20 @@
           {
             "name": "Commit",
             "required": true,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "PreviousReleaseID",
+            "required": false,
+            "schema": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "PreviousBuildCommit",
+            "required": false,
             "schema": {
               "kind": "string"
             }
@@ -2879,10 +4281,39 @@
             }
           },
           {
+            "name": "Holds",
+            "required": false,
+            "schema": {
+              "kind": "map",
+              "nullable": true,
+              "values": {
+                "kind": "boolean"
+              }
+            }
+          },
+          {
+            "name": "PreviousHolds",
+            "required": false,
+            "schema": {
+              "kind": "map",
+              "nullable": true,
+              "values": {
+                "kind": "boolean"
+              }
+            }
+          },
+          {
             "name": "ReviewID",
             "required": false,
             "schema": {
               "kind": "string"
+            }
+          },
+          {
+            "name": "GoalsOnly",
+            "required": false,
+            "schema": {
+              "kind": "boolean"
             }
           }
         ]

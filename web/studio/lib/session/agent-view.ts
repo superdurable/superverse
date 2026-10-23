@@ -103,7 +103,8 @@ function agentMessageView(value: AgentMessage__Output) {
  * A Session notification: an automated report, never a user message; its report is for the model
  * only. A delivery names its outcome, its owner, the failure's code, phase, redacted message and
  * remedy, the commit with its version, the instance, build or deployment it concerns and at most
- * eight configuration gaps.
+ * eight configuration gaps; an evolve notification names its review and whether it starts the agent's
+ * review or tells it a person's decision.
  */
 function agentNotificationView(value: AgentNotification__Output) {
   return {
@@ -134,6 +135,11 @@ function agentNotificationView(value: AgentNotification__Output) {
       value.connectorEvent === "CONNECTOR_EVENT_UNSPECIFIED"
         ? null
         : agentLiteral(value.connectorEvent, "CONNECTOR_EVENT", "connector event"),
+    reviewId: value.reviewId,
+    evolvePhase:
+      value.evolvePhase === "EVOLVE_PHASE_UNSPECIFIED"
+        ? null
+        : agentLiteral(value.evolvePhase, "EVOLVE_PHASE", "evolve phase"),
   };
 }
 

@@ -142,10 +142,11 @@ type liveChangeObserver interface {
 }
 
 // liveChange is the committed Live deployment s as its announcement carries
-// it: the lease generation orders it, the Release ID is its build commit and
-// the end of its CommitCurrentLive phase is its Live time.
+// it: the lease generation orders it, the Release ID is its build commit, the
+// end of its CommitCurrentLive phase is its Live time and ReplacedLive names
+// the Live generation it replaced.
 func liveChange(s Snapshot) evolve.LiveRelease {
-	change := evolve.LiveRelease{Revision: s.Lease.Generation, ReleaseID: s.ReleaseID, BuildCommit: s.ReleaseID}
+	change := evolve.LiveRelease{Revision: s.Lease.Generation, ReleaseID: s.ReleaseID, BuildCommit: s.ReleaseID, ReplacedRevision: s.ReplacedLive.Generation}
 	for _, timing := range s.Timings {
 		if timing.Phase == phaseCommitLive {
 			change.CommittedAt = timing.StartedAt.Add(timing.Duration).UTC()

@@ -873,8 +873,8 @@ const reportWaitLimit = 2 * time.Hour
 // harmless; a Session that ended never receives it.
 func (step ReportSubagentOutcome) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, error) {
 	identity, start, outcome := comm.Must(identityAttribute.Get(ctx)), comm.Must(startAttribute.Get(ctx)), comm.Must(outcomeAttribute.Get(ctx))
-	notification := agenttasks.SubagentNotification(identity, outcome.Status.outcome(), start.Call.Description, outcome.Report, outcome.Changes, outcome.Unsaved != "", outcome.FinishedAt,
-		outcome.Contribution)
+	notification := agenttasks.WithSubagentUsage(agenttasks.SubagentNotification(identity, outcome.Status.outcome(), start.Call.Description, outcome.Report, outcome.Changes,
+		outcome.Unsaved != "", outcome.FinishedAt, outcome.Contribution), comm.Must(agentStateAttribute.Get(ctx)).ModelUsage)
 	if outcome.CredentialChangeReason == modelcredential.ChangedReason {
 		notification.Summary += " Reason: " + outcome.CredentialChangeReason.String() + "."
 	}

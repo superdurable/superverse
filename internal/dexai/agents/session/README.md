@@ -5,7 +5,7 @@ Purpose: Owns SessionAgentFlow, the durable coding Agent of a Project's one Sess
 
 Callers: `internal/dexai/agents`, `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/boundary` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/dexai/agents/modelcredential`, `internal/dexai/agents/remoteexec`, `internal/dexai/agents/sandbox`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/sandbox/workspace/git`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/backgroundcommand`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/session/flowdesign`, `internal/dexai/agents/session/modelprovider`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/toolinput`, `internal/dexai/agents/session/toolinput/generated`, `internal/dexai/agents/toolfailure` and `internal/dexai/app/apptemplate` and calls the Dex Flow API.
+Dependencies: it imports `internal/comm/**` (3) and `internal/dexai/**` (19) and calls the Dex Flow API.
 
 ```mermaid
 flowchart LR
@@ -15,27 +15,8 @@ flowchart LR
   c2["internal/dexai/api"] --> self
   c3["internal/dexai/api/boundary"] --> self
   c4["internal/dexai/bootstrap"] --> self
-  self --> d0["internal/comm"]
-  self --> d1["internal/comm/dexflow"]
-  self --> d2["internal/comm/flowid"]
-  self --> d3["internal/dexai/agents/modelcredential"]
-  self --> d4["internal/dexai/agents/remoteexec"]
-  self --> d5["internal/dexai/agents/sandbox"]
-  self --> d6["internal/dexai/agents/sandbox/provision"]
-  self --> d7["internal/dexai/agents/sandbox/workspace"]
-  self --> d8["internal/dexai/agents/sandbox/workspace/git"]
-  self --> d9["internal/dexai/agents/sandbox/workspace/sandboxd"]
-  self --> d10["internal/dexai/agents/session/agentloop"]
-  self --> d11["internal/dexai/agents/session/agenttasks"]
-  self --> d12["internal/dexai/agents/session/backgroundcommand"]
-  self --> d13["internal/dexai/agents/session/conversation"]
-  self --> d14["internal/dexai/agents/session/flowdesign"]
-  self --> d15["internal/dexai/agents/session/modelprovider"]
-  self --> d16["internal/dexai/agents/session/sandboxtools"]
-  self --> d17["internal/dexai/agents/session/toolinput"]
-  self --> d18["internal/dexai/agents/session/toolinput/generated"]
-  self --> d19["internal/dexai/agents/toolfailure"]
-  self --> d20["internal/dexai/app/apptemplate"]
+  self --> d0["internal/comm/** (3)"]
+  self --> d1["internal/dexai/** (19)"]
   self --> e0(["Dex Flow API"])
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
@@ -501,7 +482,25 @@ a JSON file's text), and `place_attachment`, a Sandbox tool that writes a JSON
 file's redacted copy at `/workspace/.local/superverse-attachments/<id>/<name>`:
 `runTool` reads it through `attachmentRenditions.BoundFile` and hands it to the
 Runner in `Call.Attachment`. `commit_and_push` refuses a staged file there
-(`attachment_in_source`). The platform prompt's attachments section
+(`attachment_in_source`). `place_evolve_export`, in platform mode only, places
+an agent review's export of the Live runs the same way: `withTrustedSource`
+reads it through `SessionAgentFlowDependency.EvolveExport` (the Project's
+evolve objects in storage and `goals.md` at the review's goals commit through
+the repository host, no Flow read) and hands it to the Runner in
+`Call.EvolveExport`, which writes it in chunks through sandboxd to
+`/workspace/.local/superverse-evolve/<review_id>/`; `commit_and_push` refuses a
+staged file there (`evolve_export_in_source`). `report_evolve_review`, also
+platform-only, is routed by name (`reportEvolveReview`): for a proposal it
+reads `proposal.md`, `backtest.json` and `open-runs.json` of the review from the
+named change subagent's result ref through sandboxd (`ReadEvolveResult`), adds
+the review's platform model usage (`AgentState.EvolveReview`: the replies of
+the turns the review owns, the turn its notice opened and those the ends of its
+subagents opened, and the usage the subagents started in those turns reported
+with their ends), reports through
+`SessionAgentFlowDependency.ReportEvolveReview`, and records what the answer
+settles in the same commit: a proposal pins its change's record (at most two),
+an applied or discarded change unpins it, and a reported review clears
+`AgentState.EvolveReview`; a refusal is the call's failure. The platform prompt's attachments section
 (`prompts/v1/platform_attachments.md`) says how to read them.
 
 The public view (`Entry.PublicMessage`) projects one attachment summary per
@@ -527,8 +526,8 @@ configuration declares them, the bootstrap sets their defaults,
 | `session_messages.go` | Conversation RPC data operations, turn start and steering (`applySteering`), the append-only entry log and archive chunks, recording a model reply by its stop reason, todos and effort, Stop admission and settlement (`finishTaskStop` for a Stop that leaves the turn running), Preview publication data, Session notifications and automatic turns; remote inbox batch sizing, consumption, public-entry persistence and report-batch formation. Waits and scheduling decisions remain in the Flow file. |
 | `session_executor.go` | The executor side of a turn: best-effort Stream activity writes, model and tool attempt activity, the options of the model Steps, model-call planning and selective loads, compaction outcomes, the replayed segment request, the model call with its activity, and recording model and compaction failures, with the platform incident of a rejected model call, executor/report admission and fresh platform outcome recording. |
 | `session_workspace.go` | The cold-path Step input, request execution and wait budget, the lending of a READY instance to a demand from outside the conversation (`lendWorkspace`), the outcome AwaitSessionWorkspace takes (`observedWorkspace`), a ready Preview's hold and the workspace of a handoff accepted before handoffs captured it, trusted task calls on a workspace lease, admitting the workspace Flow's outcome (a reclaimed one clears the Preview's hold), applying and failing a request, the demand of a call or wave that lost its workspace, the dispatch gate with its Sandbox deadline extension (also after a task's end, or for a ready Preview with the Preview hold), the decision at the deadline, which a running task or an unfinished subagent postpones and which revokes the lease of an idle instance, resumption and the Session HEAD, the repository context a segment awaits, appended once as a notice, the catalog matches of the first request, the starting example section of a Project started from an example, whether the agent's cards carry no Flow design, which every segment, the executor handoff and the remote read then state (`recordsNoCardDesign`: an example start or a pushed, unblocked `commit_and_push`), opening segments from these sections (the Session's first, a compaction's, a rollover's, an unsummarized one and the platform handoff reconstruction of the executor segment), and the record of what a matched Session's first build kept of its example (`StartingExample.FirstBuild`). |
-| `remote_worktree_tools.go` | Remote-only connector contribution and Codex task worktree admission and execution, exact or bounded map loads, server-owned file-tool roots, stable keep sets, and closed-task cleanup. |
-| `tool_execution.go` | The refusal of a call the turn may not make, the approval a call waits for, built-in tools with the durable timer's result, Sandbox and platform tool execution, the foreground `bash` flow (begin, then polling the command ledger within the call's timeout) and its settling, the parallel tool inputs, branches and results, recording tool results with the HEAD and the Preview handoff a push hands off, the platform incidents of recorded results, which ReportPlatformIssue reports beside the turn, background commands: their records, the input of the SubFlow that follows one in the ledger, and the stop of the running ones; and subagents: the admission of `start_agent`, the cleanup of the worktree of a record it evicted, the start, stop and merge of a subagent, and the writes of its record by its admission, its report, a Stop and a failed start. |
+| `worktree_tools.go` | The tools whose work runs in a worktree of its own through the Git helper: remote-only connector contribution and Codex task worktree admission and execution, exact or bounded map loads, server-owned file-tool roots, stable keep sets, and closed-task cleanup; and subagents: the admission of `start_agent`, the cleanup of the worktree of a record it evicted, the start, stop and merge of a subagent, and the writes of its record by its admission, its report, a Stop and a failed start. |
+| `tool_execution.go` | The refusal of a call the turn may not make, the approval a call waits for, built-in tools with the durable timer's result, Sandbox and platform tool execution, the foreground `bash` flow (begin, then polling the command ledger within the call's timeout) and its settling, the parallel tool inputs, branches and results, recording tool results with the HEAD and the Preview handoff a push hands off, the platform incidents of recorded results, which ReportPlatformIssue reports beside the turn, and background commands: their records, the input of the SubFlow that follows one in the ledger, and the stop of the running ones. |
 | [`conversation/`](conversation/README.md) | The entry log and its public view, request assembly, models, request and reply, tool calls, events and the embedded `session-v1` prompts. |
 | [`agentloop/`](agentloop/README.md) | The pure loop decisions: state, turns, notifications and automatic turns, the Stop button, questions, context segments, tool catalog, batches and results. |
 | [`agenttasks/`](agenttasks/README.md) | The task records of background commands and subagents, their bounds, kinds and admission, and the notifications of their ends. |

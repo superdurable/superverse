@@ -30,6 +30,9 @@ const (
 	// ToolPlaceAttachment writes a JSON attachment's redacted file into the
 	// workspace, which the Session reads from its Project's attachments.
 	ToolPlaceAttachment ToolName = "place_attachment"
+	// ToolPlaceEvolveExport places an agent review's Live export in the
+	// workspace, which the Session reads from its Project's evolve objects.
+	ToolPlaceEvolveExport ToolName = "place_evolve_export"
 )
 
 // Delegation tools start the Session's subagents and merge what they changed
@@ -37,6 +40,9 @@ const (
 const (
 	ToolStartAgent        ToolName = "start_agent"
 	ToolMergeAgentChanges ToolName = "merge_agent_changes"
+	// ToolReportEvolveReview reports an agent review to the Project's goal
+	// measurement, with the change subagent's proposal files from its result.
+	ToolReportEvolveReview ToolName = "report_evolve_review"
 )
 
 // Platform tools read the Session's own Project on the server, without the

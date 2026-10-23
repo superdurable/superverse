@@ -15,7 +15,8 @@ import { rpc, rpcAnswered } from "@/tests/e2e/support/studio-api";
 import { createTeamSpace } from "@/tests/e2e/support/teamspace/teamspace";
 
 // A Project that was never published has no goal measurement: EvolveFlow starts with the first Live deployment, so
-// GetEvolve and Review now answer NOT_FOUND through the BFF, and the Goals tab shows its empty state with Set goals.
+// GetEvolve, Review now, a decision on a proposal and the read of a proposal answer NOT_FOUND through the BFF, and the
+// Goals tab shows its empty state with Set goals, with no proposal in the chat and no mark on the tab.
 // The mock model answers the first message; the server, Dex and the Git host are the lane's own.
 test("a Project never published shows the Goals empty state from GetEvolve's NOT_FOUND", async ({ page }, testInfo) => {
   test.setTimeout(20 * 60_000);
@@ -27,18 +28,24 @@ test("a Project never published shows the Goals empty state from GetEvolve's NOT
 
   expect((await rpc(page.request, "GetEvolve", { projectId })).status()).toBe(404);
   expect((await rpc(page.request, "StartEvolveReview", { projectId, requestId: randomUUID() })).status()).toBe(404);
+  const decision = { projectId, reviewId: "r-1", revision: "1", decision: "EVOLVE_PROPOSAL_DECISION_APPROVE" } as const;
+  expect((await rpc(page.request, "DecideEvolveProposal", decision)).status()).toBe(404);
+  expect((await rpc(page.request, "GetEvolveProposal", { projectId, reviewId: "r-1" })).status()).toBe(404);
 
   const read = page.waitForResponse((response) => rpcAnswered("GetEvolve")(response) && response.status() !== 503);
   await page.goto(`/p/${projectId}/goals`);
   expect((await read).status()).toBe(404);
-  // The tab a link names shows before the Builder reveals it on its own.
-  await expect(
-    page.getByRole("navigation", { name: "Surface", exact: true }).getByRole("link", { name: "Goals", exact: true }),
-  ).toHaveAttribute("aria-current", "page");
+  // The tab a link names shows before the Builder reveals it on its own; no proposal waits, so it carries no mark.
+  const goalsTab = page
+    .getByRole("navigation", { name: "Surface", exact: true })
+    .getByRole("link", { name: "Goals", exact: true });
+  await expect(goalsTab).toHaveAttribute("aria-current", "page");
+  await expect(goalsTab.getByTestId("needs-you-mark")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "No goals yet", exact: true })).toBeVisible();
   await expect(page.getByText("Tell the agent what this app is for", { exact: false })).toBeVisible();
   await expect(page.getByRole("button", { name: "Set goals", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review now", exact: true })).toHaveCount(0);
   await expect(page.getByTestId("goals-surface")).toHaveCount(0);
+  await expect(page.getByTestId("proposal-dock")).toHaveCount(0);
   await deleteProject(page, projectId);
 });

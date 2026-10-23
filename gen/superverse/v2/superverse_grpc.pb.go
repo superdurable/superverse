@@ -2621,8 +2621,10 @@ var AttachmentService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	EvolveService_GetEvolve_FullMethodName         = "/superverse.v2.EvolveService/GetEvolve"
-	EvolveService_StartEvolveReview_FullMethodName = "/superverse.v2.EvolveService/StartEvolveReview"
+	EvolveService_GetEvolve_FullMethodName            = "/superverse.v2.EvolveService/GetEvolve"
+	EvolveService_StartEvolveReview_FullMethodName    = "/superverse.v2.EvolveService/StartEvolveReview"
+	EvolveService_DecideEvolveProposal_FullMethodName = "/superverse.v2.EvolveService/DecideEvolveProposal"
+	EvolveService_GetEvolveProposal_FullMethodName    = "/superverse.v2.EvolveService/GetEvolveProposal"
 )
 
 // EvolveServiceClient is the client API for EvolveService service.
@@ -2630,11 +2632,14 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
-// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
-// goal values each one measured over the Project's Live runs.
+// goals of the Live build's .superverse/goals.md, the review schedule, the reviews with the goal
+// values each one measured over the Project's Live runs, and the proposals of agent reviews with a
+// person's decision on each.
 type EvolveServiceClient interface {
 	GetEvolve(ctx context.Context, in *GetEvolveRequest, opts ...grpc.CallOption) (*GetEvolveResponse, error)
 	StartEvolveReview(ctx context.Context, in *StartEvolveReviewRequest, opts ...grpc.CallOption) (*StartEvolveReviewResponse, error)
+	DecideEvolveProposal(ctx context.Context, in *DecideEvolveProposalRequest, opts ...grpc.CallOption) (*DecideEvolveProposalResponse, error)
+	GetEvolveProposal(ctx context.Context, in *GetEvolveProposalRequest, opts ...grpc.CallOption) (*GetEvolveProposalResponse, error)
 }
 
 type evolveServiceClient struct {
@@ -2665,16 +2670,39 @@ func (c *evolveServiceClient) StartEvolveReview(ctx context.Context, in *StartEv
 	return out, nil
 }
 
+func (c *evolveServiceClient) DecideEvolveProposal(ctx context.Context, in *DecideEvolveProposalRequest, opts ...grpc.CallOption) (*DecideEvolveProposalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DecideEvolveProposalResponse)
+	err := c.cc.Invoke(ctx, EvolveService_DecideEvolveProposal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *evolveServiceClient) GetEvolveProposal(ctx context.Context, in *GetEvolveProposalRequest, opts ...grpc.CallOption) (*GetEvolveProposalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEvolveProposalResponse)
+	err := c.cc.Invoke(ctx, EvolveService_GetEvolveProposal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EvolveServiceServer is the server API for EvolveService service.
 // All implementations must embed UnimplementedEvolveServiceServer
 // for forward compatibility.
 //
 // Goal measurement of a Project (EvolveFlow, one per Project since its first Live deployment): the
-// goals of the Live build's .superverse/goals.md, the review schedule, and the reviews with the
-// goal values each one measured over the Project's Live runs.
+// goals of the Live build's .superverse/goals.md, the review schedule, the reviews with the goal
+// values each one measured over the Project's Live runs, and the proposals of agent reviews with a
+// person's decision on each.
 type EvolveServiceServer interface {
 	GetEvolve(context.Context, *GetEvolveRequest) (*GetEvolveResponse, error)
 	StartEvolveReview(context.Context, *StartEvolveReviewRequest) (*StartEvolveReviewResponse, error)
+	DecideEvolveProposal(context.Context, *DecideEvolveProposalRequest) (*DecideEvolveProposalResponse, error)
+	GetEvolveProposal(context.Context, *GetEvolveProposalRequest) (*GetEvolveProposalResponse, error)
 	mustEmbedUnimplementedEvolveServiceServer()
 }
 
@@ -2690,6 +2718,12 @@ func (UnimplementedEvolveServiceServer) GetEvolve(context.Context, *GetEvolveReq
 }
 func (UnimplementedEvolveServiceServer) StartEvolveReview(context.Context, *StartEvolveReviewRequest) (*StartEvolveReviewResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartEvolveReview not implemented")
+}
+func (UnimplementedEvolveServiceServer) DecideEvolveProposal(context.Context, *DecideEvolveProposalRequest) (*DecideEvolveProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecideEvolveProposal not implemented")
+}
+func (UnimplementedEvolveServiceServer) GetEvolveProposal(context.Context, *GetEvolveProposalRequest) (*GetEvolveProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEvolveProposal not implemented")
 }
 func (UnimplementedEvolveServiceServer) mustEmbedUnimplementedEvolveServiceServer() {}
 func (UnimplementedEvolveServiceServer) testEmbeddedByValue()                       {}
@@ -2748,6 +2782,42 @@ func _EvolveService_StartEvolveReview_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EvolveService_DecideEvolveProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecideEvolveProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvolveServiceServer).DecideEvolveProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvolveService_DecideEvolveProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvolveServiceServer).DecideEvolveProposal(ctx, req.(*DecideEvolveProposalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EvolveService_GetEvolveProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEvolveProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvolveServiceServer).GetEvolveProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvolveService_GetEvolveProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvolveServiceServer).GetEvolveProposal(ctx, req.(*GetEvolveProposalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EvolveService_ServiceDesc is the grpc.ServiceDesc for EvolveService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2762,6 +2832,14 @@ var EvolveService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StartEvolveReview",
 			Handler:    _EvolveService_StartEvolveReview_Handler,
+		},
+		{
+			MethodName: "DecideEvolveProposal",
+			Handler:    _EvolveService_DecideEvolveProposal_Handler,
+		},
+		{
+			MethodName: "GetEvolveProposal",
+			Handler:    _EvolveService_GetEvolveProposal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

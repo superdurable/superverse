@@ -39,7 +39,7 @@ func StartUserTurn(state AgentState, messages []conversation.UserMessage) (Agent
 	state = startTurn(state)
 	// The user is back: notifications may open turns again, and subagents start
 	// within a fresh budget.
-	state.AutomaticTaskTurns, state.AutomaticPlatformTurns, state.AutomaticTurnsPaused = 0, 0, false
+	state.AutomaticTaskTurns, state.AutomaticPlatformTurns, state.AutomaticTurnsPaused, state.AutomaticTurnsPauseCause = 0, 0, false, ""
 	state.SubagentsStartedWithoutUser, state.AwaitsFirstMessage = 0, false
 	entries := make([]conversation.Entry, 0, len(messages)+1)
 	replaced := false
@@ -103,9 +103,57 @@ func AdmitNotification(receipts []string, pending int, id string) (isNew, isAdmi
 // TakesNotifications reports whether CheckSteered delivers pending
 // notifications at its boundary: before a model continuation inside a running
 // turn (after tool results), or with steering, ahead of the steered text.
-// None is taken while a Stop of the turn is pending.
+// None is taken while a Stop of the turn is pending. An evolve notification
+// is never delivered inside a turn: SplitTurnNotifications defers it.
 func TakesNotifications(next Continuation, isSteered, isStopped bool) bool {
 	return !isStopped && (isSteered || next == ContinueCallModel || next == ContinueCompactContext)
+}
+
+// SplitTurnNotifications splits the batch a turn's boundary took into the
+// notifications it delivers and the evolve notifications it puts back: an
+// agent review opens its own turn while the Agent waits for the user, never
+// inside the user's turn. A Channel condition takes from the head, so the
+// boundary takes them and publishes them again, behind later ones.
+func SplitTurnNotifications(notifications []conversation.SessionNotification) (taken, deferred []conversation.SessionNotification) {
+	for _, notification := range notifications {
+		if notification.IsEvolve() {
+			deferred = append(deferred, notification)
+		} else {
+			taken = append(taken, notification)
+		}
+	}
+	return taken, deferred
+}
+
+// WithoutEvolve drops the evolve notifications of a batch that a Session in
+// remote mode consumed: a local agent runs neither the platform model nor its
+// tools, so it never sees an agent review, which its executor switch reported
+// skipped.
+func WithoutEvolve(notifications []conversation.SessionNotification) []conversation.SessionNotification {
+	return slices.DeleteFunc(slices.Clone(notifications), conversation.SessionNotification.IsEvolve)
+}
+
+// WithoutLapsedReviews drops the review notices of a batch consumed while
+// the Agent waits for the user that would open no turn: after a Stop, or with
+// automatic turns off. A review never runs inside the user's turn, so such a
+// review is not recorded and expires.
+func WithoutLapsedReviews(state AgentState, notifications []conversation.SessionNotification, bounds AutomaticTurnBounds, isStopped bool) []conversation.SessionNotification {
+	if reviewOpensTurn(state, bounds, isStopped) {
+		return notifications
+	}
+	return slices.DeleteFunc(slices.Clone(notifications), isReviewNotice)
+}
+
+// reviewOpensTurn reports whether an evolve notification opens its turn: it
+// lifts a pause at a bound but never a Stop's, and qualifies by the task
+// bound, which it resets.
+func reviewOpensTurn(state AgentState, bounds AutomaticTurnBounds, isStopped bool) bool {
+	return !isStopped && state.pauseCause() != pauseStop && bounds.Task > 0
+}
+
+// isReviewNotice reports whether a notification asks for an agent review.
+func isReviewNotice(notification conversation.SessionNotification) bool {
+	return notification.IsEvolve() && notification.Evolve.Phase == conversation.EvolvePhaseReview
 }
 
 // IdleNotifications is what a batch of notifications consumed while the Agent
@@ -124,24 +172,33 @@ type AutomaticTurnBounds struct {
 	Task, Platform int
 }
 
-// ConsumeIdleNotifications decides a batch consumed in AwaitUser, as the
-// Session recorded it. A task or connector notification, or a delivery
+// ConsumeIdleNotifications decides a batch consumed in AwaitUser at now, as
+// the Session recorded it. A task or connector notification, or a delivery
 // failure that the application owns, may open one automatic turn, which
 // counts against the bound of the kind that qualified it, the platform bound
-// when both did; at that bound, or after a Stop, automatic turns pause and the
-// batch is only recorded. requests are the sequences of the recorded
-// notifications, which the opened turn works on.
-func ConsumeIdleNotifications(state AgentState, notifications []conversation.SessionNotification, requests []conversation.Sequence, bounds AutomaticTurnBounds, isStopped bool) (AgentState, IdleNotifications) {
+// when both did and the task bound when an evolve notification reset it; at
+// that bound, or after a Stop, automatic turns pause and the batch is only
+// recorded. requests are the sequences of the recorded notifications, which
+// the opened turn works on. A review notice's turn starts the Agent's review,
+// and the end of one of the review's subagents makes the turn it opens the
+// review's too.
+func ConsumeIdleNotifications(state AgentState, notifications []conversation.SessionNotification, requests []conversation.Sequence, bounds AutomaticTurnBounds, isStopped bool, now time.Time) (AgentState, IdleNotifications) {
 	var decision IdleNotifications
 	if isStopped {
-		state, decision.Paused = pauseAutomaticTurns(state)
+		state, decision.Paused = pauseAutomaticTurns(state, pauseStop)
 	}
-	platform := slices.ContainsFunc(notifications, conversation.SessionNotification.OpensPlatformTurn)
+	evolve := slices.ContainsFunc(notifications, conversation.SessionNotification.IsEvolve) && state.pauseCause() != pauseStop
+	if evolve {
+		// An agent review starts within fresh bounds, as a user turn does; a Stop's pause outlives it.
+		state.AutomaticTaskTurns, state.SubagentsStartedWithoutUser = 0, 0
+		state.AutomaticTurnsPaused, state.AutomaticTurnsPauseCause = false, ""
+	}
+	platform := !evolve && slices.ContainsFunc(notifications, conversation.SessionNotification.OpensPlatformTurn)
 	if !platform && !slices.ContainsFunc(notifications, opensTaskTurn) || state.AutomaticTurnsPaused {
 		return state, decision
 	}
 	if platform && state.AutomaticPlatformTurns >= bounds.Platform || !platform && state.AutomaticTaskTurns >= bounds.Task {
-		state, decision.Paused = pauseAutomaticTurns(state)
+		state, decision.Paused = pauseAutomaticTurns(state, pauseCap)
 		return state, decision
 	}
 	state = startTurn(state)
@@ -153,8 +210,32 @@ func ConsumeIdleNotifications(state AgentState, notifications []conversation.Ses
 	for _, sequence := range requests {
 		state = AddTurnRequest(state, sequence)
 	}
+	if index := slices.IndexFunc(notifications, isReviewNotice); index >= 0 {
+		state.EvolveReview = &EvolveReview{ReviewID: notifications[index].Evolve.ReviewID, StartedAt: now, Turn: state.Turn}
+	} else if review := state.EvolveReview; review != nil && slices.ContainsFunc(notifications, review.endsSubagent) {
+		review.Turn = state.Turn
+	}
 	decision.OpensTurn = true
 	return state, decision
+}
+
+// AddEvolveUsage adds the usage of a platform model reply to the Agent's
+// review when the review owns the turn: never a user's turn in between.
+func AddEvolveUsage(state AgentState, metrics conversation.ModelCallMetrics) AgentState {
+	if review := state.EvolveReview; review != nil && review.Turn == state.Turn {
+		review.Usage = conversation.AddModelUsage(review.Usage, metrics)
+	}
+	return state
+}
+
+// WithEvolveSubagent records that subagent agentID, admitted in the turn,
+// belongs to the Agent's review when the review owns the turn, so that its
+// usage counts and its end continues the review.
+func WithEvolveSubagent(state AgentState, agentID string) AgentState {
+	if review := state.EvolveReview; review != nil && review.Turn == state.Turn && !slices.Contains(review.Agents, agentID) {
+		review.Agents = append(review.Agents, agentID)
+	}
+	return state
 }
 
 // opensTaskTurn reports whether a notification qualifies for the task bound.
@@ -162,10 +243,14 @@ func opensTaskTurn(notification conversation.SessionNotification) bool {
 	return notification.Kind == conversation.NotificationKindTask || notification.Kind == conversation.NotificationKindConnector
 }
 
-// pauseAutomaticTurns pauses automatic turns and reports whether they ran
-// until now, which records the pause once.
-func pauseAutomaticTurns(state AgentState) (AgentState, bool) {
+// pauseAutomaticTurns pauses automatic turns for cause and reports whether
+// they ran until now, which records the pause once; a Stop's cause wins over
+// a bound's.
+func pauseAutomaticTurns(state AgentState, cause pauseCause) (AgentState, bool) {
 	isNew := !state.AutomaticTurnsPaused
+	if state.pauseCause() != pauseStop {
+		state.AutomaticTurnsPauseCause = cause
+	}
 	state.AutomaticTurnsPaused = true
 	return state, isNew
 }
@@ -231,7 +316,7 @@ func StopTurn(state AgentState) (AgentState, []conversation.ToolCall, bool) {
 	state.PendingToolCalls, state.PendingToolIndex, state.Running = []conversation.ToolCall{}, 0, nil
 	state.PendingToolsAdmission = remoteexec.Fence{}
 	state.Status = AgentStatusWaitingForMessage
-	state, isNewPause := pauseAutomaticTurns(state)
+	state, isNewPause := pauseAutomaticTurns(state, pauseStop)
 	return state, calls, isNewPause
 }
 

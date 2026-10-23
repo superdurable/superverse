@@ -33,7 +33,8 @@ import { draftWords, PreviewDraftProvider, usePreviewDraft } from "@/lib/project
 import { useNewestPublish } from "@/lib/project/setup/use-newest-publish";
 import { configurationDrafts } from "@/lib/api/flow/draft/configuration-draft";
 import { preparedSourceOf, readyPreparedSource } from "@/lib/session/session-status";
-import { ComposerDraftProvider, useComposerDraft } from "@/lib/session/ComposerDraftProvider";
+import { ComposerDraftProvider, useComposerDraft, useSlashFocusesComposer } from "@/lib/session/ComposerDraftProvider";
+import { EvolveProvider, useOfferedProposal } from "@/lib/project/goals/EvolveProvider";
 import { useSessionResource } from "@/lib/session/SessionProvider";
 import { useDesignShown } from "@/lib/session/design/use-design-shown";
 import { useFlowDesign } from "@/lib/session/design/use-flow-design";
@@ -45,6 +46,7 @@ import { ProjectFrame } from "@/components/frame/ProjectFrame";
 import { SURFACES, surfacesFor, TOOLS } from "@/components/frame/surface-registry";
 import { useBuilderLocation } from "@/components/frame/use-builder-location";
 import { useFrameLinks } from "@/components/frame/use-frame-links";
+import { ProposalChat } from "@/components/project/proposal/ProposalChat";
 import { PublishButton } from "@/components/publishing/publish/PublishButton";
 import { SessionConnectionIndicator } from "@/components/session/SessionStatusIndicators";
 import { SessionConversation } from "@/components/session/SessionConversation";
@@ -119,7 +121,9 @@ export function ProjectBuilder(props: BuilderProps) {
             drafting={Boolean(sessionResource?.requirementsDraft)}
           >
             <ComposerDraftProvider onPropose={openChatColumn}>
-              <BuilderFrame {...props} role={role} />
+              <EvolveProvider projectId={props.projectId}>
+                <BuilderFrame {...props} role={role} />
+              </EvolveProvider>
               <ElementPicker />
             </ComposerDraftProvider>
           </ProjectStageProvider>
@@ -231,20 +235,9 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         }))
       : []),
   ]);
-  // "/" opens the chat and puts the cursor in the composer, unless the person is typing elsewhere.
-  const requestFocus = draft?.requestFocus;
-  useEffect(() => {
-    if (!builds || !requestFocus) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
-      event.preventDefault();
-      requestFocus();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [builds, requestFocus]);
+  useSlashFocusesComposer(builds);
+  // Goals carries a mark while the agent's proposal waits for a decision, which only those who build make.
+  const proposalWaits = useOfferedProposal() !== null && builds;
   const host = useMemo(
     () => ({ environment: shown, canIntervene: builds, askAgent: builds ? draft?.propose : undefined, teamSpaceId }),
     [builds, draft?.propose, shown, teamSpaceId],
@@ -302,6 +295,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
         ]}
         process={process}
         setupNeedsYou={builds && !liveOnly && setupNeedsYou(previewDraft?.configuration ?? null)}
+        proposalWaits={proposalWaits}
         switchWords={{
           previewStatus,
           previewDot: own || liveOnly,
@@ -380,6 +374,7 @@ function BuilderFrame({ projectId, role, persistentQuery, children }: BuilderPro
           <SessionConversation
             projectId={projectId}
             canManage={builds}
+            dock={builds && <ProposalChat projectId={projectId} persistentQuery={persistentQuery} />}
             live={
               shown === "live"
                 ? {

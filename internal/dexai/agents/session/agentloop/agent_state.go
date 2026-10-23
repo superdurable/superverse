@@ -210,10 +210,13 @@ type AgentState struct {
 	// AutomaticTaskTurns counts the consecutive turns that task notifications
 	// opened, and AutomaticPlatformTurns those that application-owned delivery
 	// failures of HEAD opened; AutomaticTurnsPaused stops both, after Stop or
-	// at a bound, until the user starts a turn.
-	AutomaticTaskTurns     int  `json:"automatic_task_turns,omitempty"`
-	AutomaticPlatformTurns int  `json:"automatic_platform_turns,omitempty"`
-	AutomaticTurnsPaused   bool `json:"automatic_turns_paused,omitempty"`
+	// at a bound, until the user starts a turn. AutomaticTurnsPauseCause says
+	// which: an agent review lifts a pause at a bound, never one after Stop. A
+	// pause recorded without a cause reads as a Stop's (pauseCause).
+	AutomaticTaskTurns       int        `json:"automatic_task_turns,omitempty"`
+	AutomaticPlatformTurns   int        `json:"automatic_platform_turns,omitempty"`
+	AutomaticTurnsPaused     bool       `json:"automatic_turns_paused,omitempty"`
+	AutomaticTurnsPauseCause pauseCause `json:"automatic_turns_pause_cause,omitempty"`
 	// AwaitsFirstMessage marks a Session created from an example that has had
 	// no message of the person yet: until the first one starts a turn, a READY
 	// Preview holds the Sandbox only for the idle Sandbox hold.
@@ -231,6 +234,55 @@ type AgentState struct {
 	// agenttasks.MaximumConnectorContributions, kept for the Session's life;
 	// the contributions themselves are ConnectorContributionFlows.
 	ConnectorSlugs []string `json:"connector_slugs,omitempty"`
+	// EvolveReview is the agent review the Agent works on since it took the
+	// review's notification, with the platform model usage of its turns; nil
+	// once the review is reported or when none was taken.
+	EvolveReview *EvolveReview `json:"evolve_review,omitempty"`
+	// ModelUsage is a subagent's platform model usage since its start, which
+	// its end reports; the Session keeps its own in EvolveReview.
+	ModelUsage []conversation.ModelUsage `json:"model_usage,omitempty"`
+}
+
+// pauseCause is why automatic turns paused: a Stop, which only the user's
+// next message lifts, or a bound, which an agent review also lifts.
+type pauseCause string
+
+const (
+	pauseStop pauseCause = "stop"
+	pauseCap  pauseCause = "cap"
+)
+
+// pauseCause is why automatic turns are paused, empty when they run; a
+// pause recorded before the cause was reads as a Stop's.
+func (state AgentState) pauseCause() pauseCause {
+	switch {
+	case !state.AutomaticTurnsPaused:
+		return ""
+	case state.AutomaticTurnsPauseCause == "":
+		return pauseStop
+	}
+	return state.AutomaticTurnsPauseCause
+}
+
+// EvolveReview is a review of the Project's goals the Agent took: the
+// review, when the Agent took its notification, the latest turn it owns (the
+// turn its notification opened, or one the end of its subagents opened), the
+// subagents started in its turns and the platform model usage of its turns,
+// by model, which its report carries with the usage of those subagents.
+type EvolveReview struct {
+	ReviewID  string                    `json:"review_id"`
+	StartedAt time.Time                 `json:"started_at"`
+	Turn      int64                     `json:"turn,omitempty"`
+	Agents    []string                  `json:"agents,omitempty"`
+	Usage     []conversation.ModelUsage `json:"usage,omitempty"`
+}
+
+// endsSubagent reports whether a notification is the end of one of the
+// review's subagents.
+func (review *EvolveReview) endsSubagent(notification conversation.SessionNotification) bool {
+	return notification.Source == conversation.NotificationSourceSubagent && slices.ContainsFunc(review.Agents, func(agentID string) bool {
+		return flowid.SubagentTaskID(agentID) == notification.TaskID
+	})
 }
 
 // ConnectorContributionAttempt is the Session's remote worktree attempt. The

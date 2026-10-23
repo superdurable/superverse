@@ -8,6 +8,7 @@
 
 export { ConversationView } from "@/components/agent/conversation/ConversationView";
 export { needsConfiguration, type NotificationLinks } from "@/components/agent/conversation/ConversationMessage";
+export { MarkdownContent } from "@/components/agent/conversation/MarkdownContent";
 export { AgentTasksPanel } from "@/components/agent/interaction/AgentTasksPanel";
 export { TimerCard } from "@/components/agent/interaction/TimerCard";
 export { TodoProgress } from "@/components/agent/interaction/TodoProgress";

@@ -3,23 +3,24 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Runs the platform's own Git commands in a Session's Sandbox for checkout, Agent commits and subagent worktrees, with a trusted environment and per-operation repository credentials.
 
-Callers: `internal/dexai/agents/sandbox`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent` and `internal/dexai/bootstrap` import this package.
+Callers: `internal/dexai/agents`, `internal/dexai/agents/sandbox`, `internal/dexai/agents/sandbox/provision`, `internal/dexai/agents/sandbox/workspace`, `internal/dexai/agents/session`, `internal/dexai/agents/session/agentloop`, `internal/dexai/agents/session/agenttasks`, `internal/dexai/agents/session/contribution`, `internal/dexai/agents/session/sandboxtools`, `internal/dexai/agents/session/subagent` and `internal/dexai/bootstrap` import this package.
 
 Dependencies: it imports `internal/comm`, `internal/comm/flowid`, `internal/comm/platform/connectorlibrary`, `internal/comm/platform/repohost`, `internal/dexai/agents/sandbox/workspace/sandboxd`, `internal/dexai/agents/session/conversation`, `internal/dexai/agents/toolfailure` and `internal/dexai/app/appmanifest` and calls the GitHub Git API.
 
 ```mermaid
 flowchart LR
   self["internal/dexai/agents/sandbox/workspace/git"]
-  c0["internal/dexai/agents/sandbox"] --> self
-  c1["internal/dexai/agents/sandbox/provision"] --> self
-  c2["internal/dexai/agents/sandbox/workspace"] --> self
-  c3["internal/dexai/agents/session"] --> self
-  c4["internal/dexai/agents/session/agentloop"] --> self
-  c5["internal/dexai/agents/session/agenttasks"] --> self
-  c6["internal/dexai/agents/session/contribution"] --> self
-  c7["internal/dexai/agents/session/sandboxtools"] --> self
-  c8["internal/dexai/agents/session/subagent"] --> self
-  c9["internal/dexai/bootstrap"] --> self
+  c0["internal/dexai/agents"] --> self
+  c1["internal/dexai/agents/sandbox"] --> self
+  c2["internal/dexai/agents/sandbox/provision"] --> self
+  c3["internal/dexai/agents/sandbox/workspace"] --> self
+  c4["internal/dexai/agents/session"] --> self
+  c5["internal/dexai/agents/session/agentloop"] --> self
+  c6["internal/dexai/agents/session/agenttasks"] --> self
+  c7["internal/dexai/agents/session/contribution"] --> self
+  c8["internal/dexai/agents/session/sandboxtools"] --> self
+  c9["internal/dexai/agents/session/subagent"] --> self
+  c10["internal/dexai/bootstrap"] --> self
   self --> d0["internal/comm"]
   self --> d1["internal/comm/flowid"]
   self --> d2["internal/comm/platform/connectorlibrary"]

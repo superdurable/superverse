@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
 Purpose: The Project Builder's frame: the bar, the chat column with its rail, Tools' list, the links between surfaces and versions, and the surface registry.
 
-Importers: `components/project`, `components/project/goals` and `mock/surface` import this directory.
+Importers: `components/project`, `components/project/goals`, `components/project/proposal` and `mock/surface` import this directory.
 
 Imports: it imports `components/frame/bar`, `components/ui`, `components/ui/pane`, `lib/browser`, `lib/project/setup`, `lib/shared` and `lib/teamspace`.
 
@@ -12,7 +12,8 @@ flowchart LR
   self["components/frame"]
   c0["components/project"] --> self
   c1["components/project/goals"] --> self
-  c2["mock/surface"] --> self
+  c2["components/project/proposal"] --> self
+  c3["mock/surface"] --> self
   self --> d0["components/frame/bar"]
   self --> d1["components/ui"]
   self --> d2["components/ui/pane"]
@@ -39,6 +40,9 @@ surface's content, and the frame draws everything around them.
   move between surfaces, and keeps the surface on every move between versions.
 - `conversation` draws a new Project's first conversation: the chat alone, centred, under a bar with only
   the Project's name and its actions. `ChatColumn` keeps the chat mounted through the switch to the
-  standard frame. `surfaces` limits the tabs to those with something to show and `fresh` marks the ones
+  standard frame; content of the chat moves the focus to its heading (`CHAT_HEADING_ID`) when what
+  held it leaves and nothing else can take it. `surfaces` limits the tabs to those with something to show and `fresh` marks the ones
   not opened since they appeared; the caller decides both.
+- A tab that needs a person carries the amber `NeedsYouMark`, which its accessible name says: Tools while
+  Setup needs you (`setupNeedsYou`), Goals while the agent's proposal waits for a decision (`proposalWaits`).
 - Widths and folded rails are per browser (`STORAGE_KEYS`), never shared.

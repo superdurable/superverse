@@ -12,18 +12,21 @@ import { ProblemPanel, type RemedyActions } from "@/components/ui/problem/Proble
 
 /**
  * A failed request of the page as a problem: what the page tried, the server's reason with its
- * remedy, and the details. reason is the error, or the message of a failed read.
+ * remedy, and the details. reason is the error, or the message of a failed read. Without
+ * `announce`, it shows without an alert, as where another copy of the same problem announces it.
  */
 export function RequestProblem({
   operation,
   reason,
   actions,
+  announce = true,
 }: {
   operation: string;
   reason: unknown;
   actions?: RemedyActions;
+  announce?: boolean;
 }) {
-  return <ProblemPanel problem={errorProblem(reason, { operation })} actions={actions} />;
+  return <ProblemPanel problem={errorProblem(reason, { operation })} actions={actions} announce={announce} />;
 }
 
 /** A neutral status line, in the same band as the Flow views' notices. */

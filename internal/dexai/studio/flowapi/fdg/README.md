@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
 Purpose: Defines and validates the Flow Definition Graph 2.0 contract for the Flow API, configuration host and Studio Runs: bundles, typed values, Start input and visibility queries.
 
-Callers: `internal/dexai/agents/diagnostics`, `internal/dexai/api`, `internal/dexai/delivery/evolve/runexport`, `internal/dexai/studio/confighost`, `internal/dexai/studio/confighost/connectormanifest`, `internal/dexai/studio/flowapi` and `internal/dexai/studio/runs` import this package.
+Callers: `internal/dexai/agents/diagnostics`, `internal/dexai/api`, `internal/dexai/delivery/evolve/runexport/history`, `internal/dexai/studio/confighost`, `internal/dexai/studio/confighost/connectormanifest`, `internal/dexai/studio/flowapi` and `internal/dexai/studio/runs` import this package.
 
 Dependencies: it imports `internal/comm` and `internal/dexai/app/appmanifest` and calls the Dex Flow API.
 
@@ -12,7 +12,7 @@ flowchart LR
   self["internal/dexai/studio/flowapi/fdg"]
   c0["internal/dexai/agents/diagnostics"] --> self
   c1["internal/dexai/api"] --> self
-  c2["internal/dexai/delivery/evolve/runexport"] --> self
+  c2["internal/dexai/delivery/evolve/runexport/history"] --> self
   c3["internal/dexai/studio/confighost"] --> self
   c4["internal/dexai/studio/confighost/connectormanifest"] --> self
   c5["internal/dexai/studio/flowapi"] --> self

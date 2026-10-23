@@ -8,6 +8,7 @@
 
 "use client";
 
+import type { ReactNode } from "react";
 import { NotReady } from "@/components/ui/NotReady";
 import { useProjectResource } from "@/lib/project/ProjectResourceProvider";
 import { useSessionResource } from "@/lib/session/SessionProvider";
@@ -30,16 +31,18 @@ function Waiting({ step }: { step: StartupStep }) {
 /**
  * The conversation of the Project's one Session. While Setup runs the Project has no Session yet;
  * once the Project is READY its ProjectFlow starts the Session, which the page reads as soon as
- * it exists.
+ * it exists. `dock` is a card the Builder keeps above the composer, such as the agent's proposal.
  */
 export function SessionConversation({
   projectId,
   canManage,
   live,
+  dock,
 }: {
   projectId: string;
   canManage: boolean;
   live?: LiveViewing;
+  dock?: ReactNode;
 }) {
   const project = useProjectResource()?.snapshot;
   const owner = useSessionResource();
@@ -78,5 +81,5 @@ export function SessionConversation({
       </aside>
     );
   }
-  return <SessionChat canManage={canManage} live={live} />;
+  return <SessionChat canManage={canManage} live={live} dock={dock} />;
 }

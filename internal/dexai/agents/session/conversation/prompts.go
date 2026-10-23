@@ -36,6 +36,8 @@ var (
 	sourceHandoffPromptFile string
 	//go:embed prompts/v1/platform_event.md
 	platformEventPromptFile string
+	//go:embed prompts/v1/platform_evolve.md
+	platformEvolvePromptFile string
 	//go:embed prompts/v1/compaction.md
 	compactionPromptFile string
 	//go:embed prompts/v1/unfinished_source_handoff.md
@@ -66,8 +68,9 @@ var (
 
 var (
 	// SessionSystemPrompt is the Session profile plus the source handoff
-	// guidance and how to act on delivery notifications.
-	SessionSystemPrompt = platformSessionPrompt() + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile)
+	// guidance, how to act on delivery notifications and, for the platform
+	// model only, how to answer an agent review of the goals.
+	SessionSystemPrompt = platformSessionPrompt() + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile) + "\n\n" + prompt(platformEvolvePromptFile)
 	// RemoteSessionSystemPrompt contains the shared Session rules without
 	// instructions for tools available only to the platform model.
 	RemoteSessionSystemPrompt = remoteSessionPrompt() + "\n\n" + prompt(sourceHandoffPromptFile) + "\n\n" + prompt(platformEventPromptFile)

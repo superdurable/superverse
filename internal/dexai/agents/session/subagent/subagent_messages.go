@@ -183,6 +183,9 @@ type replyNext struct {
 // is discarded and forces a compaction.
 func recordReply(ctx dex.Context, reply conversation.ModelReply, startedAt time.Time) replyNext {
 	state, segment := comm.Must(agentStateAttribute.Get(ctx)), comm.Must(contextSegmentAttribute.Get(ctx))
+	// The run's platform model usage, which its end reports for an agent review's billable record.
+	state.ModelUsage = conversation.AddModelUsage(state.ModelUsage, reply.Metrics)
+	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	segment.CacheAnchor = state.LastSequence
 	if prompt, isKnown := reply.Metrics.PromptTokens(); isKnown {
 		segment.PromptTokens = prompt

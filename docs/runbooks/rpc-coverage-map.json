@@ -32,7 +32,9 @@
       "kind-e2e",
       "native-e2e"
     ],
-    "/superverse.v2.AgentService/InterruptAgent": [],
+    "/superverse.v2.AgentService/InterruptAgent": [
+      "native-e2e"
+    ],
     "/superverse.v2.AgentService/ListAgentModels": [
       "kind-e2e",
       "native-e2e",
@@ -119,10 +121,19 @@
       "kind-e2e",
       "native-e2e"
     ],
+    "/superverse.v2.EvolveService/DecideEvolveProposal": [
+      "native-e2e"
+    ],
     "/superverse.v2.EvolveService/GetEvolve": [
+      "kind-e2e",
+      "native-e2e",
       "native-integration"
     ],
+    "/superverse.v2.EvolveService/GetEvolveProposal": [
+      "native-e2e"
+    ],
     "/superverse.v2.EvolveService/StartEvolveReview": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.FlowDiagnosticsService/DeleteFlowChannelMessage": [],
@@ -226,10 +237,12 @@
     ],
     "/superverse.v2.ProjectMemberService/RemoveProjectMember": [
       "api-integration",
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.ProjectMemberService/SetProjectMemberRole": [
       "api-integration",
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.ProjectService/CreateProject": [
@@ -285,6 +298,7 @@
       "native-integration"
     ],
     "/superverse.v2.ReleaseService/CancelReleaseBuild": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.ReleaseService/DeriveLiveConfiguration": [
@@ -333,6 +347,7 @@
       "native-e2e"
     ],
     "/superverse.v2.RemoteAgentService/RevokeRemoteAgentConnection": [
+      "native-e2e",
       "native-integration"
     ],
     "/superverse.v2.RemoteAgentService/SetSessionExecutor": [

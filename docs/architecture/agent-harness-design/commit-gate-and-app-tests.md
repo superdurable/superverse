@@ -103,9 +103,11 @@ After the gate, `GitOperations.CommitAndPush` runs the platform Git protocol in 
 - **Commit.** All changes are staged and committed with a process-scoped committer identity and the turn
   marker `SuperVerse-Turn: <sha256(callID)>`, in a subject of at most 72 bytes that never splits a UTF-8
   character. The push never forces. A staged file under `.local/superverse-attachments/`, where
-  `place_attachment` writes the user's attachments, fails `attachment_in_source` before anything is
-  committed, also for a blocked handoff, and everything is unstaged: the template's `.gitignore`
-  ignores `/.local/`, but the application may edit it.
+  `place_attachment` writes the user's attachments, fails `attachment_in_source`, and one under
+  `.local/superverse-evolve/`, where `place_evolve_export` places an agent review's Live runs,
+  `evolve_export_in_source`, before anything is committed, also for a blocked handoff, and
+  everything is unstaged: the template's `.gitignore` ignores `/.local/`, but the application may
+  edit it.
 - **Tree identity.** The definitions stage renders the tree that committing the working tree would create
   and names it; after staging, `git write-tree` must give that tree (for a clean accepted HEAD, HEAD's
   tree). A file that changed after the gate rendered it, such as a tracked file the tests or a background

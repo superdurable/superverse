@@ -14,16 +14,19 @@ import (
 )
 
 var regexMap = map[string]ogenregex.Regexp{
-	"^([A-Z][A-Za-z0-9]*|complete|fail)$":    ogenregex.MustCompile("^([A-Z][A-Za-z0-9]*|complete|fail)$"),
-	"^Test[A-Za-z0-9_]*(/[^\\s]+)?$":         ogenregex.MustCompile("^Test[A-Za-z0-9_]*(/[^\\s]+)?$"),
-	"^[0-9a-f]{40}$":                         ogenregex.MustCompile("^[0-9a-f]{40}$"),
-	"^[A-Z][A-Za-z0-9]*$":                    ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*$"),
-	"^[A-Z][A-Za-z0-9]*Flow$":                ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*Flow$"),
-	"^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$": ogenregex.MustCompile("^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$"),
-	"^[a-z0-9]{12}$":                         ogenregex.MustCompile("^[a-z0-9]{12}$"),
-	"^[a-z][a-z0-9-]{0,31}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{0,31}$"),
-	"^[a-z][a-z0-9-]{1,62}$":                 ogenregex.MustCompile("^[a-z][a-z0-9-]{1,62}$"),
-	"^s[1-9][0-9]{0,2}$":                     ogenregex.MustCompile("^s[1-9][0-9]{0,2}$"),
+	"^([A-Z][A-Za-z0-9]*|complete|fail)$":               ogenregex.MustCompile("^([A-Z][A-Za-z0-9]*|complete|fail)$"),
+	"^Test[A-Za-z0-9_]*(/[^\\s]+)?$":                    ogenregex.MustCompile("^Test[A-Za-z0-9_]*(/[^\\s]+)?$"),
+	"^[0-9a-f]{40}$":                                    ogenregex.MustCompile("^[0-9a-f]{40}$"),
+	"^[A-Z][A-Za-z0-9]*$":                               ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*$"),
+	"^[A-Z][A-Za-z0-9]*Flow$":                           ogenregex.MustCompile("^[A-Z][A-Za-z0-9]*Flow$"),
+	"^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$":            ogenregex.MustCompile("^[a-z0-9](?:[a-z0-9-]{0,34}[a-z0-9])?$"),
+	"^[a-z0-9]{12}$":                                    ogenregex.MustCompile("^[a-z0-9]{12}$"),
+	"^[a-z][a-z0-9-]{0,31}$":                            ogenregex.MustCompile("^[a-z][a-z0-9-]{0,31}$"),
+	"^[a-z][a-z0-9-]{1,62}$":                            ogenregex.MustCompile("^[a-z][a-z0-9-]{1,62}$"),
+	"^\\.local/superverse-evolve/r-[1-9][0-9]{0,17}/?$": ogenregex.MustCompile("^\\.local/superverse-evolve/r-[1-9][0-9]{0,17}/?$"),
+	"^agent-[a-z0-9]{8}$":                               ogenregex.MustCompile("^agent-[a-z0-9]{8}$"),
+	"^r-[1-9][0-9]{0,17}$":                              ogenregex.MustCompile("^r-[1-9][0-9]{0,17}$"),
+	"^s[1-9][0-9]{0,2}$":                                ogenregex.MustCompile("^s[1-9][0-9]{0,2}$"),
 }
 
 // Ref: #
@@ -2082,6 +2085,52 @@ func (o OptPlaceAttachment) Or(d PlaceAttachment) PlaceAttachment {
 	return d
 }
 
+// NewOptPlaceEvolveExport returns new OptPlaceEvolveExport with value set to v.
+func NewOptPlaceEvolveExport(v PlaceEvolveExport) OptPlaceEvolveExport {
+	return OptPlaceEvolveExport{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPlaceEvolveExport is optional PlaceEvolveExport.
+type OptPlaceEvolveExport struct {
+	Value PlaceEvolveExport
+	Set   bool
+}
+
+// IsSet returns true if OptPlaceEvolveExport was set.
+func (o OptPlaceEvolveExport) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPlaceEvolveExport) Reset() {
+	var v PlaceEvolveExport
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPlaceEvolveExport) SetTo(v PlaceEvolveExport) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPlaceEvolveExport) Get() (v PlaceEvolveExport, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPlaceEvolveExport) Or(d PlaceEvolveExport) PlaceEvolveExport {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptRead returns new OptRead with value set to v.
 func NewOptRead(v Read) OptRead {
 	return OptRead{
@@ -2444,6 +2493,144 @@ func (o OptReadTaskOutput) Get() (v ReadTaskOutput, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptReadTaskOutput) Or(d ReadTaskOutput) ReadTaskOutput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptReportEvolveReview returns new OptReportEvolveReview with value set to v.
+func NewOptReportEvolveReview(v ReportEvolveReview) OptReportEvolveReview {
+	return OptReportEvolveReview{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReportEvolveReview is optional ReportEvolveReview.
+type OptReportEvolveReview struct {
+	Value ReportEvolveReview
+	Set   bool
+}
+
+// IsSet returns true if OptReportEvolveReview was set.
+func (o OptReportEvolveReview) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReportEvolveReview) Reset() {
+	var v ReportEvolveReview
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReportEvolveReview) SetTo(v ReportEvolveReview) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReportEvolveReview) Get() (v ReportEvolveReview, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReportEvolveReview) Or(d ReportEvolveReview) ReportEvolveReview {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptReportEvolveReviewKind returns new OptReportEvolveReviewKind with value set to v.
+func NewOptReportEvolveReviewKind(v ReportEvolveReviewKind) OptReportEvolveReviewKind {
+	return OptReportEvolveReviewKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReportEvolveReviewKind is optional ReportEvolveReviewKind.
+type OptReportEvolveReviewKind struct {
+	Value ReportEvolveReviewKind
+	Set   bool
+}
+
+// IsSet returns true if OptReportEvolveReviewKind was set.
+func (o OptReportEvolveReviewKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReportEvolveReviewKind) Reset() {
+	var v ReportEvolveReviewKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReportEvolveReviewKind) SetTo(v ReportEvolveReviewKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReportEvolveReviewKind) Get() (v ReportEvolveReviewKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReportEvolveReviewKind) Or(d ReportEvolveReviewKind) ReportEvolveReviewKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptReportEvolveReviewVerdict returns new OptReportEvolveReviewVerdict with value set to v.
+func NewOptReportEvolveReviewVerdict(v ReportEvolveReviewVerdict) OptReportEvolveReviewVerdict {
+	return OptReportEvolveReviewVerdict{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReportEvolveReviewVerdict is optional ReportEvolveReviewVerdict.
+type OptReportEvolveReviewVerdict struct {
+	Value ReportEvolveReviewVerdict
+	Set   bool
+}
+
+// IsSet returns true if OptReportEvolveReviewVerdict was set.
+func (o OptReportEvolveReviewVerdict) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReportEvolveReviewVerdict) Reset() {
+	var v ReportEvolveReviewVerdict
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReportEvolveReviewVerdict) SetTo(v ReportEvolveReviewVerdict) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReportEvolveReviewVerdict) Get() (v ReportEvolveReviewVerdict, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReportEvolveReviewVerdict) Or(d ReportEvolveReviewVerdict) ReportEvolveReviewVerdict {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -2970,6 +3157,22 @@ func (s *PlaceAttachment) GetAttachmentID() string {
 // SetAttachmentID sets the value of AttachmentID.
 func (s *PlaceAttachment) SetAttachmentID(val string) {
 	s.AttachmentID = val
+}
+
+// Ref: #
+type PlaceEvolveExport struct {
+	// The ID of the agent review the evolve notification names, such as r-12.
+	ReviewID string `json:"review_id"`
+}
+
+// GetReviewID returns the value of ReviewID.
+func (s *PlaceEvolveExport) GetReviewID() string {
+	return s.ReviewID
+}
+
+// SetReviewID sets the value of ReviewID.
+func (s *PlaceEvolveExport) SetReviewID(val string) {
+	s.ReviewID = val
 }
 
 // Ref: #
@@ -3504,6 +3707,266 @@ func (s *ReadTaskOutput) SetOffset(val OptInt) {
 }
 
 // Ref: #
+type ReportEvolveReview struct {
+	// The agent review the evolve notification names, such as r-12.
+	ReviewID string `json:"review_id"`
+	// Reported ends the review with its verdict; applied reports an approved proposal pushed to Preview;
+	// discarded reports a declined, superseded or stale proposal whose change you discarded.
+	Phase ReportEvolveReviewPhase `json:"phase"`
+	// For reported only: proposal offers the change subagent's change; no_change ends the review without
+	// one.
+	Verdict OptReportEvolveReviewVerdict `json:"verdict"`
+	// For a proposal: the task ID of the change subagent whose result holds
+	// .superverse/evolve/<review_id>/proposal.md, backtest.json and open-runs.json.
+	AgentID OptString `json:"agent_id"`
+	// For a proposal: change (the default), trial for a change history cannot judge, or undo to revert a
+	// live proposal named in undoes.
+	Kind OptReportEvolveReviewKind `json:"kind"`
+	// For an undo proposal only: the review of the live proposal it reverts.
+	Undoes OptString `json:"undoes"`
+	// For a proposal: one line in the goal's words, such as Follow up once instead of twice.
+	Title OptString `json:"title"`
+	// For reported: what the review found, the proposal's why and its exact numbers, and findings without
+	// a proposal as noticed.
+	Summary OptString `json:"summary"`
+	// For applied only: the commit commit_and_push pushed the approved change as.
+	AppliedCommit OptString `json:"applied_commit"`
+}
+
+// GetReviewID returns the value of ReviewID.
+func (s *ReportEvolveReview) GetReviewID() string {
+	return s.ReviewID
+}
+
+// GetPhase returns the value of Phase.
+func (s *ReportEvolveReview) GetPhase() ReportEvolveReviewPhase {
+	return s.Phase
+}
+
+// GetVerdict returns the value of Verdict.
+func (s *ReportEvolveReview) GetVerdict() OptReportEvolveReviewVerdict {
+	return s.Verdict
+}
+
+// GetAgentID returns the value of AgentID.
+func (s *ReportEvolveReview) GetAgentID() OptString {
+	return s.AgentID
+}
+
+// GetKind returns the value of Kind.
+func (s *ReportEvolveReview) GetKind() OptReportEvolveReviewKind {
+	return s.Kind
+}
+
+// GetUndoes returns the value of Undoes.
+func (s *ReportEvolveReview) GetUndoes() OptString {
+	return s.Undoes
+}
+
+// GetTitle returns the value of Title.
+func (s *ReportEvolveReview) GetTitle() OptString {
+	return s.Title
+}
+
+// GetSummary returns the value of Summary.
+func (s *ReportEvolveReview) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetAppliedCommit returns the value of AppliedCommit.
+func (s *ReportEvolveReview) GetAppliedCommit() OptString {
+	return s.AppliedCommit
+}
+
+// SetReviewID sets the value of ReviewID.
+func (s *ReportEvolveReview) SetReviewID(val string) {
+	s.ReviewID = val
+}
+
+// SetPhase sets the value of Phase.
+func (s *ReportEvolveReview) SetPhase(val ReportEvolveReviewPhase) {
+	s.Phase = val
+}
+
+// SetVerdict sets the value of Verdict.
+func (s *ReportEvolveReview) SetVerdict(val OptReportEvolveReviewVerdict) {
+	s.Verdict = val
+}
+
+// SetAgentID sets the value of AgentID.
+func (s *ReportEvolveReview) SetAgentID(val OptString) {
+	s.AgentID = val
+}
+
+// SetKind sets the value of Kind.
+func (s *ReportEvolveReview) SetKind(val OptReportEvolveReviewKind) {
+	s.Kind = val
+}
+
+// SetUndoes sets the value of Undoes.
+func (s *ReportEvolveReview) SetUndoes(val OptString) {
+	s.Undoes = val
+}
+
+// SetTitle sets the value of Title.
+func (s *ReportEvolveReview) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *ReportEvolveReview) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetAppliedCommit sets the value of AppliedCommit.
+func (s *ReportEvolveReview) SetAppliedCommit(val OptString) {
+	s.AppliedCommit = val
+}
+
+// For a proposal: change (the default), trial for a change history cannot judge, or undo to revert a
+// live proposal named in undoes.
+type ReportEvolveReviewKind string
+
+const (
+	ReportEvolveReviewKindChange ReportEvolveReviewKind = "change"
+	ReportEvolveReviewKindTrial  ReportEvolveReviewKind = "trial"
+	ReportEvolveReviewKindUndo   ReportEvolveReviewKind = "undo"
+)
+
+// AllValues returns all ReportEvolveReviewKind values.
+func (ReportEvolveReviewKind) AllValues() []ReportEvolveReviewKind {
+	return []ReportEvolveReviewKind{
+		ReportEvolveReviewKindChange,
+		ReportEvolveReviewKindTrial,
+		ReportEvolveReviewKindUndo,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ReportEvolveReviewKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ReportEvolveReviewKindChange:
+		return []byte(s), nil
+	case ReportEvolveReviewKindTrial:
+		return []byte(s), nil
+	case ReportEvolveReviewKindUndo:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ReportEvolveReviewKind) UnmarshalText(data []byte) error {
+	switch ReportEvolveReviewKind(data) {
+	case ReportEvolveReviewKindChange:
+		*s = ReportEvolveReviewKindChange
+		return nil
+	case ReportEvolveReviewKindTrial:
+		*s = ReportEvolveReviewKindTrial
+		return nil
+	case ReportEvolveReviewKindUndo:
+		*s = ReportEvolveReviewKindUndo
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Reported ends the review with its verdict; applied reports an approved proposal pushed to Preview;
+// discarded reports a declined, superseded or stale proposal whose change you discarded.
+type ReportEvolveReviewPhase string
+
+const (
+	ReportEvolveReviewPhaseReported  ReportEvolveReviewPhase = "reported"
+	ReportEvolveReviewPhaseApplied   ReportEvolveReviewPhase = "applied"
+	ReportEvolveReviewPhaseDiscarded ReportEvolveReviewPhase = "discarded"
+)
+
+// AllValues returns all ReportEvolveReviewPhase values.
+func (ReportEvolveReviewPhase) AllValues() []ReportEvolveReviewPhase {
+	return []ReportEvolveReviewPhase{
+		ReportEvolveReviewPhaseReported,
+		ReportEvolveReviewPhaseApplied,
+		ReportEvolveReviewPhaseDiscarded,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ReportEvolveReviewPhase) MarshalText() ([]byte, error) {
+	switch s {
+	case ReportEvolveReviewPhaseReported:
+		return []byte(s), nil
+	case ReportEvolveReviewPhaseApplied:
+		return []byte(s), nil
+	case ReportEvolveReviewPhaseDiscarded:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ReportEvolveReviewPhase) UnmarshalText(data []byte) error {
+	switch ReportEvolveReviewPhase(data) {
+	case ReportEvolveReviewPhaseReported:
+		*s = ReportEvolveReviewPhaseReported
+		return nil
+	case ReportEvolveReviewPhaseApplied:
+		*s = ReportEvolveReviewPhaseApplied
+		return nil
+	case ReportEvolveReviewPhaseDiscarded:
+		*s = ReportEvolveReviewPhaseDiscarded
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// For reported only: proposal offers the change subagent's change; no_change ends the review without
+// one.
+type ReportEvolveReviewVerdict string
+
+const (
+	ReportEvolveReviewVerdictProposal ReportEvolveReviewVerdict = "proposal"
+	ReportEvolveReviewVerdictNoChange ReportEvolveReviewVerdict = "no_change"
+)
+
+// AllValues returns all ReportEvolveReviewVerdict values.
+func (ReportEvolveReviewVerdict) AllValues() []ReportEvolveReviewVerdict {
+	return []ReportEvolveReviewVerdict{
+		ReportEvolveReviewVerdictProposal,
+		ReportEvolveReviewVerdictNoChange,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ReportEvolveReviewVerdict) MarshalText() ([]byte, error) {
+	switch s {
+	case ReportEvolveReviewVerdictProposal:
+		return []byte(s), nil
+	case ReportEvolveReviewVerdictNoChange:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ReportEvolveReviewVerdict) UnmarshalText(data []byte) error {
+	switch ReportEvolveReviewVerdict(data) {
+	case ReportEvolveReviewVerdictProposal:
+		*s = ReportEvolveReviewVerdictProposal
+		return nil
+	case ReportEvolveReviewVerdictNoChange:
+		*s = ReportEvolveReviewVerdictNoChange
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #
 type RequestUserInput struct {
 	Questions []RequestUserInputQuestionsItem `json:"questions"`
 }
@@ -3680,6 +4143,10 @@ type StartAgent struct {
 	// For connector_develop only: new for a new connector, operation for a new operation of an existing
 	// connector, fix for a defect fix of an existing connector.
 	Contribution OptStartAgentContribution `json:"contribution"`
+	// Ignored workspace directories the subagent reads, which its worktree would not hold: only an agent
+	// review's placed export, .local/superverse-evolve/<review_id>. Each appears read-only at the same
+	// path in the subagent's worktree and never enters its result.
+	Inputs []string `json:"inputs"`
 }
 
 // GetDescription returns the value of Description.
@@ -3707,6 +4174,11 @@ func (s *StartAgent) GetContribution() OptStartAgentContribution {
 	return s.Contribution
 }
 
+// GetInputs returns the value of Inputs.
+func (s *StartAgent) GetInputs() []string {
+	return s.Inputs
+}
+
 // SetDescription sets the value of Description.
 func (s *StartAgent) SetDescription(val string) {
 	s.Description = val
@@ -3730,6 +4202,11 @@ func (s *StartAgent) SetSlug(val OptString) {
 // SetContribution sets the value of Contribution.
 func (s *StartAgent) SetContribution(val OptStartAgentContribution) {
 	s.Contribution = val
+}
+
+// SetInputs sets the value of Inputs.
+func (s *StartAgent) SetInputs(val []string) {
+	s.Inputs = val
 }
 
 // For connector_develop only: new for a new connector, operation for a new operation of an existing
@@ -4020,6 +4497,8 @@ type ToolInputs struct {
 	ReadConnectorChecksInput         OptReadConnectorChecks         `json:"ReadConnectorChecksInput"`
 	ReadAttachmentInput              OptReadAttachment              `json:"ReadAttachmentInput"`
 	PlaceAttachmentInput             OptPlaceAttachment             `json:"PlaceAttachmentInput"`
+	PlaceEvolveExportInput           OptPlaceEvolveExport           `json:"PlaceEvolveExportInput"`
+	ReportEvolveReviewInput          OptReportEvolveReview          `json:"ReportEvolveReviewInput"`
 	RequestUserInputInput            OptRequestUserInput            `json:"RequestUserInputInput"`
 	WriteTodosInput                  OptWriteTodos                  `json:"WriteTodosInput"`
 	StartAgentInput                  OptStartAgent                  `json:"StartAgentInput"`
@@ -4123,6 +4602,16 @@ func (s *ToolInputs) GetReadAttachmentInput() OptReadAttachment {
 // GetPlaceAttachmentInput returns the value of PlaceAttachmentInput.
 func (s *ToolInputs) GetPlaceAttachmentInput() OptPlaceAttachment {
 	return s.PlaceAttachmentInput
+}
+
+// GetPlaceEvolveExportInput returns the value of PlaceEvolveExportInput.
+func (s *ToolInputs) GetPlaceEvolveExportInput() OptPlaceEvolveExport {
+	return s.PlaceEvolveExportInput
+}
+
+// GetReportEvolveReviewInput returns the value of ReportEvolveReviewInput.
+func (s *ToolInputs) GetReportEvolveReviewInput() OptReportEvolveReview {
+	return s.ReportEvolveReviewInput
 }
 
 // GetRequestUserInputInput returns the value of RequestUserInputInput.
@@ -4258,6 +4747,16 @@ func (s *ToolInputs) SetReadAttachmentInput(val OptReadAttachment) {
 // SetPlaceAttachmentInput sets the value of PlaceAttachmentInput.
 func (s *ToolInputs) SetPlaceAttachmentInput(val OptPlaceAttachment) {
 	s.PlaceAttachmentInput = val
+}
+
+// SetPlaceEvolveExportInput sets the value of PlaceEvolveExportInput.
+func (s *ToolInputs) SetPlaceEvolveExportInput(val OptPlaceEvolveExport) {
+	s.PlaceEvolveExportInput = val
+}
+
+// SetReportEvolveReviewInput sets the value of ReportEvolveReviewInput.
+func (s *ToolInputs) SetReportEvolveReviewInput(val OptReportEvolveReview) {
+	s.ReportEvolveReviewInput = val
 }
 
 // SetRequestUserInputInput sets the value of RequestUserInputInput.
@@ -8628,6 +9127,39 @@ func (s *OptPlaceAttachment) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes PlaceEvolveExport as json.
+func (o OptPlaceEvolveExport) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes PlaceEvolveExport from json.
+func (o *OptPlaceEvolveExport) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptPlaceEvolveExport to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptPlaceEvolveExport) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptPlaceEvolveExport) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes Read as json.
 func (o OptRead) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -8888,6 +9420,105 @@ func (s OptReadTaskOutput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptReadTaskOutput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReview as json.
+func (o OptReportEvolveReview) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ReportEvolveReview from json.
+func (o *OptReportEvolveReview) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptReportEvolveReview to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptReportEvolveReview) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptReportEvolveReview) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReviewKind as json.
+func (o OptReportEvolveReviewKind) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes ReportEvolveReviewKind from json.
+func (o *OptReportEvolveReviewKind) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptReportEvolveReviewKind to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptReportEvolveReviewKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptReportEvolveReviewKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReviewVerdict as json.
+func (o OptReportEvolveReviewVerdict) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes ReportEvolveReviewVerdict from json.
+func (o *OptReportEvolveReviewVerdict) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptReportEvolveReviewVerdict to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptReportEvolveReviewVerdict) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptReportEvolveReviewVerdict) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -9349,6 +9980,102 @@ func (s *PlaceAttachment) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *PlaceAttachment) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *PlaceEvolveExport) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *PlaceEvolveExport) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("review_id")
+		e.Str(s.ReviewID)
+	}
+}
+
+var jsonFieldsNameOfPlaceEvolveExport = [1]string{
+	0: "review_id",
+}
+
+// Decode decodes PlaceEvolveExport from json.
+func (s *PlaceEvolveExport) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode PlaceEvolveExport to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "review_id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.ReviewID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"review_id\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode PlaceEvolveExport")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfPlaceEvolveExport) {
+					name = jsonFieldsNameOfPlaceEvolveExport[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *PlaceEvolveExport) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *PlaceEvolveExport) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -10540,6 +11267,361 @@ func (s *ReadTaskOutput) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *ReportEvolveReview) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ReportEvolveReview) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("review_id")
+		e.Str(s.ReviewID)
+	}
+	{
+		e.FieldStart("phase")
+		s.Phase.Encode(e)
+	}
+	{
+		if s.Verdict.Set {
+			e.FieldStart("verdict")
+			s.Verdict.Encode(e)
+		}
+	}
+	{
+		if s.AgentID.Set {
+			e.FieldStart("agent_id")
+			s.AgentID.Encode(e)
+		}
+	}
+	{
+		if s.Kind.Set {
+			e.FieldStart("kind")
+			s.Kind.Encode(e)
+		}
+	}
+	{
+		if s.Undoes.Set {
+			e.FieldStart("undoes")
+			s.Undoes.Encode(e)
+		}
+	}
+	{
+		if s.Title.Set {
+			e.FieldStart("title")
+			s.Title.Encode(e)
+		}
+	}
+	{
+		if s.Summary.Set {
+			e.FieldStart("summary")
+			s.Summary.Encode(e)
+		}
+	}
+	{
+		if s.AppliedCommit.Set {
+			e.FieldStart("applied_commit")
+			s.AppliedCommit.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfReportEvolveReview = [9]string{
+	0: "review_id",
+	1: "phase",
+	2: "verdict",
+	3: "agent_id",
+	4: "kind",
+	5: "undoes",
+	6: "title",
+	7: "summary",
+	8: "applied_commit",
+}
+
+// Decode decodes ReportEvolveReview from json.
+func (s *ReportEvolveReview) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReportEvolveReview to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "review_id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.ReviewID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"review_id\"")
+			}
+		case "phase":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Phase.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"phase\"")
+			}
+		case "verdict":
+			if err := func() error {
+				s.Verdict.Reset()
+				if err := s.Verdict.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"verdict\"")
+			}
+		case "agent_id":
+			if err := func() error {
+				s.AgentID.Reset()
+				if err := s.AgentID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"agent_id\"")
+			}
+		case "kind":
+			if err := func() error {
+				s.Kind.Reset()
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "undoes":
+			if err := func() error {
+				s.Undoes.Reset()
+				if err := s.Undoes.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"undoes\"")
+			}
+		case "title":
+			if err := func() error {
+				s.Title.Reset()
+				if err := s.Title.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"title\"")
+			}
+		case "summary":
+			if err := func() error {
+				s.Summary.Reset()
+				if err := s.Summary.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"summary\"")
+			}
+		case "applied_commit":
+			if err := func() error {
+				s.AppliedCommit.Reset()
+				if err := s.AppliedCommit.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"applied_commit\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ReportEvolveReview")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000011,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfReportEvolveReview) {
+					name = jsonFieldsNameOfReportEvolveReview[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ReportEvolveReview) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReportEvolveReview) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReviewKind as json.
+func (s ReportEvolveReviewKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ReportEvolveReviewKind from json.
+func (s *ReportEvolveReviewKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReportEvolveReviewKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ReportEvolveReviewKind(v) {
+	case ReportEvolveReviewKindChange:
+		*s = ReportEvolveReviewKindChange
+	case ReportEvolveReviewKindTrial:
+		*s = ReportEvolveReviewKindTrial
+	case ReportEvolveReviewKindUndo:
+		*s = ReportEvolveReviewKindUndo
+	default:
+		*s = ReportEvolveReviewKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ReportEvolveReviewKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReportEvolveReviewKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReviewPhase as json.
+func (s ReportEvolveReviewPhase) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ReportEvolveReviewPhase from json.
+func (s *ReportEvolveReviewPhase) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReportEvolveReviewPhase to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ReportEvolveReviewPhase(v) {
+	case ReportEvolveReviewPhaseReported:
+		*s = ReportEvolveReviewPhaseReported
+	case ReportEvolveReviewPhaseApplied:
+		*s = ReportEvolveReviewPhaseApplied
+	case ReportEvolveReviewPhaseDiscarded:
+		*s = ReportEvolveReviewPhaseDiscarded
+	default:
+		*s = ReportEvolveReviewPhase(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ReportEvolveReviewPhase) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReportEvolveReviewPhase) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ReportEvolveReviewVerdict as json.
+func (s ReportEvolveReviewVerdict) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ReportEvolveReviewVerdict from json.
+func (s *ReportEvolveReviewVerdict) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ReportEvolveReviewVerdict to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ReportEvolveReviewVerdict(v) {
+	case ReportEvolveReviewVerdictProposal:
+		*s = ReportEvolveReviewVerdictProposal
+	case ReportEvolveReviewVerdictNoChange:
+		*s = ReportEvolveReviewVerdictNoChange
+	default:
+		*s = ReportEvolveReviewVerdict(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ReportEvolveReviewVerdict) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ReportEvolveReviewVerdict) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *RequestUserInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -11099,14 +12181,25 @@ func (s *StartAgent) encodeFields(e *jx.Encoder) {
 			s.Contribution.Encode(e)
 		}
 	}
+	{
+		if s.Inputs != nil {
+			e.FieldStart("inputs")
+			e.ArrStart()
+			for _, elem := range s.Inputs {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfStartAgent = [5]string{
+var jsonFieldsNameOfStartAgent = [6]string{
 	0: "description",
 	1: "prompt",
 	2: "kind",
 	3: "slug",
 	4: "contribution",
+	5: "inputs",
 }
 
 // Decode decodes StartAgent from json.
@@ -11171,6 +12264,25 @@ func (s *StartAgent) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"contribution\"")
+			}
+		case "inputs":
+			if err := func() error {
+				s.Inputs = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Inputs = append(s.Inputs, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"inputs\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -11930,6 +13042,18 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.PlaceEvolveExportInput.Set {
+			e.FieldStart("PlaceEvolveExportInput")
+			s.PlaceEvolveExportInput.Encode(e)
+		}
+	}
+	{
+		if s.ReportEvolveReviewInput.Set {
+			e.FieldStart("ReportEvolveReviewInput")
+			s.ReportEvolveReviewInput.Encode(e)
+		}
+	}
+	{
 		if s.RequestUserInputInput.Set {
 			e.FieldStart("RequestUserInputInput")
 			s.RequestUserInputInput.Encode(e)
@@ -11979,7 +13103,7 @@ func (s *ToolInputs) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfToolInputs = [27]string{
+var jsonFieldsNameOfToolInputs = [29]string{
 	0:  "ConnectorCatalogInput",
 	1:  "CommitAndPushInput",
 	2:  "ConfirmRequirementsInput",
@@ -11999,14 +13123,16 @@ var jsonFieldsNameOfToolInputs = [27]string{
 	16: "ReadConnectorChecksInput",
 	17: "ReadAttachmentInput",
 	18: "PlaceAttachmentInput",
-	19: "RequestUserInputInput",
-	20: "WriteTodosInput",
-	21: "StartAgentInput",
-	22: "StartConnectorContributionInput",
-	23: "SubmitConnectorContributionInput",
-	24: "OpenTaskWorktreeInput",
-	25: "MergeTaskWorktreeInput",
-	26: "MergeAgentChangesInput",
+	19: "PlaceEvolveExportInput",
+	20: "ReportEvolveReviewInput",
+	21: "RequestUserInputInput",
+	22: "WriteTodosInput",
+	23: "StartAgentInput",
+	24: "StartConnectorContributionInput",
+	25: "SubmitConnectorContributionInput",
+	26: "OpenTaskWorktreeInput",
+	27: "MergeTaskWorktreeInput",
+	28: "MergeAgentChangesInput",
 }
 
 // Decode decodes ToolInputs from json.
@@ -12206,6 +13332,26 @@ func (s *ToolInputs) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"PlaceAttachmentInput\"")
+			}
+		case "PlaceEvolveExportInput":
+			if err := func() error {
+				s.PlaceEvolveExportInput.Reset()
+				if err := s.PlaceEvolveExportInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"PlaceEvolveExportInput\"")
+			}
+		case "ReportEvolveReviewInput":
+			if err := func() error {
+				s.ReportEvolveReviewInput.Reset()
+				if err := s.ReportEvolveReviewInput.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ReportEvolveReviewInput\"")
 			}
 		case "RequestUserInputInput":
 			if err := func() error {
@@ -15273,6 +16419,41 @@ func (s *PlaceAttachment) Validate() error {
 	return nil
 }
 
+func (s *PlaceEvolveExport) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^r-[1-9][0-9]{0,17}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.ReviewID)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "review_id",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *Read) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -16084,6 +17265,275 @@ func (s *ReadTaskOutput) Validate() error {
 	return nil
 }
 
+func (s *ReportEvolveReview) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     0,
+			MaxLengthSet:  false,
+			Email:         false,
+			Hostname:      false,
+			Regex:         regexMap["^r-[1-9][0-9]{0,17}$"],
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.ReviewID)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "review_id",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Phase.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "phase",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Verdict.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "verdict",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.AgentID.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         regexMap["^agent-[a-z0-9]{8}$"],
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "agent_id",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Kind.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Undoes.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         regexMap["^r-[1-9][0-9]{0,17}$"],
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "undoes",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Title.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     1,
+					MinLengthSet:  true,
+					MaxLength:     120,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "title",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Summary.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     2048,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "summary",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.AppliedCommit.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         regexMap["^[0-9a-f]{40}$"],
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "applied_commit",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s ReportEvolveReviewKind) Validate() error {
+	switch s {
+	case "change":
+		return nil
+	case "trial":
+		return nil
+	case "undo":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s ReportEvolveReviewPhase) Validate() error {
+	switch s {
+	case "reported":
+		return nil
+	case "applied":
+		return nil
+	case "discarded":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s ReportEvolveReviewVerdict) Validate() error {
+	switch s {
+	case "proposal":
+		return nil
+	case "no_change":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *RequestUserInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -16472,6 +17922,54 @@ func (s *StartAgent) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "contribution",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Inputs == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    1,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Inputs)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Inputs {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     0,
+					MaxLengthSet:  false,
+					Email:         false,
+					Hostname:      false,
+					Regex:         regexMap["^\\.local/superverse-evolve/r-[1-9][0-9]{0,17}/?$"],
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(elem)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "inputs",
 			Error: err,
 		})
 	}
@@ -17062,6 +18560,42 @@ func (s *ToolInputs) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "PlaceAttachmentInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.PlaceEvolveExportInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "PlaceEvolveExportInput",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.ReportEvolveReviewInput.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "ReportEvolveReviewInput",
 			Error: err,
 		})
 	}

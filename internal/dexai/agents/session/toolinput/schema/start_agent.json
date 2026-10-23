@@ -42,6 +42,15 @@
         "operation",
         "fix"
       ]
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Ignored workspace directories the subagent reads, which its worktree would not hold: only an agent review's placed export, .local/superverse-evolve/<review_id>. Each appears read-only at the same path in the subagent's worktree and never enters its result.",
+      "maxItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^\\.local/superverse-evolve/r-[1-9][0-9]{0,17}/?$"
+      }
     }
   }
 }

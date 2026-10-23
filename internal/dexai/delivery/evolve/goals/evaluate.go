@@ -9,6 +9,8 @@
 package goals
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -31,7 +33,9 @@ type Metrics struct {
 
 // GoalValue is one goal's value overall, per release at start and per trial arm.
 type GoalValue struct {
-	ID        string          `json:"id"`
+	ID string `json:"id"`
+	// Digest names the definition the value was measured under (definitionDigest).
+	Digest    string          `json:"digest"`
 	Kind      Kind            `json:"kind"`
 	Statement string          `json:"statement"`
 	Metric    string          `json:"metric"`
@@ -69,7 +73,7 @@ func Evaluate(spec Spec, records []runexport.Record, at time.Time) (Metrics, err
 		e := evaluator{spec: spec, at: at}
 		value, runs := e.metric(m, records)
 		gv := GoalValue{
-			ID: goal.ID, Kind: goal.Kind, Statement: goal.Statement, Metric: goal.Metric, Direction: goal.Direction,
+			ID: goal.ID, Digest: definitionDigest(goal), Kind: goal.Kind, Statement: goal.Statement, Metric: goal.Metric, Direction: goal.Direction,
 			Target: goal.Target, Value: value, Runs: runs, FewRuns: runs < fewRuns,
 			ByRelease: e.split(m, records, func(r runexport.Record) string { return r.ReleaseAtStart }),
 			ByVariant: e.split(m, records, func(r runexport.Record) string {
@@ -90,6 +94,27 @@ func Evaluate(spec Spec, records []runexport.Record, at time.Time) (Metrics, err
 	}
 	return result, nil
 }
+
+// definitionDigest is a short digest of what a goal's value means: its metric,
+// its direction or guardrail and its target. Two goals with one ID and the same
+// digest measure the same thing; another digest is another definition, such as
+// a looser guardrail, whose values never stand for this one's.
+func definitionDigest(goal Goal) string {
+	definition, err := json.Marshal(struct {
+		Metric    string     `json:"metric"`
+		Direction Direction  `json:"direction,omitempty"`
+		Guardrail *Guardrail `json:"guardrail,omitempty"`
+		Target    *float64   `json:"target,omitempty"`
+	}{goal.Metric, goal.Direction, goal.Guardrail, goal.Target})
+	if err != nil {
+		panic("goals: a goal definition does not encode: " + err.Error())
+	}
+	sum := sha256.Sum256(definition)
+	return hex.EncodeToString(sum[:8])
+}
+
+// DefinitionDigestForTest is definitionDigest, which tests compute as a review does.
+var DefinitionDigestForTest = definitionDigest
 
 type evaluator struct {
 	spec Spec
@@ -117,90 +142,142 @@ func (e evaluator) split(m metric, records []runexport.Record, key func(runexpor
 
 // metric returns the value and the run count it rests on: a ratio rests on its denominator's runs.
 func (e evaluator) metric(m metric, records []runexport.Record) (*float64, int) {
-	value, runs := e.term(m.numerator, records)
-	if m.denominator == nil {
-		return value, runs
-	}
-	denominator, denominatorRuns := e.term(*m.denominator, records)
-	if value == nil || denominator == nil || *denominator == 0 {
-		return nil, denominatorRuns
-	}
-	ratio := *value / *denominator
-	return &ratio, denominatorRuns
+	return ratio(m, func(t term) []share {
+		shares := make([]share, 0, len(records))
+		for _, record := range records {
+			shares = append(shares, e.share(t, record, nil))
+		}
+		return shares
+	})
 }
 
-func (e evaluator) term(t term, records []runexport.Record) (*float64, int) {
-	var selected []runexport.Record
-	for _, record := range records {
-		if t.where == nil || e.holds(*t.where, record) {
-			selected = append(selected, record)
-		}
+// share is one run's part in a term: the chance the term selects it, the chance that it is also
+// the term's outcome, and its number. A recorded run's chances are 0 or 1; the backtest weighs
+// an estimated run by the runs that took its new path.
+type share struct {
+	selected float64
+	hit      float64
+	value    float64
+	counted  bool
+}
+
+// ratio combines the shares of a metric's terms into its value and the runs it rests on.
+func ratio(m metric, shares func(term) []share) (*float64, int) {
+	return ratioSides(m, shares, shares)
+}
+
+// ratioSides is ratio with the numerator's and the denominator's shares taken apart.
+func ratioSides(m metric, numerator, denominator func(term) []share) (*float64, int) {
+	value, weight := combine(m.numerator.fn, numerator(m.numerator))
+	if m.denominator == nil {
+		return value, int(math.Round(weight))
+	}
+	denominatorValue, denominatorWeight := combine(m.denominator.fn, denominator(*m.denominator))
+	runs := int(math.Round(denominatorWeight))
+	if value == nil || denominatorValue == nil || *denominatorValue == 0 {
+		return nil, runs
+	}
+	result := *value / *denominatorValue
+	return &result, runs
+}
+
+// share is a run's part in a term from its recorded facts, with numbers replacing recorded per-run numbers by name.
+func (e evaluator) share(t term, record runexport.Record, numbers map[string]float64) share {
+	if t.where != nil && !e.holds(*t.where, record) {
+		return share{}
 	}
 	switch t.fn {
 	case aggregateCount:
-		n := 0
-		for _, record := range selected {
-			if e.outcome(t.outcome, record) {
-				n++
-			}
-		}
-		count := float64(n)
-		return &count, len(selected)
+		return share{selected: 1, hit: indicator(e.outcome(t.outcome, record))}
 	case aggregateRate:
-		hits, base := 0, 0
-		for _, record := range selected {
-			if e.outcome(t.of, record) {
-				base++
-				if e.outcome(t.outcome, record) {
-					hits++
-				}
-			}
+		if !e.outcome(t.of, record) {
+			return share{}
+		}
+		return share{selected: 1, hit: indicator(e.outcome(t.outcome, record))}
+	default:
+		value, counted := e.numberWith(t.number, record, numbers)
+		return share{selected: 1, value: value, counted: counted}
+	}
+}
+
+func indicator(holds bool) float64 {
+	if holds {
+		return 1
+	}
+	return 0
+}
+
+// combine aggregates a term's shares and returns the weight of runs the value rests on.
+func combine(fn aggregate, shares []share) (*float64, float64) {
+	switch fn {
+	case aggregateCount:
+		hits, runs := 0.0, 0.0
+		for _, s := range shares {
+			hits += s.hit
+			runs += s.selected
+		}
+		return &hits, runs
+	case aggregateRate:
+		hits, base := 0.0, 0.0
+		for _, s := range shares {
+			hits += s.hit
+			base += s.selected
 		}
 		if base == 0 {
 			return nil, 0
 		}
-		rate := float64(hits) / float64(base)
+		rate := hits / base
 		return &rate, base
-	}
-	var values []float64
-	for _, record := range selected {
-		if v, ok := e.number(t.number, record); ok {
-			values = append(values, v)
+	default:
+		var values []share
+		for _, s := range shares {
+			if s.counted && s.selected > 0 {
+				values = append(values, s)
+			}
 		}
+		if len(values) == 0 {
+			return nil, 0
+		}
+		return summarize(fn, values)
 	}
-	if len(values) == 0 {
-		return nil, 0
-	}
-	result := summarize(t.fn, values)
-	return &result, len(values)
 }
 
-func summarize(fn aggregate, values []float64) float64 {
+// summarize aggregates numbers weighted by the chance each run is selected; a percentile is the
+// first value whose cumulative weight reaches its share of the total.
+func summarize(fn aggregate, values []share) (*float64, float64) {
+	total, weight := 0.0, 0.0
+	for _, v := range values {
+		total += v.selected * v.value
+		weight += v.selected
+	}
+	var result float64
 	switch fn {
-	case aggregateSum, aggregateMean:
-		total := 0.0
-		for _, v := range values {
-			total += v
-		}
-		if fn == aggregateMean {
-			return total / float64(len(values))
-		}
-		return total
+	case aggregateMean:
+		result = total / weight
 	case aggregateMax:
-		best := math.Inf(-1)
+		result = math.Inf(-1)
 		for _, v := range values {
-			best = math.Max(best, v)
+			result = math.Max(result, v.value)
 		}
-		return best
+	case aggregateP50, aggregateP90:
+		sorted := append([]share(nil), values...)
+		sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].value < sorted[j].value })
+		target := 0.5 * weight
+		if fn == aggregateP90 {
+			target = 0.9 * weight
+		}
+		cumulative := 0.0
+		for _, v := range sorted {
+			cumulative += v.selected
+			result = v.value
+			if cumulative >= target {
+				break
+			}
+		}
+	default:
+		result = total
 	}
-	sorted := append([]float64(nil), values...)
-	sort.Float64s(sorted)
-	share := 0.5
-	if fn == aggregateP90 {
-		share = 0.9
-	}
-	rank := int(math.Ceil(share*float64(len(sorted)))) - 1
-	return sorted[max(rank, 0)]
+	return &result, weight
 }
 
 func (e evaluator) holds(c condition, record runexport.Record) bool {
@@ -234,7 +311,16 @@ func (e evaluator) outcome(name string, record runexport.Record) bool {
 	return false
 }
 
-// number is a run's value of a per-run number; Steps, Actions and waits a run never had count as zero.
+// numberWith is a run's value of a per-run number, taken from numbers by its name when present
+// there; Steps, Actions and waits a run never had count as zero. Fields always come from the record.
+func (e evaluator) numberWith(n number, record runexport.Record, numbers map[string]float64) (float64, bool) {
+	if value, ok := numbers[n.key()]; ok && n.kind != numberField {
+		return value, true
+	}
+	return e.number(n, record)
+}
+
+// number is a run's recorded value of a per-run number.
 func (e evaluator) number(n number, record runexport.Record) (float64, bool) {
 	switch n.kind {
 	case numberDuration:

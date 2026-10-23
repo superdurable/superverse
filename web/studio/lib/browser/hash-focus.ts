@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from "react";
 
-const FOCUSABLE = "button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])";
+const FOCUSABLE = "button, input, select, textarea, summary, a[href], [tabindex]:not([tabindex='-1'])";
 /** How long a jump waits for its target to render, as after a read the page waits for. */
 const WAIT_MS = 5_000;
 /**

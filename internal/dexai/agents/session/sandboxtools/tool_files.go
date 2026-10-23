@@ -11,9 +11,12 @@ package sandboxtools
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"path"
 	"slices"
 	"strings"
 
@@ -22,6 +25,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/toolinput"
 	"github.com/superdurable/superversev2/internal/dexai/agents/toolfailure"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals"
 )
 
 // The file tools read, edit, write and search the agent root and the read-only
@@ -147,6 +151,163 @@ func (execution *Execution) placeAttachment(ctx context.Context, call Call) (Res
 		Digest     string `json:"digest"`
 		Redactions int    `json:"redactions"`
 	}{path, len(file.Data), file.Digest, file.Redactions})))}, nil
+}
+
+// EvolveExport is an agent review's export as the Session read it for
+// place_evolve_export: the stored manifest.json with the digest of runs.jsonl,
+// the stream of runs.jsonl (RunsBytes bytes of RunsCount runs, one per FlowID
+// in canonical order), metrics.json and goals.md at the goals commit, the
+// Live build's. NotLive, when set, is why the stored manifest is not this
+// review's export of the Live runs.
+type EvolveExport struct {
+	ReviewID    string
+	GoalsCommit string
+	RunsSHA256  string
+	Manifest    []byte
+	Runs        io.Reader
+	RunsBytes   int64
+	RunsCount   int
+	Metrics     []byte
+	Goals       []byte
+	NotLive     string
+}
+
+// Bounds of a placed export: the chunks of runs.jsonl that sandboxd writes,
+// and the whole of runs.jsonl.
+const (
+	evolveChunkBytes         = 4 << 20
+	maximumEvolveExportBytes = 256 << 20
+	maximumEvolveAnswerBytes = 64 << 10
+)
+
+//go:embed evolve_export.py
+var evolveExportProgram string
+
+// placeEvolveExport places the export of the review a place_evolve_export
+// call names in conversation.EvolveWorkspacePath: runs.jsonl, streamed in
+// chunks of at most 4 MiB through sandboxd and concatenated by the helper,
+// which checks its SHA-256 against the export's, with manifest.json,
+// metrics.json and goals.md, all read-only; the helper keeps the newest two
+// review folders. Placing it again writes the same bytes.
+func (execution *Execution) placeEvolveExport(ctx context.Context, call Call) (Result, error) {
+	input, err := toolinput.PlaceEvolveExport.Decode(call.Arguments)
+	if err != nil {
+		return Result{}, invalidArguments(err)
+	}
+	export := call.EvolveExport
+	switch {
+	case export == nil || export.ReviewID != input.ReviewID:
+		return Result{}, sandboxd.NewToolFailure(toolfailure.EvolveReviewStale, fmt.Errorf("review %s of this Project has no stored export to place", input.ReviewID))
+	case export.NotLive != "":
+		return Result{}, sandboxd.NewToolFailure(toolfailure.EvolveExportNotLive, errors.New(export.NotLive))
+	}
+	if export.RunsBytes > maximumEvolveExportBytes {
+		return Result{}, sandboxd.NewToolFailure(toolfailure.EvolveExportTooLarge, fmt.Errorf("runs.jsonl of %s takes %d bytes; at most %d are placed", input.ReviewID, export.RunsBytes, maximumEvolveExportBytes))
+	}
+	folder := conversation.EvolveWorkspaceDirectory(input.ReviewID)
+	chunks := &chunkWriter{ctx: ctx, client: execution.executor, directory: folder + "/.parts"}
+	// The stream fails at its end unless it held the runs the review evaluated; the helper checks the chunks.
+	if _, err = io.Copy(chunks, io.LimitReader(export.Runs, maximumEvolveExportBytes+1)); err == nil {
+		err = chunks.flush()
+	}
+	if err != nil {
+		return Result{}, fmt.Errorf("place the runs of %s: %w", input.ReviewID, err)
+	}
+	digest, count := export.RunsSHA256, export.RunsCount
+	for name, data := range map[string][]byte{"manifest.json": export.Manifest, "metrics.json": export.Metrics, "goals.md": export.Goals} {
+		if err = execution.executor.WriteFile(ctx, sandboxd.WorkspacePath(folder+"/.parts/"+name), data, "0600"); err != nil {
+			return Result{}, fmt.Errorf("write %s of %s: %w", name, input.ReviewID, err)
+		}
+	}
+	request := struct {
+		RunsSHA256 string `json:"runsSha256"`
+		Chunks     int    `json:"chunks"`
+	}{digest, chunks.count}
+	output, err := execution.executor.RunHelperJSON(ctx, []string{"python3", "-c", evolveExportProgram, path.Join(sandboxd.WorkspaceRoot, folder)},
+		comm.Must(json.Marshal(request)), maximumEvolveAnswerBytes)
+	if err != nil {
+		return Result{}, err
+	}
+	var placed struct {
+		RunsSHA256 string   `json:"runs_sha256"`
+		Bytes      int64    `json:"bytes"`
+		Pruned     []string `json:"pruned"`
+	}
+	if err = json.Unmarshal(output, &placed); err != nil || placed.RunsSHA256 != digest {
+		return Result{}, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("the export helper answered %q for %s", output, input.ReviewID))
+	}
+	return jsonResult(evolvePlacement{Folder: conversation.EvolveWorkspacePath(input.ReviewID), Files: []string{"runs.jsonl", "manifest.json", "metrics.json", "goals.md"},
+		Runs: count, Bytes: placed.Bytes, GoalsCommit: export.GoalsCommit, RunsSHA256: digest, Goals: goalValues(export.Metrics), Removed: placed.Pruned,
+		Next: "Read goals.md (the Live build's goals) and metrics.json; give this folder to subagents as start_agent inputs. Only these runs and goals count."}, false), nil
+}
+
+// evolvePlacement is what place_evolve_export answers.
+type evolvePlacement struct {
+	Folder      string            `json:"folder"`
+	Files       []string          `json:"files"`
+	Runs        int               `json:"runs"`
+	Bytes       int64             `json:"bytes"`
+	GoalsCommit string            `json:"goals_commit"`
+	RunsSHA256  string            `json:"runs_sha256"`
+	Goals       []evolveGoalValue `json:"goals,omitempty"`
+	Removed     []string          `json:"removed_folders,omitempty"`
+	Next        string            `json:"next"`
+}
+
+// evolveGoalValue is one goal's value as metrics.json holds it.
+type evolveGoalValue struct {
+	ID    string   `json:"id"`
+	Value *float64 `json:"value"`
+	Runs  int      `json:"runs"`
+}
+
+// goalValues are the goal values of metrics.json, none when it does not decode.
+func goalValues(metrics []byte) []evolveGoalValue {
+	var decoded goals.Metrics
+	if json.Unmarshal(metrics, &decoded) != nil {
+		return nil
+	}
+	values := make([]evolveGoalValue, 0, len(decoded.Goals))
+	for _, goal := range decoded.Goals {
+		values = append(values, evolveGoalValue{ID: goal.ID, Value: goal.Value, Runs: goal.Runs})
+	}
+	return values
+}
+
+// chunkWriter writes what it is given through sandboxd as numbered files of
+// at most evolveChunkBytes in directory, runs-0000 first.
+type chunkWriter struct {
+	ctx       context.Context
+	client    *sandboxd.SandboxClient
+	directory string
+	buffer    []byte
+	count     int
+}
+
+func (w *chunkWriter) Write(data []byte) (int, error) {
+	for rest := data; len(rest) > 0; {
+		taken := min(len(rest), evolveChunkBytes-len(w.buffer))
+		w.buffer, rest = append(w.buffer, rest[:taken]...), rest[taken:]
+		if len(w.buffer) == evolveChunkBytes {
+			if err := w.flush(); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(data), nil
+}
+
+// flush writes the buffered bytes as the next chunk; an empty export writes one empty chunk.
+func (w *chunkWriter) flush() error {
+	if len(w.buffer) == 0 && w.count > 0 {
+		return nil
+	}
+	target := sandboxd.WorkspacePath(fmt.Sprintf("%s/runs-%04d", w.directory, w.count))
+	if err := w.client.WriteFile(w.ctx, target, w.buffer, "0600"); err != nil {
+		return fmt.Errorf("write %s: %w", target, err)
+	}
+	w.buffer, w.count = w.buffer[:0], w.count+1
+	return nil
 }
 
 func (execution *Execution) grep(ctx context.Context, call Call) (Result, error) {

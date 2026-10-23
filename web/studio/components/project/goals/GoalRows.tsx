@@ -48,37 +48,22 @@ function GoalRow({
   value: EvolveGoalValue__Output | null;
   trend: number[];
 }) {
-  const unit = goalUnit(goal.metric);
-  const format = (number: number | undefined) => formatGoalValue(number, unit);
-  const limit = guardrailWords(goal);
+  const format = (number: number | undefined) => formatGoalValue(number, goalUnit(goal.metric));
   const holds = value?.holds;
   const runs = value?.runs ?? 0;
-  const down = goal.direction === "EVOLVE_GOAL_DIRECTION_DOWN";
-  // Each fact keeps its separator, so a wrapped line never starts with one.
-  const facts: ReactNode[] = [
-    KIND_WORDS[goal.kind],
-    limit ?? (
-      <span className="inline-flex items-center gap-0.5">
-        <Glyph name={down ? "arrowDown" : "arrowUp"} className="size-3" />
-        {down ? "Down" : "Up"}
-      </span>
-    ),
-    goal.target !== undefined && `Target ${format(goal.target)}`,
-    value && `${runs.toLocaleString()} run${runs === 1 ? "" : "s"}`,
-  ].filter(Boolean);
   return (
     <li className="flex items-center gap-3 px-3 py-2.5" data-testid="goal-row" data-goal={goal.id}>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] text-ink">{goal.statement}</p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-caption text-ink-faint">
-          {facts.map((fact, index) => (
-            <span key={index} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              {fact}
-              {index < facts.length - 1 && <span aria-hidden="true">·</span>}
-            </span>
-          ))}
+        <GoalFacts
+          facts={[
+            ...goalKindFacts(goal),
+            goal.target !== undefined && `Target ${format(goal.target)}`,
+            value && `${runs.toLocaleString()} run${runs === 1 ? "" : "s"}`,
+          ]}
+        >
           {value?.fewRuns && <Badge title="Fewer than 20 runs: read it as a hint">few runs</Badge>}
-        </p>
+        </GoalFacts>
       </div>
       {trend.length >= 2 && <Trend values={trend} format={format} />}
       <div className="flex w-22 shrink-0 items-center justify-end gap-1.5">
@@ -96,6 +81,37 @@ function GoalRow({
         </span>
       </div>
     </li>
+  );
+}
+
+/** What a goal is about and which way it should go: its kind, then its guardrail's limit or its direction. */
+export function goalKindFacts(goal: EvolveGoal__Output): ReactNode[] {
+  const down = goal.direction === "EVOLVE_GOAL_DIRECTION_DOWN";
+  return [
+    KIND_WORDS[goal.kind],
+    guardrailWords(goal) ?? (
+      <span className="inline-flex items-center gap-0.5">
+        <Glyph name={down ? "arrowDown" : "arrowUp"} className="size-3" />
+        {down ? "Down" : "Up"}
+      </span>
+    ),
+  ];
+}
+
+/** The quiet line of facts under a goal's statement, dot-separated, with marks such as "few runs" after them. */
+export function GoalFacts({ facts, children }: { facts: ReactNode[]; children?: ReactNode }) {
+  // Each fact keeps its separator, so a wrapped line never starts with one.
+  const shown = facts.filter(Boolean);
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-caption text-ink-faint">
+      {shown.map((fact, index) => (
+        <span key={index} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          {fact}
+          {index < shown.length - 1 && <span aria-hidden="true">·</span>}
+        </span>
+      ))}
+      {children}
+    </p>
   );
 }
 

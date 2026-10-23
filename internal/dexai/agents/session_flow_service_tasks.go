@@ -9,16 +9,24 @@
 package agents
 
 import (
+	"cmp"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/agents/modelcredential"
+	"github.com/superdurable/superversev2/internal/dexai/agents/remoteexec"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	sessionagent "github.com/superdurable/superversev2/internal/dexai/agents/session"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/subagent"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
 )
 
 // reportSessionNotification delivers one notification from a source outside
@@ -36,6 +44,132 @@ func (s *SessionFlowService) reportSessionNotification(ctx context.Context, proj
 		return false, fmt.Errorf("report notification %s to the Session of Project %s: %w", notification.ID, projectID, err)
 	}
 	return admitted, nil
+}
+
+// ReportEvolveNotification tells the Project's Session of an agent review
+// that waits for its report, or of a person's decision on the review's
+// proposal, as EvolveFlow asks. The Session takes it only while its Agent
+// waits for the user. A Session that is not ACTIVE, runs a local agent, which
+// never runs the platform model or its tools, or whose Project has no model
+// key while its model is not the mock is a *evolve.SessionSkip; a full queue
+// is evolve.ErrSessionBusy, which the caller asks again. A delivered or
+// repeated notice is nil.
+func (s *SessionFlowService) ReportEvolveNotification(ctx context.Context, projectID string, notice evolve.EvolveNotice) error {
+	if reason, err := s.evolveSessionSkip(ctx, projectID); err != nil || reason != "" {
+		return cmp.Or(err, error(&evolve.SessionSkip{Reason: reason}))
+	}
+	admitted, err := s.reportSessionNotification(ctx, projectID, evolveNotification(projectID, notice))
+	switch {
+	case errors.Is(err, sessionagent.ErrSessionInactive):
+		return &evolve.SessionSkip{Reason: evolve.ReasonSessionUnavailable}
+	case err != nil || admitted:
+		return err
+	}
+	summary, err := s.Agent.GetSessionSummary(ctx, agentloop.SessionFlowID(projectID))
+	if err != nil {
+		return fmt.Errorf("read the Session of Project %s: %w", projectID, err)
+	}
+	if summary.Status == agentloop.SessionStatusActive {
+		return evolve.ErrSessionBusy
+	}
+	return &evolve.SessionSkip{Reason: evolve.ReasonSessionUnavailable}
+}
+
+// ReportEvolveRemote tells the Project's goal measurement that its Session
+// switched to a local agent, which never runs the platform model or its
+// subagents: a review that waits for the agent ends skipped
+// (remote_session). It is best effort; a failure is logged, and the review's
+// 24-hour wait for the report ends it otherwise.
+func (s *SessionFlowService) ReportEvolveRemote(ctx context.Context, projectID string) {
+	if err := s.Evolve.SkipWaitingReview(ctx, projectID, evolve.ReasonRemoteSession); err != nil && !errors.Is(err, evolve.ErrNotStarted) {
+		s.Logger.WarnContext(ctx, "agent review", "operation", "skip-remote", "project_id", projectID, "failed", true)
+	}
+}
+
+// EvolveExport reads the export of review reviewID of the Session's Project
+// for place_evolve_export, from storage and, for goals.md at its goals commit,
+// from repository through the repository host; nil when the review has no
+// stored export, and an export whose manifest is not this review's export of
+// the Live runs is answered with the reason.
+func (s *SessionFlowService) EvolveExport(ctx context.Context, projectID, reviewID string, repository git.Repository) (*sandboxtools.EvolveExport, error) {
+	export, err := s.Evolve.ReviewExport(ctx, projectID, reviewID, repository.Owner+"/"+repository.Name, repository.InstallationID)
+	switch {
+	case errors.Is(err, evolve.ErrNoExport):
+		return nil, nil
+	case errors.Is(err, runexport.ErrNotLive):
+		return &sandboxtools.EvolveExport{ReviewID: reviewID, NotLive: err.Error()}, nil
+	case err != nil:
+		return nil, err
+	}
+	manifest, err := json.MarshalIndent(export.Manifest, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("encode the manifest of %s: %w", reviewID, err)
+	}
+	return &sandboxtools.EvolveExport{ReviewID: reviewID, GoalsCommit: export.Manifest.GoalsCommit, RunsSHA256: export.Manifest.RunsSHA256,
+		Manifest: append(manifest, '\n'), Runs: export.Runs, RunsBytes: export.RunsBytes, RunsCount: export.RunsCount, Metrics: export.Metrics, Goals: export.Goals}, nil
+}
+
+// ReportEvolveReview reports the Session's report on an agent review of
+// project projectID to its goal measurement, with a proposal's files; a
+// Project without goal measurement answers stale_review.
+func (s *SessionFlowService) ReportEvolveReview(ctx context.Context, projectID string, report evolve.ReviewReport, files *evolve.ReviewFiles) (evolve.ReportAnswer, error) {
+	answer, err := s.Evolve.ReportReview(ctx, projectID, report, files)
+	if errors.Is(err, evolve.ErrNotStarted) {
+		return evolve.ReportAnswer{Refusal: evolve.ReportStaleReview, Detail: "the Project has no goal measurement"}, nil
+	}
+	return answer, err
+}
+
+// evolveSessionSkip is why the Project's Session cannot take an agent review,
+// empty when it can: it is not ACTIVE, it runs a local agent, or its model is
+// not the mock and the Session holds no active key of that model's provider,
+// the credential the review runs on.
+func (s *SessionFlowService) evolveSessionSkip(ctx context.Context, projectID string) (evolve.ReviewReason, error) {
+	executor, err := s.Agent.ReadExecutor(ctx, projectID)
+	var stopped *sessionagent.SessionExecutionStoppedError
+	switch {
+	case errors.Is(err, sessionagent.ErrSessionInactive), errors.Is(err, sessionagent.ErrCommandRejected), errors.As(err, &stopped):
+		return evolve.ReasonSessionUnavailable, nil
+	case err != nil:
+		return "", fmt.Errorf("read the executor of the Session of Project %s: %w", projectID, err)
+	case executor.Mode == remoteexec.ModeRemote:
+		return evolve.ReasonRemoteSession, nil
+	}
+	flowID := agentloop.SessionFlowID(projectID)
+	snapshot, err := s.Agent.GetSnapshot(ctx, flowID)
+	switch {
+	case err != nil:
+		return "", fmt.Errorf("read the model of the Session of Project %s: %w", projectID, err)
+	case snapshot.Agent == nil:
+		return evolve.ReasonSessionUnavailable, nil
+	case snapshot.Agent.Description.Model.IsMock():
+		return "", nil
+	}
+	info, err := s.Agent.ReadModelCredentialInfo(ctx, flowID, modelcredential.ForModel(snapshot.Agent.Description.Model))
+	if err != nil {
+		return "", fmt.Errorf("read the model key of the Session of Project %s: %w", projectID, err)
+	}
+	if !info.Active() {
+		return evolve.ReasonNoModelKey, nil
+	}
+	return "", nil
+}
+
+// evolveNotification is the Session notification of an EvolveFlow notice,
+// its text cut to the notification's bound.
+func evolveNotification(projectID string, notice evolve.EvolveNotice) conversation.SessionNotification {
+	notification := conversation.SessionNotification{ID: notice.NotificationID(projectID), Kind: conversation.NotificationKindTask,
+		Source: conversation.NotificationSourceEvolve, OccurredAt: notice.OccurredAt, Summary: notice.Text,
+		Evolve: &conversation.EvolveNotice{ReviewID: notice.ReviewID, Phase: conversation.EvolvePhaseReview}}
+	if decision := notice.Decision; decision != nil {
+		notification.Evolve = &conversation.EvolveNotice{ReviewID: notice.ReviewID, Phase: conversation.EvolvePhaseDecision, Decision: string(decision.Decision),
+			Revision: decision.Revision, AgentID: decision.AgentID, Reason: decision.Reason}
+	}
+	const marker = " [cut]"
+	for overflow := len(notification.Text()) - conversation.MaximumNotificationBytes; overflow > 0; overflow = len(notification.Text()) - conversation.MaximumNotificationBytes {
+		notification.Summary = comm.TruncateUTF8(notification.Summary, max(0, len(notification.Summary)-overflow-len(marker)-16)) + marker
+	}
+	return notification
 }
 
 func (s *SessionFlowService) logNotification(ctx context.Context, projectID string, notification conversation.SessionNotification, admitted bool, err error) {

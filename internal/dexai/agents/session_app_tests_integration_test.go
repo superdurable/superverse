@@ -83,10 +83,7 @@ func TestSessionMockAppTestsDexIntegration(t *testing.T) {
 }
 
 // toolResultContent is the content of the result of tool at index, in order,
-// as the Session stored it. The Snapshot's messages carry no tool result
-// content, so it reads the stored entry, CurrentMessages/<sequence>, from the
-// engine state of the Session (a diagnostic read, blobs loaded as the Flow API
-// loads them).
+// as the Session stored it (storedToolResult).
 func (s *mockSession) toolResultContent(ctx context.Context, messages []conversation.SequencedMessage, tool conversation.ToolName, index int) string {
 	s.t.Helper()
 	var sequences []conversation.Sequence
@@ -98,17 +95,41 @@ func (s *mockSession) toolResultContent(ctx context.Context, messages []conversa
 	if index >= len(sequences) {
 		s.t.Fatalf("expected a %s result at %d, got %d results", tool, index, len(sequences))
 	}
+	return s.storedToolResult(ctx, sequences[index])
+}
+
+// storedToolResult is the content of the result of the tool message at
+// sequence, as the Session stored it. The Snapshot's messages carry no tool
+// result content, so it reads the stored entry from the engine state of the
+// Session (a diagnostic read, blobs loaded as the Flow API loads them):
+// CurrentMessages/<sequence>, or, once the entry was archived, the
+// ArchivedMessages chunk that holds it.
+func (s *mockSession) storedToolResult(ctx context.Context, sequence conversation.Sequence) string {
+	s.t.Helper()
 	state, err := s.reader.GetFlowState(ctx, &dexpb.GetFlowStateRequest{FlowId: string(s.id)})
 	if err != nil {
 		s.t.Fatalf("the engine state of %s did not read (%s)", s.id, grpcFailure(err))
 	}
-	key := "CurrentMessages/" + agentloop.SequenceKey(sequences[index])
+	size := conversation.Sequence(agentloop.ArchiveMessageChunkSize)
+	current, archived := "CurrentMessages/"+agentloop.SequenceKey(sequence), "ArchivedMessages/"+agentloop.SequenceKey((sequence-1)/size*size+1)
 	for _, attribute := range state.GetAttributes() {
-		if attribute.GetKey() != key {
+		var entry *conversation.Entry
+		switch attribute.GetKey() {
+		case current:
+			entry = new(conversation.Entry)
+			decodeHistoryJSON(ctx, s.t, s.reader, string(s.id), attribute.GetValue(), entry)
+		case archived:
+			var chunk conversation.ArchivedEntryChunk
+			decodeHistoryJSON(ctx, s.t, s.reader, string(s.id), attribute.GetValue(), &chunk)
+			for i := range chunk.Entries {
+				if chunk.Entries[i].Sequence == sequence {
+					entry = &chunk.Entries[i].Entry
+				}
+			}
+		}
+		if entry == nil {
 			continue
 		}
-		var entry conversation.Entry
-		decodeHistoryJSON(ctx, s.t, s.reader, string(s.id), attribute.GetValue(), &entry)
 		for _, block := range entry.Blocks {
 			var result struct {
 				Type    string `json:"type"`
@@ -118,8 +139,8 @@ func (s *mockSession) toolResultContent(ctx context.Context, messages []conversa
 				return result.Content
 			}
 		}
-		s.t.Fatalf("the stored entry %s holds no tool result", key)
+		s.t.Fatalf("the stored entry %d of %s holds no tool result", sequence, s.id)
 	}
-	s.t.Fatalf("the engine state of %s holds no %s", s.id, key)
+	s.t.Fatalf("the engine state of %s holds neither %s nor %s with entry %d", s.id, current, archived, sequence)
 	return ""
 }

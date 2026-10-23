@@ -8,24 +8,28 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { getEvolve, startEvolveReview } from "@/lib/api/evolve";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { decideEvolveProposal, getEvolve, startEvolveReview } from "@/lib/api/evolve";
 import { newRequestId, retainedAfterFailure, type PendingCommand } from "@/lib/api/transport/api-error";
 import { useSingleFlight } from "@/lib/browser/use-single-flight";
 import type { Evolve__Output } from "@/lib/generated/protobuf/superverse/v2/Evolve";
+import type { EvolveProposal__Output } from "@/lib/generated/protobuf/superverse/v2/EvolveProposal";
 import type { EvolveReviewRefusal__Output } from "@/lib/generated/protobuf/superverse/v2/EvolveReviewRefusal";
 import { delay } from "@/lib/shared/async";
+import { agentAtWork, behindLive, type ProposalChoice, type ProposalMark } from "./proposals";
 
 /**
- * While a review runs the page reads the measurement again this often, for at most REFRESH_LIMIT_MS from the read
- * that found it running: an export of a usual Project takes minutes, and a longer one stays shown as running until
- * the page is read again.
+ * While a review runs, the agent carries out a decision or the measurement follows a new Live, the page reads the
+ * measurement again this often, a failed read included, for at most REFRESH_LIMIT_MS from the read that found it so:
+ * an export of a usual Project takes minutes, and a longer one stays shown as running until the page is read again.
  */
 const REFRESH_MILLISECONDS = 5_000;
 const REFRESH_LIMIT_MILLISECONDS = 15 * 60_000;
+/** The least time between the reads a return to the page makes (focus, or the tab shown again). */
+const RETURN_MILLISECONDS = 30_000;
 
 /** A Project's goal measurement as the page has read it; absent before its first Live deployment. */
-type GoalMeasurement =
+export type GoalMeasurement =
   | { state: "reading" }
   | { state: "failed"; error: unknown }
   | { state: "absent" }
@@ -34,10 +38,12 @@ type GoalMeasurement =
 const READING: GoalMeasurement = { state: "reading" };
 
 /**
- * The Project's goal measurement from `GetEvolve`, read again while a review runs until it ends, and on `reload`.
- * A read that fails after one succeeded keeps what the page shows.
+ * The Project's goal measurement from `GetEvolve`, read again until it settles while a review runs, the agent carries
+ * out a decision (one it was not told of once the person told it, `told`) or the measurement follows a new `liveKey`
+ * (Live's revision, whose change moves proposals); and on `reload`, a new `liveKey` or a return to the page. A read
+ * that fails after one succeeded keeps what the page shows.
  */
-export function useGoalMeasurement(projectId: string) {
+export function useGoalMeasurement(projectId: string, liveKey: string, told: ReadonlySet<string>) {
   const [read, setRead] = useState<{ projectId: string; measurement: GoalMeasurement } | null>(null);
   const [reads, setReads] = useState(0);
   useEffect(() => {
@@ -45,11 +51,14 @@ export function useGoalMeasurement(projectId: string) {
     const { signal } = controller;
     void (async () => {
       const deadline = Date.now() + REFRESH_LIMIT_MILLISECONDS;
+      // Whether the last read found the measurement about to change, so the next one follows, even after a failure.
+      let changing = false;
       for (;;) {
-        let measurement: GoalMeasurement;
         try {
           const evolve = await getEvolve({ projectId }, signal);
-          measurement = evolve ? { state: "ready", evolve } : { state: "absent" };
+          if (signal.aborted) return;
+          setRead({ projectId, measurement: evolve ? { state: "ready", evolve } : { state: "absent" } });
+          changing = evolve !== null && (agentAtWork(evolve, told) || behindLive(evolve, liveKey));
         } catch (error) {
           if (signal.aborted) return;
           setRead((current) =>
@@ -57,18 +66,30 @@ export function useGoalMeasurement(projectId: string) {
               ? current
               : { projectId, measurement: { state: "failed", error } },
           );
-          return;
         }
-        if (signal.aborted) return;
-        setRead({ projectId, measurement });
-        if (measurement.state !== "ready" || !measurement.evolve.activeReviewId || Date.now() >= deadline) return;
+        if (!changing || Date.now() >= deadline) return;
         await delay(REFRESH_MILLISECONDS, signal);
         if (signal.aborted) return;
       }
     })();
     return () => controller.abort();
-  }, [projectId, reads]);
+  }, [projectId, liveKey, reads, told]);
   const reload = useCallback(() => setReads((count) => count + 1), []);
+  // A scheduled review may have proposed something while the page was away.
+  useEffect(() => {
+    let last = Date.now();
+    const back = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < RETURN_MILLISECONDS) return;
+      last = Date.now();
+      reload();
+    };
+    window.addEventListener("focus", back);
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      window.removeEventListener("focus", back);
+      document.removeEventListener("visibilitychange", back);
+    };
+  }, [reload]);
   return { measurement: read?.projectId === projectId ? read.measurement : READING, reload };
 }
 
@@ -96,4 +117,57 @@ export function useReviewNow(projectId: string, onAnswer: () => void) {
       onAnswer();
     });
   return { start, starting: action.busy !== null, refusal, failure: action.failure };
+}
+
+const DECISIONS = {
+  approve: "EVOLVE_PROPOSAL_DECISION_APPROVE",
+  decline: "EVOLVE_PROPOSAL_DECISION_DECLINE",
+} as const satisfies Record<ProposalChoice, string>;
+
+/**
+ * Approve or Decline of an offered proposal at the revision the page showed, one at a time. The server answers a
+ * repeated decision with the one it recorded, so a retry after an unknown outcome sends it again. A STALE_PROPOSAL
+ * refusal is an answer, kept as `stale` with the revision the server found the proposal at, until the next decision or
+ * `dismissStale`; `target` names the proposal and revision of the last decision, whose `failure` holds as long as the
+ * proposal stays there (`stillMarked`), and the card that sent it (`source`), which alone announces how it went.
+ * Either answer reads the measurement again through `onAnswer`. `decide` resolves to whether the server answered.
+ */
+export function useProposalDecision(projectId: string, onAnswer: () => void) {
+  const action = useSingleFlight<ProposalChoice>();
+  const [target, setTarget] = useState<(ProposalMark & { source: string }) | null>(null);
+  const [stale, setStale] = useState<ProposalMark | null>(null);
+  const { run } = action;
+  const decide = useCallback(
+    async (proposal: EvolveProposal__Output, choice: ProposalChoice, reason: string, source: string) => {
+      let answered = false;
+      await run(choice, async (signal) => {
+        const { reviewId, revision } = proposal;
+        setTarget({ reviewId, revision, source });
+        setStale(null);
+        const answer = await decideEvolveProposal(
+          { projectId, reviewId, revision, decision: DECISIONS[choice], reason },
+          signal,
+        );
+        if (answer.refusal === "EVOLVE_PROPOSAL_REFUSAL_STALE_PROPOSAL")
+          setStale({ reviewId, revision: answer.proposal?.revision ?? revision });
+        answered = true;
+        onAnswer();
+      });
+      return answered;
+    },
+    [onAnswer, projectId, run],
+  );
+  const dismissStale = useCallback(() => setStale(null), []);
+  const { busy, failure } = action;
+  return useMemo(
+    () => ({
+      decide,
+      deciding: busy,
+      target,
+      stale,
+      dismissStale,
+      failure: failure && { choice: failure.label, reason: failure.reason },
+    }),
+    [busy, decide, dismissStale, failure, stale, target],
+  );
 }

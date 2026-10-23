@@ -40,6 +40,12 @@ import (
 // contribution Flows.
 var producedNotifications = []conversation.NotificationKind{conversation.NotificationKindTask, conversation.NotificationKindDelivery, conversation.NotificationKindConnector}
 
+// distinctNotificationSources are the sources whose notifications the Session
+// takes unlike the others of their kind: an evolve notification opens its own
+// turn only while the Agent waits for the user. A scenario answers each with
+// its source declared.
+var distinctNotificationSources = []conversation.NotificationSource{conversation.NotificationSourceEvolve}
+
 // testRoots are where the tests that run scenarios live, with the file names
 // that count as such tests.
 var testRoots = []struct {
@@ -135,6 +141,7 @@ func coverageProblems(catalog []mockmodel.Scenario) []string {
 	tools := map[conversation.ToolName]bool{}
 	pending := map[agentloop.PendingUserInputKind]bool{}
 	notifications := map[conversation.NotificationKind]bool{}
+	sources := map[conversation.NotificationSource]bool{}
 	subagents := map[agenttasks.SubagentKind]bool{}
 	for _, scenario := range catalog {
 		for _, kind := range scenario.SubagentKinds {
@@ -150,6 +157,9 @@ func coverageProblems(catalog []mockmodel.Scenario) []string {
 		}
 		for _, kind := range scenario.Notifications {
 			notifications[kind] = true
+		}
+		for _, source := range scenario.NotificationSources {
+			sources[source] = true
 		}
 	}
 	var problems []string
@@ -170,6 +180,11 @@ func coverageProblems(catalog []mockmodel.Scenario) []string {
 	for _, kind := range producedNotifications {
 		if !notifications[kind] {
 			problems = append(problems, fmt.Sprintf("no scenario receives a %s notification", kind))
+		}
+	}
+	for _, source := range distinctNotificationSources {
+		if !sources[source] {
+			problems = append(problems, fmt.Sprintf("no scenario answers a notification of source %s", source))
 		}
 	}
 	for _, kind := range agenttasks.SubagentKinds {

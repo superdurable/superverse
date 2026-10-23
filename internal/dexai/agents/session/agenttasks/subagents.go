@@ -9,12 +9,14 @@
 package agenttasks
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -229,6 +231,15 @@ type SubagentRecord struct {
 	Merge *subagentMerge `json:"merge,omitempty"`
 	// Connector is the connector a connector_develop subagent contributes to.
 	Connector *ConnectorTarget `json:"connector,omitempty"`
+	// Inputs are the ignored workspace directories its worktree holds
+	// read-only (SubagentCall.Inputs).
+	Inputs []string `json:"inputs,omitempty"`
+	// PinnedFor is the agent review whose offered or approved proposal is the
+	// subagent's change: eviction keeps the record until the change is
+	// applied or discarded. At most maximumPinnedSubagents are pinned.
+	PinnedFor string `json:"pinned_for,omitempty"`
+	// Usage is the platform model usage the subagent reported with its end.
+	Usage []conversation.ModelUsage `json:"usage,omitempty"`
 }
 
 // subagentMerge is the receipt of merge_agent_changes as a record keeps it.
@@ -243,7 +254,7 @@ type subagentMerge struct {
 // admitted.
 func NewSubagentRecord(agentID string, callID conversation.CallID, call SubagentCall, fingerprint string, now time.Time) SubagentRecord {
 	return SubagentRecord{AgentID: agentID, CallID: callID, Kind: call.Kind, Description: call.Description, Fingerprint: fingerprint,
-		Status: SubagentStarting, StartedAt: now, Connector: call.Connector}
+		Status: SubagentStarting, StartedAt: now, Connector: call.Connector, Inputs: call.Inputs}
 }
 
 // TaskID is the task ID the model and the user read.
@@ -324,7 +335,7 @@ func (record SubagentRecord) Finish(notification conversation.SessionNotificatio
 		return record, nil
 	}
 	record.Status, record.FinishedAt, record.Changes, record.ChangesUnsaved = status, notification.OccurredAt, notification.Changes, notification.ChangesUnsaved
-	record.Summary = comm.TruncateUTF8(notification.Summary, maximumSubagentSummaryBytes)
+	record.Summary, record.Usage = comm.TruncateUTF8(notification.Summary, maximumSubagentSummaryBytes), notification.Usage
 	return record, nil
 }
 
@@ -371,11 +382,11 @@ func StartingSubagents(records map[string]SubagentRecord) []string {
 
 // ExpiredSubagents are the records to delete before a new one is added: the
 // oldest finished ones beyond retainedFinishedSubagents. Unfinished records
-// are never deleted.
+// and pinned ones are never deleted.
 func ExpiredSubagents(records map[string]SubagentRecord) []string {
 	var finished []SubagentRecord
 	for _, record := range records {
-		if record.Status.Finished() {
+		if record.Status.Finished() && record.PinnedFor == "" {
 			finished = append(finished, record)
 		}
 	}
@@ -426,6 +437,10 @@ type SubagentCall struct {
 	Description string           `json:"description"`
 	Prompt      string           `json:"prompt"`
 	Connector   *ConnectorTarget `json:"connector,omitempty"`
+	// Inputs are ignored workspace directories the subagent reads, which its
+	// worktree holds read-only at the same path and its result never holds:
+	// only an agent review's placed export, .local/superverse-evolve/<id>.
+	Inputs []string `json:"inputs,omitempty"`
 }
 
 // Fingerprint identifies the admitted call of the Session sessionFlowID that
@@ -434,6 +449,12 @@ type SubagentCall struct {
 // subagent's admission must name it.
 func (call SubagentCall) Fingerprint(sessionFlowID, agentID string) string {
 	digest := sha256.Sum256([]byte(call.Prompt))
+	if len(call.Inputs) > 0 {
+		return flowid.Fingerprint(struct {
+			SessionFlowID, AgentID, Kind, Description, PromptSHA256 string
+			Inputs                                                  []string
+		}{sessionFlowID, agentID, call.Kind.String(), call.Description, hex.EncodeToString(digest[:]), call.Inputs})
+	}
 	if call.Connector == nil {
 		return flowid.Fingerprint(struct{ SessionFlowID, AgentID, Kind, Description, PromptSHA256 string }{
 			sessionFlowID, agentID, call.Kind.String(), call.Description, hex.EncodeToString(digest[:])})
@@ -514,6 +535,20 @@ func SubagentNotification(id SubagentIdentity, status SubagentStatus, descriptio
 		OccurredAt: at, TaskID: id.TaskID(), TaskStatus: status.String(), Summary: subagentSummary(status, description, changes, unsaved, contribution),
 		Report: report, Changes: changes, ChangesUnsaved: unsaved, Contribution: contribution,
 	}
+	return fitReport(notification)
+}
+
+// WithSubagentUsage adds the platform model usage of the subagent's run to its
+// task notification, which an agent review's report sums, cutting the report
+// further when the notification would exceed its bound.
+func WithSubagentUsage(notification conversation.SessionNotification, usage []conversation.ModelUsage) conversation.SessionNotification {
+	notification.Usage = usage
+	return fitReport(notification)
+}
+
+// fitReport cuts the report of a subagent's notification to fit
+// conversation.MaximumSubagentReportBytes.
+func fitReport(notification conversation.SessionNotification) conversation.SessionNotification {
 	const marker = "\n[report truncated]"
 	for overflow := len(notification.Text()) - conversation.MaximumSubagentReportBytes; overflow > 0; overflow = len(notification.Text()) - conversation.MaximumSubagentReportBytes {
 		notification.Report = comm.TruncateUTF8(notification.Report, max(0, len(notification.Report)-overflow-len(marker)-16)) + marker
@@ -545,4 +580,60 @@ func subagentSummary(status SubagentStatus, description string, changes *convers
 		return summary + " It changed no files."
 	}
 	return summary + fmt.Sprintf(" It changed %d file(s), which wait to be merged.", changes.Files)
+}
+
+// maximumPinnedSubagents bounds the records pinned for agent reviews.
+const maximumPinnedSubagents = 2
+
+// PinFor pins the record of agentID for review reviewID, whose proposal is
+// its change, and returns the records that changed. open are the reviews
+// whose proposals are offered or approved, as the review's report answered:
+// a record pinned for any other review is unpinned, and past the bound the
+// one pinned for the oldest open review is. An unknown agent changes nothing.
+func PinFor(records map[string]SubagentRecord, agentID, reviewID string, open []string) []SubagentRecord {
+	record, known := records[agentID]
+	if !known {
+		return nil
+	}
+	var changed, pinned []SubagentRecord
+	if record.PinnedFor != reviewID {
+		record.PinnedFor = reviewID
+		changed = append(changed, record)
+	}
+	for _, other := range SortedSubagents(records) {
+		switch {
+		case other.AgentID == agentID || other.PinnedFor == "":
+		case !slices.Contains(open, other.PinnedFor):
+			other.PinnedFor = ""
+			changed = append(changed, other)
+		default:
+			pinned = append(pinned, other)
+		}
+	}
+	slices.SortStableFunc(pinned, func(left, right SubagentRecord) int { return reviewOrder(left.PinnedFor, right.PinnedFor) })
+	for _, other := range pinned[:max(0, len(pinned)-(maximumPinnedSubagents-1))] {
+		other.PinnedFor = ""
+		changed = append(changed, other)
+	}
+	return changed
+}
+
+// Unpin unpins the records pinned for review reviewID, whose change was
+// applied or discarded, and returns them.
+func Unpin(records map[string]SubagentRecord, reviewID string) []SubagentRecord {
+	var changed []SubagentRecord
+	for _, record := range SortedSubagents(records) {
+		if record.PinnedFor == reviewID {
+			record.PinnedFor = ""
+			changed = append(changed, record)
+		}
+	}
+	return changed
+}
+
+// reviewOrder orders review IDs r-<n> by their number, oldest first.
+func reviewOrder(left, right string) int {
+	l, _ := strconv.ParseInt(strings.TrimPrefix(left, "r-"), 10, 64)
+	r, _ := strconv.ParseInt(strings.TrimPrefix(right, "r-"), 10, 64)
+	return cmp.Compare(l, r)
 }

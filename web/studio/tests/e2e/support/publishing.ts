@@ -69,7 +69,12 @@ export async function openPublishPopover(page: Page, projectId: string, tab: "pr
 export async function chooseVersion(popover: Locator, commit: string, skipReason: string | undefined) {
   const version = popover.getByTestId(`publish-version-${commit}`);
   await expect(popover.getByRole("radiogroup")).toBeVisible({ timeout: 60_000 });
-  if (!(await version.isVisible())) await popover.getByRole("button", { name: /^Another version/ }).click();
+  // The list re-reads when the head moves: unfold the others only while the version is not shown and they exist.
+  const others = popover.getByRole("button", { name: /^Another version/ });
+  await expect(async () => {
+    if (!(await version.isVisible())) await others.click({ timeout: 2_000 });
+    await expect(version).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 60_000 });
   await version.click();
   await expect(version).toHaveAttribute("aria-checked", "true");
   await expect(version).toContainText(/^V\d+/);

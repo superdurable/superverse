@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["review_id", "phase"],
+  "properties": {
+    "review_id": {
+      "type": "string",
+      "pattern": "^r-[1-9][0-9]{0,17}$",
+      "description": "The agent review the evolve notification names, such as r-12."
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["reported", "applied", "discarded"],
+      "description": "reported ends the review with its verdict; applied reports an approved proposal pushed to Preview; discarded reports a declined, superseded or stale proposal whose change you discarded."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["proposal", "no_change"],
+      "description": "For reported only: proposal offers the change subagent's change; no_change ends the review without one."
+    },
+    "agent_id": {
+      "type": "string",
+      "pattern": "^agent-[a-z0-9]{8}$",
+      "description": "For a proposal: the task ID of the change subagent whose result holds .superverse/evolve/<review_id>/proposal.md, backtest.json and open-runs.json."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["change", "trial", "undo"],
+      "description": "For a proposal: change (the default), trial for a change history cannot judge, or undo to revert a live proposal named in undoes."
+    },
+    "undoes": {
+      "type": "string",
+      "pattern": "^r-[1-9][0-9]{0,17}$",
+      "description": "For an undo proposal only: the review of the live proposal it reverts."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "For a proposal: one line in the goal's words, such as Follow up once instead of twice."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 2048,
+      "description": "For reported: what the review found, the proposal's why and its exact numbers, and findings without a proposal as noticed."
+    },
+    "applied_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "For applied only: the commit commit_and_push pushed the approved change as."
+    }
+  }
+}

@@ -1,0 +1,85 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Agent reviews and the automatic-turn bounds: the test sends synthetic evolve
+# notifications through the Session Service, as EvolveFlow does. Input 1
+# chains background steps, each opened by the previous one's notification,
+# until the default agent.taskTurns of 5 pauses automatic continuation at its
+# bound; the review's notification then lifts that pause and opens its own
+# turn within fresh bounds. Input 2 runs a long check that the test stops: a
+# review that arrives after the Stop is dropped, opens no turn and expires,
+# so the user's next turn never sees it. Input 3
+# waits 30 seconds in a timer: a review that arrives meanwhile is not taken
+# inside the turn, and opens its own turn after the turn ends. It changes
+# nothing in the workspace.
+name: evolve-budget
+title: "Agent reviews and automatic turns"
+description: "An agent review lifts the pause at the automatic-turn bound and opens its own turn, is dropped after a Stop, and waits for the end of a running turn."
+category: agent_feature
+inputs:
+  - label: "Chain the background steps to the bound"
+    message: "Chain the background steps until automatic continuation pauses."
+    replies:
+      - text: "Starting background step 1."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-1", description: "Background step 1", run_in_background: true}
+      - text: "Background step 1 runs; waiting for it."
+      - text: "Starting background step 2."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-2", description: "Background step 2", run_in_background: true}
+      - text: "Background step 2 runs; waiting for it."
+      - text: "Starting background step 3."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-3", description: "Background step 3", run_in_background: true}
+      - text: "Background step 3 runs; waiting for it."
+      - text: "Starting background step 4."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-4", description: "Background step 4", run_in_background: true}
+      - text: "Background step 4 runs; waiting for it."
+      - text: "Starting background step 5."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-5", description: "Background step 5", run_in_background: true}
+      - text: "Background step 5 runs; waiting for it."
+      - text: "Starting background step 6."
+        notification: task
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 5; echo step-6", description: "Background step 6", run_in_background: true}
+      - text: "Background step 6 runs; waiting for it."
+      - text: "An agent review opened this turn within fresh bounds; nothing to change."
+        notification: task
+        notification_source: evolve
+  - label: "Run a long check"
+    message: "Run a long check before the review."
+    replies:
+      - text: "Running a long check."
+        tool_uses:
+          - name: bash
+            input: {command: "sleep 300", description: "Run a long check", timeout_seconds: 600}
+        expect_failure: true
+        expect_failure_text: "Error: interrupted_by_user"
+  - label: "Wait in a long turn"
+    message: "Wait half a minute, then report."
+    replies:
+      - text: "Waiting 30 seconds."
+        tool_uses:
+          - name: start_timer
+            input: {duration_seconds: 30, reason: "Wait in a long turn"}
+      - text: "The wait ended; this turn is done."
+      - text: "The agent review waited for the end of the turn and opened its own."
+        notification: task
+        notification_source: evolve

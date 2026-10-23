@@ -63,6 +63,8 @@ const (
 	MediaTypeZip  MediaType = "application/zip"
 	// MediaTypeGzip is a gzip stream, such as the compressed JSON Lines of a run export part.
 	MediaTypeGzip MediaType = "application/gzip"
+	// MediaTypeMarkdown is a Markdown document, such as the proposal of a goal review.
+	MediaTypeMarkdown MediaType = "text/markdown"
 	// MediaTypeRendition is a rendition: the exact JSON of one Claude content
 	// block, which a model request carries byte for byte.
 	MediaTypeRendition MediaType = "application/vnd.superverse.content-block+json"
@@ -127,26 +129,37 @@ func (s *Store) GetJSON(ctx context.Context, ref ObjectRef, value any) error {
 // wrote once, into value and returns its exact reference. A key that holds no
 // object is ErrNotFound.
 func (s *Store) GetCurrentJSON(ctx context.Context, key string, value any) (ObjectRef, error) {
+	data, ref, err := s.GetCurrent(ctx, key)
+	if err != nil {
+		return ObjectRef{}, err
+	}
+	return ref, decodeJSON(data, ref, value)
+}
+
+// GetCurrent reads the current version of key, which an immutable Put wrote
+// once, and returns it with its exact reference, whose digest the caller may
+// check against one it recorded. A key that holds no object is ErrNotFound.
+func (s *Store) GetCurrent(ctx context.Context, key string) ([]byte, ObjectRef, error) {
 	if !validKey(key) {
-		return ObjectRef{}, fmt.Errorf("%w: key %q is not readable", errInvalidObject, key)
+		return nil, ObjectRef{}, fmt.Errorf("%w: key %q is not readable", errInvalidObject, key)
 	}
 	fullKey := s.prefix + key
 	result, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &fullKey})
 	if isMissing(err) {
-		return ObjectRef{}, fmt.Errorf("%w: %s: %w", ErrNotFound, fullKey, err)
+		return nil, ObjectRef{}, fmt.Errorf("%w: %s: %w", ErrNotFound, fullKey, err)
 	}
 	if err != nil {
-		return ObjectRef{}, fmt.Errorf("read %s: %w", fullKey, err)
+		return nil, ObjectRef{}, fmt.Errorf("read %s: %w", fullKey, err)
 	}
 	data, err := readObject(result, fullKey)
 	if err != nil {
-		return ObjectRef{}, err
+		return nil, ObjectRef{}, err
 	}
 	ref := ObjectRef{Key: fullKey, Version: aws.ToString(result.VersionId), Digest: Digest(data), MediaType: aws.ToString(result.ContentType)}
 	if !IsVersion(ref.Version) {
-		return ObjectRef{}, fmt.Errorf("%w: %s has version %q", errUnversioned, fullKey, ref.Version)
+		return nil, ObjectRef{}, fmt.Errorf("%w: %s has version %q", errUnversioned, fullKey, ref.Version)
 	}
-	return ref, decodeJSON(data, ref, value)
+	return data, ref, nil
 }
 
 // decodeJSON decodes data, the one JSON value of the object ref, into value.

@@ -30,13 +30,14 @@ import (
 	"github.com/superdurable/superversev2/internal/comm/platform/objectstore"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport/history"
 )
 
 // Bounds of one export.
 const (
 	// partRuns is the most runs a part holds: pagesPerPart search pages of the hosted store's largest size.
 	partRuns     = 500
-	pagesPerPart = partRuns / runexport.SearchPageSize
+	pagesPerPart = partRuns / history.SearchPageSize
 	// maximumExportBytes ends an export, truncated, once its compressed parts reach it.
 	maximumExportBytes = 64 << 20
 	// The Live engine reads an export makes per second: every read, and searches among them.
@@ -118,19 +119,19 @@ func (f *EvolveFlow) exportPart(ctx context.Context, projectID string, record Re
 
 // searchPart reads up to pagesPerPart search pages from cursor and returns the
 // runs to export, newest start first, within the run limit.
-func (f *EvolveFlow) searchPart(ctx context.Context, projectID string, flows []string, from time.Time, cursor *exportCursor, pace *exportPace) ([]runexport.Found, error) {
-	newest := map[string]runexport.Found{}
+func (f *EvolveFlow) searchPart(ctx context.Context, projectID string, flows []string, from time.Time, cursor *exportCursor, pace *exportPace) ([]history.Found, error) {
+	newest := map[string]history.Found{}
 	remaining := f.settings.MaxRunsPerExport - cursor.Runs
 	for page := 0; page < pagesPerPart && cursor.Flow < len(flows) && len(newest) < remaining; page++ {
 		if cursor.Reads >= f.settings.MaxReadsPerExport {
 			cursor.Truncated = true
 			break
 		}
-		var found []runexport.Found
+		var found []history.Found
 		var next string
 		err := f.dependency.InvokeEvolveLive(ctx, projectID, func(ctx context.Context, live dexpb.FlowServiceClient) error {
 			var searchErr error
-			found, next, searchErr = runexport.Engine{Flows: pacedFlows{FlowServiceClient: live, pace: pace}}.SearchPage(ctx, flows[cursor.Flow], cursor.PageToken)
+			found, next, searchErr = history.Engine{Flows: pacedFlows{FlowServiceClient: live, pace: pace}}.SearchPage(ctx, flows[cursor.Flow], cursor.PageToken)
 			return searchErr
 		})
 		if err != nil {
@@ -145,7 +146,7 @@ func (f *EvolveFlow) searchPart(ctx context.Context, projectID string, flows []s
 			cursor.Flow++
 		}
 	}
-	runs := slices.SortedFunc(maps.Values(newest), func(a, b runexport.Found) int {
+	runs := slices.SortedFunc(maps.Values(newest), func(a, b history.Found) int {
 		return cmp.Or(b.StartedAt.Compare(a.StartedAt), cmp.Compare(a.FlowID, b.FlowID))
 	})
 	if len(runs) >= remaining {
@@ -157,28 +158,28 @@ func (f *EvolveFlow) searchPart(ctx context.Context, projectID string, flows []s
 
 // recordSettings choose what the part's records keep: the goals' fields, the
 // Live redaction, the price table and the release timeline up to the review.
-func (f *EvolveFlow) recordSettings(ctx context.Context, projectID string, spec goals.Spec, at time.Time) (runexport.Settings, error) {
+func (f *EvolveFlow) recordSettings(ctx context.Context, projectID string, spec goals.Spec, at time.Time) (history.Settings, error) {
 	redact, err := f.dependency.LiveRedaction(ctx, projectID)
 	if err != nil {
-		return runexport.Settings{}, fmt.Errorf("read the Live redaction: %w", err)
+		return history.Settings{}, fmt.Errorf("read the Live redaction: %w", err)
 	}
 	timeline, err := f.dependency.LiveTimeline(ctx, projectID, at)
 	if err != nil {
-		return runexport.Settings{}, fmt.Errorf("read the Live timeline: %w", err)
+		return history.Settings{}, fmt.Errorf("read the Live timeline: %w", err)
 	}
 	fields := map[string]bool{}
 	for _, field := range spec.ExportFields() {
 		fields[field] = true
 	}
-	return runexport.Settings{Fields: fields, Redact: redact, Prices: f.settings.ModelPrices, Timeline: timeline, At: at}, nil
+	return history.Settings{Fields: fields, Redact: redact, Prices: f.settings.ModelPrices, Timeline: timeline, At: at}, nil
 }
 
 // recordRun reads and compacts one run; a run the engine no longer holds is not found.
-func (f *EvolveFlow) recordRun(ctx context.Context, projectID string, run runexport.Found, settings runexport.Settings, pace *exportPace) (runexport.Record, bool, error) {
+func (f *EvolveFlow) recordRun(ctx context.Context, projectID string, run history.Found, settings history.Settings, pace *exportPace) (runexport.Record, bool, error) {
 	var record runexport.Record
 	err := f.dependency.InvokeEvolveLive(ctx, projectID, func(ctx context.Context, live dexpb.FlowServiceClient) error {
 		var readErr error
-		engine := runexport.Engine{Flows: pacedFlows{FlowServiceClient: live, pace: pace}, MaxHistoryEvents: f.settings.MaxHistoryEventsPerRun}
+		engine := history.Engine{Flows: pacedFlows{FlowServiceClient: live, pace: pace}, MaxHistoryEvents: f.settings.MaxHistoryEventsPerRun}
 		record, readErr = engine.Record(ctx, run, settings)
 		return readErr
 	})

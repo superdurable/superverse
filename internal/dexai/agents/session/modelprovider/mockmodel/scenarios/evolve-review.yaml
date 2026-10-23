@@ -1,0 +1,474 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# An agent review from its notification to Preview, on a Project created from
+# the summary-approval example, whose PrepareSummary decides in the plain
+# function SummaryTextAccepted whether a text gets a model request. Input 1
+# pushes the goals (cost per request, requests and the share that reaches the
+# model) through the commit gate. Every push traces the example's card,
+# version 1, as the example records it: R1 and R2, each with its
+# untested_reason. Once a Live build with them runs and a
+# review waits for the agent, its evolve notification opens its own turn:
+# place_evolve_export places the review's Live export and refuses a review
+# with no stored export as stale_review, and an investigate subagent, given
+# the folder as its input, measures it with the coding image's
+# superverse-evolve, which refuses export, other runs and a manifest whose
+# source is not live; it also leaves a backtest bound to another review's
+# folder, which the review refuses as export_mismatch. A change subagent then
+# raises the rule to 20 bytes, replays the Live build's and its own rule over
+# the runs, compares them, checks the open runs and writes the proposal; its
+# report is offered, a report of a review that does not wait is stale_review
+# and an applied report before any approval is stale_proposal. The person's
+# approval opens the decision's turn: the change is merged, a force-added file
+# of the export is refused by the commit gate, the change is pushed for
+# Preview and reported applied.
+name: evolve-review
+title: "Agent review"
+description: "Pushes goals for the summary approval, then reviews them when the agent review arrives: places the Live export, investigates and backtests a change with subagents, offers it, and applies it to Preview once approved."
+category: agent_feature
+workspace: summary-approval
+arguments: {review: r-1, task: agent-aaaaaaaa, commit: "0000000000000000000000000000000000000000"}
+inputs:
+  - label: "Push goals for the summary approval"
+    message: "Write goals for the summary approval, push them, and review them when the agent review arrives."
+    replies:
+      - text: "Writing the goals file."
+        tool_uses:
+          - name: write
+            input:
+              path: .superverse/goals.md
+              content: |
+                # Goals
+
+                The application summarizes texts that a person approves. A text too short to say
+                anything should not cost a model request, and most requests should still reach the
+                model. Off limits: the approval itself; every generated summary waits for a person in
+                Studio.
+
+                ```yaml goals
+                version: 1
+                review: weekly
+                flows: [TextSummaryFlow]
+                fields: [summary-status, source-bytes]
+                goals:
+                  - id: model-calls
+                    kind: cost
+                    statement: A request calls the model only for a text worth summarizing.
+                    metric: mean(ai.calls)
+                    direction: down
+                  - id: requests
+                    kind: outcome
+                    statement: The application receives summary requests.
+                    metric: sum(steps.PrepareSummary)
+                    direction: up
+                  - id: summarized-share
+                    kind: outcome
+                    statement: At least half of the requests reach the model.
+                    metric: mean(steps.GenerateSummary)
+                    guardrail:
+                      min: 0.5
+                ```
+      - text: "Restoring the application's dependencies, as the template's instructions say."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore the application's dependencies", timeout_seconds: 600}
+      - text: "Running the source checks and pushing the goals."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Add the summary approval's goals"
+              verification:
+                - ".superverse/goals.md holds one goals block for TextSummaryFlow"
+              requirements:
+                - id: R1
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+                - id: R2
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "The Approve summary Action is a Studio action, which the API tests do not drive."
+              requirements_revision: 1
+      - text: "The goals are pushed. They take effect when you publish this version; I will review them when the agent review arrives."
+      - text: "Placing the review's export of the Live runs."
+        notification: task
+        notification_source: evolve
+        tool_uses:
+          - name: place_evolve_export
+            input: {review_id: "{{review}}"}
+        expect_result_contains:
+          - "\"runs_sha256\":\""
+          - "\"goals_commit\":\""
+          - "superverse-evolve/{{review}}"
+      - text: "Placing a review that has no stored export."
+        tool_uses:
+          - name: place_evolve_export
+            input: {review_id: "r-999999"}
+        expect_failure: true
+        expect_failure_text: "Error: stale_review"
+      - text: "Reading the Live build's goals and the review's metrics."
+        tool_uses:
+          - name: bash
+            input:
+              command: "cd .local/superverse-evolve/{{review}} && ls && stat -c %a runs.jsonl goals.md && sha256sum runs.jsonl && grep -c 'yaml goals' goals.md && head -c 600 metrics.json"
+              description: "Read the placed review folder"
+        expect_result_contains:
+          - "manifest.json"
+          - "metrics.json"
+          - "444"
+          - "evaluated_at"
+      - text: "Starting an investigation of the review's Live runs."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Investigate the review's runs"
+              kind: investigate
+              inputs: [".local/superverse-evolve/{{review}}"]
+              prompt: "Review {{review}}: measure the placed Live runs of .local/superverse-evolve/{{review}} with superverse-evolve and report at most five findings with their numbers. [[subagent:evolve-review/investigate]] [[scenario-arg:review={{review}}]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A subagent investigates the review's runs; its findings arrive as a notification."
+      - text: "Reporting the backtest the investigation left, which another review's folder computed."
+        notification: task
+        tool_uses:
+          - name: report_evolve_review
+            input: {review_id: "{{review}}", phase: reported, verdict: proposal, agent_id: "{{task}}", title: "A backtest of another review's folder", summary: "Computed over another review's folder."}
+        expect_failure: true
+        expect_failure_text: "Error: export_mismatch"
+      - text: "Short texts reach the model; a change subagent backtests a rule that skips them."
+        tool_uses:
+          - name: start_agent
+            input:
+              description: "Skip texts too short to summarize"
+              kind: change
+              inputs: [".local/superverse-evolve/{{review}}"]
+              prompt: "Review {{review}}: change SummaryTextAccepted so a text under 20 bytes gets no model request, backtest it over the placed Live runs and write the proposal. [[subagent:evolve-review/change]] [[scenario-arg:review={{review}}]]"
+        expect_result_contains:
+          - "\"task_id\":\"agent-"
+      - text: "A change subagent backtests the rule; its proposal arrives as a notification."
+      - text: "Reporting the review with the change subagent's proposal."
+        notification: task
+        tool_uses:
+          - name: report_evolve_review
+            input: {review_id: "{{review}}", phase: reported, verdict: proposal, agent_id: "{{task}}", title: "Skip texts too short to summarize", summary: "Texts under 20 bytes reach the model today; the backtest knows exactly what skipping them saves, and most requests still reach the model."}
+        expect_result_contains:
+          - "\"phase\":\"reported\""
+      - text: "Reporting a review that does not wait."
+        tool_uses:
+          - name: report_evolve_review
+            input: {review_id: "r-999999", phase: reported, verdict: no_change, summary: "A review that does not wait."}
+        expect_failure: true
+        expect_failure_text: "Error: stale_review"
+      - text: "Reporting an applied change before any approval."
+        tool_uses:
+          - name: report_evolve_review
+            input: {review_id: "{{review}}", phase: applied, applied_commit: "1111111111111111111111111111111111111111"}
+        expect_failure: true
+        expect_failure_text: "Error: stale_proposal"
+      - text: "The review proposes to skip texts too short to summarize; the proposal waits for you on the Goals tab."
+      - text: "The proposal is approved; merging the change subagent's change."
+        notification: task
+        notification_source: evolve
+        tool_uses:
+          - name: merge_agent_changes
+            input: {agent_id: "{{task}}", action: apply}
+        expect_result_contains:
+          - "summary_rules.go"
+      - text: "Restoring the application's dependencies before the commit gate."
+        tool_uses:
+          - name: bash
+            input: {command: "make bootstrap && git add -f .local/superverse-evolve/{{review}}/goals.md && git status --short", description: "Restore dependencies and stage a file of the review's export", timeout_seconds: 600}
+      - text: "Pushing with a file of the review's export staged, which the commit gate refuses."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Skip texts too short to summarize"
+              verification:
+                - "SummaryTextAccepted refuses texts under 20 bytes"
+              requirements:
+                - id: R1
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+                - id: R2
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "The Approve summary Action is a Studio action, which the API tests do not drive."
+              requirements_revision: 1
+        expect_failure: true
+        expect_failure_text: "Error: evolve_export_in_source"
+      - text: "Unstaging the review's export, which stays out of the repository."
+        tool_uses:
+          - name: bash
+            input: {command: "git reset -q -- .local/superverse-evolve && git status --short", description: "Unstage the review's export"}
+      - text: "Pushing the approved change for Preview."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Skip texts too short to summarize"
+              verification:
+                - "SummaryTextAccepted refuses texts under 20 bytes"
+                - ".superverse/evolve/{{review}}/ holds the proposal, its backtest and its open-run check"
+              requirements:
+                - id: R1
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "A person approves in Studio, which the API tests do not drive; TestTextSummaryGeneratedWaitsForApproval proves the generated summary reaches the waiting Step."
+                - id: R2
+                  evidence: [internal/process/text_summary_flow.go]
+                  untested_reason: "The Approve summary Action is a Studio action, which the API tests do not drive."
+              requirements_revision: 1
+        expect_result_contains:
+          - "\"commit\":\""
+      - text: "Reporting the applied change."
+        tool_uses:
+          - name: report_evolve_review
+            input: {review_id: "{{review}}", phase: applied, applied_commit: "{{commit}}"}
+        expect_result_contains:
+          - "\"phase\":\"applied\""
+      - text: "The approved change is on Preview; publish it from the Publish popover when you are ready."
+subagents:
+  investigate:
+    kind: investigate
+    replies:
+      - text: "Checking the Live build's goals and measuring the review's runs."
+        tool_uses:
+          - name: bash
+            input:
+              command: "superverse-evolve check .local/superverse-evolve/{{review}}/goals.md && superverse-evolve metrics --review {{review}} | head -c 1500"
+              description: "Check the goals and measure the placed runs"
+        expect_result_contains:
+          - "goal(s) over [TextSummaryFlow]"
+          - "\"evaluated_at\""
+      - text: "Counting the runs by text size with a script."
+        tool_uses:
+          - name: bash
+            input:
+              command: "python3 -c \"import json,collections;c=collections.Counter('under 20' if json.loads(l)['fields'].get('source-bytes',0)<20 else '20 or more' for l in open('.local/superverse-evolve/{{review}}/runs.jsonl'));print(dict(c))\""
+              description: "Count the runs by text size"
+        expect_result_contains:
+          - "under 20"
+      - text: "Checking that only the review's own Live runs can be measured."
+        tool_uses:
+          - name: bash
+            input:
+              command: |
+                superverse-evolve export --dex 127.0.0.1:8801; echo "export exit=$?"
+                superverse-evolve metrics --review {{review}} --runs .local/superverse-evolve/{{review}}/runs.jsonl; echo "runs exit=$?"
+                rm -rf .local/superverse-evolve/r-999999 && cp -R .local/superverse-evolve/{{review}} .local/superverse-evolve/r-999999 && chmod -R u+w .local/superverse-evolve/r-999999
+                superverse-evolve metrics --review r-999999; echo "copy exit=$?"
+                python3 -c "import json;p='.local/superverse-evolve/r-999999/manifest.json';m=json.load(open(p));m['review_id']='r-999999';json.dump(m,open(p,'w'))"
+                printf 'x' >> .local/superverse-evolve/r-999999/runs.jsonl
+                superverse-evolve metrics --review r-999999; echo "edited exit=$?"
+                python3 -c "import json;p='.local/superverse-evolve/r-999999/manifest.json';m=json.load(open(p));m['source']={'kind':'external'};json.dump(m,open(p,'w'))"
+                superverse-evolve metrics --review r-999999; echo "external exit=$?"
+              description: "Check the measurement's refusals"
+        expect_result_contains:
+          - "unknown command \"export\""
+          - "export exit=2"
+          - "runs exit=2"
+          - "it is the export of review"
+          - "copy exit=1"
+          - "not the manifest's runs_sha256"
+          - "edited exit=1"
+          - "its runs came from source \"external\""
+          - "external exit=1"
+      - text: "Leaving a backtest computed over another review's folder, which the review must refuse."
+        tool_uses:
+          - name: bash
+            input:
+              command: |
+                set -e
+                rm -rf .local/superverse-evolve/r-999999 && cp -R .local/superverse-evolve/{{review}} .local/superverse-evolve/r-999999 && chmod -R u+w .local/superverse-evolve/r-999999
+                python3 -c "import json;p='.local/superverse-evolve/r-999999/manifest.json';m=json.load(open(p));m['review_id']='r-999999';json.dump(m,open(p,'w'))"
+                mkdir -p .local/backtest .superverse/evolve/{{review}}
+                python3 -c "import json;[print(json.dumps({'flow_id':json.loads(l)['flow_id'],'decisions':{'accepted':True},'numbers':{'steps.PrepareSummary':1}})) for l in open('.local/superverse-evolve/r-999999/runs.jsonl')]" > .local/backtest/same.jsonl
+                superverse-evolve compare --review r-999999 --before .local/backtest/same.jsonl --after .local/backtest/same.jsonl --out .superverse/evolve/{{review}}/backtest.json
+                python3 scripts/render-flow-definitions.py --output .local/backtest/defs.json
+                superverse-evolve open-runs --review r-999999 --before-defs .local/backtest/defs.json --after-defs .local/backtest/defs.json --out .superverse/evolve/{{review}}/open-runs.json
+                printf '# A backtest of another review\n\nComputed over the folder of review r-999999.\n' > .superverse/evolve/{{review}}/proposal.md
+                grep -o '"review_id": "r-999999"' .superverse/evolve/{{review}}/backtest.json
+              description: "Write a backtest bound to another review's folder"
+              timeout_seconds: 300
+        expect_result_contains:
+          - "\"review_id\": \"r-999999\""
+      - text: "Texts under 20 bytes reach the model like any other; a rule that skips them could be checked exactly, since source-bytes is recorded on every run. .superverse/evolve/ holds a backtest computed over another review's folder."
+  change:
+    kind: change
+    replies:
+      - text: "Raising the rule to texts of at least 20 bytes."
+        tool_uses:
+          - name: edit
+            input:
+              path: internal/process/summary_rules.go
+              old_string: "return sourceBytes > 0 && sourceBytes <= MaximumTextSummaryBytes"
+              new_string: "return sourceBytes >= 20 && sourceBytes <= MaximumTextSummaryBytes"
+          - name: edit
+            input:
+              path: internal/process/text_summary_flow.go
+              old_string: "Text must contain 1 to 65,536 UTF-8 bytes. No model request was made."
+              new_string: "Text must contain 20 to 65,536 UTF-8 bytes. No model request was made."
+      - text: "Writing the backtest program, which calls the decision function over each Live run."
+        tool_uses:
+          - name: write
+            input:
+              path: .superverse/evolve/{{review}}/backtest/main.go
+              content: |
+                // Command backtest replays the text rule of internal/process over a review's
+                // Live runs and writes one decision line per run for superverse-evolve compare.
+                package main
+
+                import (
+                	"bufio"
+                	"encoding/json"
+                	"log"
+                	"os"
+
+                	"github.com/superdurable/dex-template-basic-process/internal/process"
+                )
+
+                type run struct {
+                	FlowID string         `json:"flow_id"`
+                	Fields map[string]any `json:"fields"`
+                	AI     struct {
+                		Calls int `json:"calls"`
+                	} `json:"ai"`
+                }
+
+                func main() {
+                	in, err := os.Open(os.Args[1])
+                	if err != nil {
+                		log.Fatal(err)
+                	}
+                	defer in.Close()
+                	out, err := os.Create(os.Args[2])
+                	if err != nil {
+                		log.Fatal(err)
+                	}
+                	defer out.Close()
+                	scanner := bufio.NewScanner(in)
+                	scanner.Buffer(make([]byte, 1<<20), 1<<20)
+                	encoder := json.NewEncoder(out)
+                	for scanner.Scan() {
+                		var r run
+                		if err := json.Unmarshal(scanner.Bytes(), &r); err != nil {
+                			log.Fatal(err)
+                		}
+                		size, recorded := r.Fields["source-bytes"].(float64)
+                		if !recorded {
+                			continue
+                		}
+                		accepted := process.SummaryTextAccepted(int(size))
+                		generated, calls := 0.0, 0.0
+                		if accepted {
+                			generated, calls = 1, float64(r.AI.Calls)
+                		}
+                		line := map[string]any{
+                			"flow_id":   r.FlowID,
+                			"decisions": map[string]any{"accepted": accepted},
+                			"points":    map[string]any{"accepted": map[string]any{"step": "PrepareSummary", "entry": 1}},
+                			"numbers":   map[string]float64{"steps.PrepareSummary": 1, "steps.GenerateSummary": generated, "ai.calls": calls},
+                		}
+                		if err := encoder.Encode(line); err != nil {
+                			log.Fatal(err)
+                		}
+                	}
+                	if err := scanner.Err(); err != nil {
+                		log.Fatal(err)
+                	}
+                }
+      - text: "Replaying the Live build's rule, from the review's goals commit, over the runs."
+        tool_uses:
+          - name: bash
+            input:
+              command: |
+                set -e
+                work=$(pwd) && folder=$work/.local/superverse-evolve/{{review}}
+                live=$(python3 -c "import json;print(json.load(open('$folder/manifest.json'))['goals_commit'])")
+                rm -rf /tmp/evolve-before-{{review}} && mkdir -p /tmp/evolve-before-{{review}} .local/backtest
+                git archive "$live" | tar -x -C /tmp/evolve-before-{{review}}
+                mkdir -p /tmp/evolve-before-{{review}}/.superverse/evolve/{{review}}/backtest
+                cp .superverse/evolve/{{review}}/backtest/main.go /tmp/evolve-before-{{review}}/.superverse/evolve/{{review}}/backtest/
+                cd /tmp/evolve-before-{{review}} && go run .superverse/evolve/{{review}}/backtest/main.go "$folder/runs.jsonl" "$work/.local/backtest/before.jsonl"
+                cd "$work" && wc -l < .local/backtest/before.jsonl && echo "before from $live"
+              description: "Replay the Live build's rule over the review's runs"
+              timeout_seconds: 600
+        expect_result_contains:
+          - "before from "
+      - text: "Replaying the changed rule over the same runs."
+        tool_uses:
+          - name: bash
+            input:
+              command: "go run .superverse/evolve/{{review}}/backtest/main.go .local/superverse-evolve/{{review}}/runs.jsonl .local/backtest/after.jsonl && wc -l < .local/backtest/after.jsonl && echo after"
+              description: "Replay the changed rule over the review's runs"
+              timeout_seconds: 600
+        expect_result_contains:
+          - "after"
+      - text: "Comparing both sides over the review's runs."
+        tool_uses:
+          - name: bash
+            input:
+              command: "superverse-evolve compare --review {{review}} --before .local/backtest/before.jsonl --after .local/backtest/after.jsonl --target model-calls --out .superverse/evolve/{{review}}/backtest.json && python3 -c \"import json;b=json.load(open('.superverse/evolve/{{review}}/backtest.json'));print('runs', b['runs']);print('gates', len(b['gates']))\""
+              description: "Compare the Live build's rule with the change"
+        expect_result_contains:
+          - "'changed_exact'"
+          - "gates 0"
+      - text: "Checking the open runs against the Live build's and the changed Flow definitions."
+        tool_uses:
+          - name: bash
+            input:
+              command: |
+                set -e
+                (cd /tmp/evolve-before-{{review}} && python3 scripts/render-flow-definitions.py --output "$OLDPWD/.local/backtest/before-defs.json")
+                python3 scripts/render-flow-definitions.py --output .local/backtest/after-defs.json
+                superverse-evolve open-runs --review {{review}} --before-defs .local/backtest/before-defs.json --after-defs .local/backtest/after-defs.json --out .superverse/evolve/{{review}}/open-runs.json
+                python3 -c "import json;c=json.load(open('.superverse/evolve/{{review}}/open-runs.json'));print('open runs', c['open_runs'], 'gates', len(c['gates']))"
+              description: "Check the open runs against both Flow definitions"
+              timeout_seconds: 300
+        expect_result_contains:
+          - "gates 0"
+      - text: "Writing the proposal."
+        tool_uses:
+          - name: write
+            input:
+              path: .superverse/evolve/{{review}}/proposal.md
+              content: |
+                # Skip texts too short to summarize
+
+                ## Why
+
+                Texts under 20 bytes reach the model like any other request, and a summary of them
+                says nothing the text does not. The investigation counted them over the review's Live
+                runs with a script.
+
+                ## What changes
+
+                `SummaryTextAccepted` accepts a text of 20 to 65,536 bytes instead of 1 to 65,536, so a
+                shorter text ends with its notice and no model request. Files:
+                `internal/process/summary_rules.go` and the notice in
+                `internal/process/text_summary_flow.go`.
+
+                ## Goals
+
+                The backtest's numbers are in `backtest.json`: every run is known exactly, since the
+                rule reads the recorded `source-bytes`; model calls per request go down, requests stay,
+                and the share that reaches the model stays above its guardrail.
+
+                ## Backtest
+
+                The Live build's rule and the changed one were replayed over the review's Live runs;
+                the Live rule matches every recorded run.
+
+                ## Open runs
+
+                Open runs wait in `AwaitSummaryApproval`, which the change keeps; no Attribute changes.
+
+                ## Risks
+
+                A person who sends a short text gets the notice instead of a summary. The approval, off
+                limits, is unchanged. The next review watches the share that reaches the model.
+
+                ## Undo
+
+                Roll Live back to the release before; the next review proposes the code revert.
+      - text: "The change skips texts under 20 bytes; its backtest, open-run check and proposal are under .superverse/evolve/{{review}}/."

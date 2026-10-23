@@ -153,6 +153,7 @@ type worktreeRefusal struct {
 var refusals = map[string]toolfailure.Code{
 	"snapshot_too_large": toolfailure.SnapshotTooLarge,
 	"workspace_disk_low": toolfailure.WorkspaceDiskLow,
+	"input_missing":      toolfailure.SubagentInputMissing,
 }
 
 // IsCreationRefusal reports whether code is a refusal of CreateAgentWorktree.
@@ -175,15 +176,19 @@ func IsCreationRefusal(code toolfailure.Code) bool {
 // subagents that keep does not name, the Session's unfinished ones, and is
 // refused (snapshot_too_large, workspace_disk_low) when the snapshot would
 // exceed 100 MiB or the volume has less than 256 MiB free.
-func (operations *GitOperations) CreateAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string, keep []string) (AgentWorktree, error) {
+func (operations *GitOperations) CreateAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string, keep, inputs []string) (AgentWorktree, error) {
 	if keep == nil {
 		keep = []string{}
 	}
+	if inputs == nil {
+		inputs = []string{}
+	}
 	request := struct {
 		Keep                 []string `json:"keep"`
+		Inputs               []string `json:"inputs"`
 		MinimumFreeBytes     int64    `json:"minimumFreeBytes"`
 		MaximumSnapshotBytes int64    `json:"maximumSnapshotBytes"`
-	}{keep, minimumFreeBytes, maximumSnapshotBytes}
+	}{keep, inputs, minimumFreeBytes, maximumSnapshotBytes}
 	var answer AgentWorktree
 	err := runAgentWorktree(ctx, client, "create", agentID, request, &answer)
 	if err == nil && (!flowid.IsCommitSHA(answer.Base) || answer.Root != AgentWorktreeRoot(agentID)) {
@@ -237,6 +242,36 @@ func (operations *GitOperations) MergeAgentChanges(ctx context.Context, client *
 // CleanupAgentWorktree removes a closed task attempt's refs and merge
 // receipts. Only platform expiry passes removeCheckout for a failed finish;
 // ordinary remote task cleanup refuses a still registered checkout.
+// ResultFile is one file of a subagent's result as ReadAgentResult read it:
+// its UTF-8 content, or why it has none.
+type ResultFile struct {
+	Size     int64  `json:"size"`
+	Content  string `json:"content"`
+	Missing  bool   `json:"missing"`
+	TooLarge bool   `json:"too_large"`
+	Binary   bool   `json:"binary"`
+}
+
+// ReadAgentResult reads files, each path relative to the repository with its
+// byte limit, from the result ref of subagent agentID without a checkout: a
+// path the result lacks is Missing, also when the subagent saved no result,
+// one over its limit TooLarge and one that is not UTF-8 Binary.
+func (operations *GitOperations) ReadAgentResult(ctx context.Context, client *sandboxd.SandboxClient, agentID string, files map[string]int64) (map[string]ResultFile, error) {
+	var answer struct {
+		Result string                `json:"result"`
+		Files  map[string]ResultFile `json:"files"`
+	}
+	if err := runAgentWorktree(ctx, client, "read", agentID, struct {
+		Files map[string]int64 `json:"files"`
+	}{files}, &answer); err != nil {
+		return nil, err
+	}
+	if len(answer.Files) != len(files) || (answer.Result != "" && !flowid.IsCommitSHA(answer.Result)) {
+		return nil, sandboxd.NewToolFailure(toolfailure.PlatformCommandUnavailable, fmt.Errorf("the worktree helper read %d of %d files of %s's result %q", len(answer.Files), len(files), agentID, answer.Result))
+	}
+	return answer.Files, nil
+}
+
 func (operations *GitOperations) CleanupAgentWorktree(ctx context.Context, client *sandboxd.SandboxClient, agentID string, removeCheckout bool) error {
 	var answer struct {
 		Cleaned bool `json:"cleaned"`

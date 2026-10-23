@@ -9,9 +9,11 @@
 package conversation
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 )
 
 // Model is a catalog model's durable identity. Published spellings never change.
@@ -266,6 +268,49 @@ type ModelCallMetrics struct {
 	// InputTransformations records the position and reason of each change the
 	// API made to the request, never content.
 	InputTransformations []InputTransformation `json:"input_transformations,omitempty"`
+}
+
+// ModelUsage is the platform's calls of one model and their tokens: the
+// prompt tokens (input, cache read and cache write) and the output tokens.
+type ModelUsage struct {
+	Model        string `json:"model"`
+	Calls        int64  `json:"calls"`
+	InputTokens  int64  `json:"input_tokens"`
+	OutputTokens int64  `json:"output_tokens"`
+}
+
+// maximumUsageModels bounds the models a usage list names; calls of further
+// models count under the last one.
+const maximumUsageModels = 16
+
+// AddModelUsage adds the usage of the call metrics measured to usage.
+func AddModelUsage(usage []ModelUsage, metrics ModelCallMetrics) []ModelUsage {
+	model := cmp.Or(metrics.ServedModel, metrics.Model, "unknown")
+	input, _ := metrics.PromptTokens()
+	var output int64
+	if metrics.OutputTokens != nil {
+		output = *metrics.OutputTokens
+	}
+	return SumModelUsage(usage, []ModelUsage{{Model: model, Calls: 1, InputTokens: input, OutputTokens: output}})
+}
+
+// SumModelUsage adds the usage of more to usage, by model.
+func SumModelUsage(usage, more []ModelUsage) []ModelUsage {
+	usage = slices.Clone(usage)
+	for _, added := range more {
+		index := slices.IndexFunc(usage, func(u ModelUsage) bool { return u.Model == added.Model })
+		switch {
+		case index < 0 && len(usage) < maximumUsageModels:
+			usage = append(usage, ModelUsage{Model: added.Model})
+			index = len(usage) - 1
+		case index < 0:
+			index = len(usage) - 1
+		}
+		usage[index].Calls += added.Calls
+		usage[index].InputTokens += added.InputTokens
+		usage[index].OutputTokens += added.OutputTokens
+	}
+	return usage
 }
 
 // InputTransformation is one change the API reported to a request's input.

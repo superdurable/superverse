@@ -21,3 +21,10 @@
 !internal/dexai/app/apptemplate/examples/
 !internal/dexai/app/apptemplate/examples/catalog.json
 !internal/dexai/app/apptemplate/examples/*.tar
+!internal/dexai/delivery/
+!internal/dexai/delivery/evolve/
+!internal/dexai/delivery/evolve/goals/
+!internal/dexai/delivery/evolve/goals/*.go
+!internal/dexai/delivery/evolve/runexport/
+!internal/dexai/delivery/evolve/runexport/*.go
+internal/dexai/delivery/evolve/**/*_test.go

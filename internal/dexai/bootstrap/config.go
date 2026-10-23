@@ -47,7 +47,7 @@ import (
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/modelprovider"
 	"github.com/superdurable/superversev2/internal/dexai/api/watch"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
-	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/runexport/history"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/releases/build"
 	buildhosted "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/hosted"
 	buildlocal "github.com/superdurable/superversev2/internal/dexai/delivery/releases/build/local"
@@ -363,9 +363,9 @@ func s3Endpoint(endpoint string) func(*s3.Options) {
 // evolveSettings are the evolve.* keys with the Live engines' retention of
 // closed runs, which bounds a review's window.
 func evolveSettings(settings serverconfig.EvolveConfig, retentionDays int32) evolve.Settings {
-	prices := make(map[string]runexport.Price, len(settings.ModelPrices))
+	prices := make(map[string]history.Price, len(settings.ModelPrices))
 	for _, price := range settings.ModelPrices {
-		prices[price.Model] = runexport.Price{InputPerMTok: price.InputPerMTok, OutputPerMTok: price.OutputPerMTok}
+		prices[price.Model] = history.Price{InputPerMTok: price.InputPerMTok, OutputPerMTok: price.OutputPerMTok}
 	}
 	return evolve.Settings{
 		MaxRunsPerExport: settings.MaxRunsPerExport, MaxHistoryEventsPerRun: settings.MaxHistoryEventsPerRun, MaxReadsPerExport: settings.MaxReadsPerExport,

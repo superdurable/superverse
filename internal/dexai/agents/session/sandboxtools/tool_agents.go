@@ -31,8 +31,8 @@ import (
 // AgentWorktreeArguments are the trusted arguments of the worktree operations
 // of the subagent agentID, which the Session and the subagent build; keep
 // names the Session's unfinished subagents, whose worktrees a creation keeps.
-func AgentWorktreeArguments(agentID string, keep []string) string {
-	return string(comm.Must(json.Marshal(agentWorktreeArguments{AgentID: agentID, Keep: keep})))
+func AgentWorktreeArguments(agentID string, keep, inputs []string) string {
+	return string(comm.Must(json.Marshal(agentWorktreeArguments{AgentID: agentID, Keep: keep, Inputs: inputs})))
 }
 
 // expiredAgentWorktreeCleanupArguments authorizes removal of a checkout whose
@@ -73,6 +73,7 @@ func TaskWorktreeMergeArguments(agentID string, discard bool, paths []string) st
 type agentWorktreeArguments struct {
 	AgentID        string   `json:"agent_id"`
 	Keep           []string `json:"keep"`
+	Inputs         []string `json:"inputs,omitempty"`
 	RemoveCheckout bool     `json:"remove_checkout,omitempty"`
 }
 
@@ -88,7 +89,7 @@ func worktreeArguments(call Call) agentWorktreeArguments {
 // subagent, or answers the one an earlier attempt created.
 func (execution *Execution) createAgentWorktree(ctx context.Context, call Call) (Result, error) {
 	arguments := worktreeArguments(call)
-	worktree, err := execution.commits.CreateAgentWorktree(ctx, execution.executor, arguments.AgentID, arguments.Keep)
+	worktree, err := execution.commits.CreateAgentWorktree(ctx, execution.executor, arguments.AgentID, arguments.Keep, arguments.Inputs)
 	if err != nil {
 		return Result{}, err
 	}
@@ -106,6 +107,29 @@ func (execution *Execution) finishAgentWorktree(ctx context.Context, call Call) 
 }
 
 // cleanupAgentWorktree removes a closed task attempt's refs and receipts.
+// EvolveResultArguments are the arguments of ReadEvolveResult: the change
+// subagent agentID and the files of its result to read, with their limits.
+func EvolveResultArguments(agentID string, files map[string]int64) string {
+	return string(comm.Must(json.Marshal(evolveResultArguments{AgentID: agentID, Files: files})))
+}
+
+type evolveResultArguments struct {
+	AgentID string           `json:"agent_id"`
+	Files   map[string]int64 `json:"files"`
+}
+
+// readEvolveResult reads the proposal files of an agent review from the result
+// ref of its change subagent, for report_evolve_review, without a checkout.
+func (execution *Execution) readEvolveResult(ctx context.Context, call Call) (Result, error) {
+	var arguments evolveResultArguments
+	comm.MustDo(json.Unmarshal([]byte(call.Arguments), &arguments))
+	files, err := execution.commits.ReadAgentResult(ctx, execution.executor, arguments.AgentID, arguments.Files)
+	if err != nil {
+		return Result{}, err
+	}
+	return Result{Content: fmt.Sprintf("Read %d file(s) of the result of subagent %s.", len(files), arguments.AgentID), EvolveFiles: files}, nil
+}
+
 func (execution *Execution) cleanupAgentWorktree(ctx context.Context, call Call) (Result, error) {
 	arguments := worktreeArguments(call)
 	if err := execution.commits.CleanupAgentWorktree(ctx, execution.executor, arguments.AgentID, arguments.RemoveCheckout); err != nil {

@@ -158,11 +158,12 @@ var (
 // Delegation to subagents that the call asks for too often or too early.
 var (
 	ModelCredentialUnavailable = callCode("model_credential_unavailable", "The Project key is missing or retained by unfinished tasks. Ask the user to set their key or stop those tasks before starting another subagent.")
-	SubagentLimitReached     = callCode("subagent_limit_reached", "Three subagents already run. Wait for a task notification before you start another, or stop one with stop_task.")
-	TaskWorktreeLimitReached = callCode("task_worktree_limit_reached", "Three task worktrees are open, or sixteen names are currently retained. Merge or discard an open worktree, or continue with an existing name.")
-	SubagentBudgetReached    = callCode("subagent_budget_reached", "Six subagents were started since the user's last message. Continue with the subagents you have, or ask the user before you start more.")
-	SnapshotTooLarge         = callCode("snapshot_too_large", "The uncommitted and untracked files of the workspace exceed 100 MiB, which a subagent's worktree would copy. Commit, delete or ignore the large files first.")
-	AgentNotFinished         = callCode("agent_not_finished", "The subagent is still running. Wait for its task notification before you merge or discard its changes.")
+	SubagentLimitReached       = callCode("subagent_limit_reached", "Three subagents already run. Wait for a task notification before you start another, or stop one with stop_task.")
+	TaskWorktreeLimitReached   = callCode("task_worktree_limit_reached", "Three task worktrees are open, or sixteen names are currently retained. Merge or discard an open worktree, or continue with an existing name.")
+	SubagentBudgetReached      = callCode("subagent_budget_reached", "Six subagents were started since the user's last message. Continue with the subagents you have, or ask the user before you start more.")
+	SnapshotTooLarge           = callCode("snapshot_too_large", "The uncommitted and untracked files of the workspace exceed 100 MiB, which a subagent's worktree would copy. Commit, delete or ignore the large files first.")
+	AgentNotFinished           = callCode("agent_not_finished", "The subagent is still running. Wait for its task notification before you merge or discard its changes.")
+	SubagentInputMissing       = callCode("subagent_input_missing", "An input directory of start_agent does not exist in the workspace, or Git does not ignore it. Place it first, such as with place_evolve_export, keep .local/ in .gitignore, then start the subagent again.")
 	// A connector_develop subagent works on the branch of its connector, which
 	// one subagent at a time may change.
 	ConnectorContributionRunning = callCode("connector_contribution_running", "A connector_develop subagent already works on this connector. "+
@@ -176,6 +177,23 @@ var (
 	ConnectorCheckFailed = callCode("connector_check_failed", "The connectors library checks failed before the contribution was pushed. Fix the worktree, then call submit_connector_contribution again.")
 )
 
+// An agent review's place_evolve_export and report_evolve_review that name the
+// wrong review or proposal, or whose change's files cannot back a proposal.
+var (
+	EvolveReviewStale = callCode("stale_review", "The review does not wait for your report: it ended, expired or was skipped, or it is not this Project's review. "+
+		"Report only the review of the newest evolve notification, while it waits; read its ID there.")
+	EvolveProposalStale = callCode("stale_proposal", "The review's proposal is not in a state this report follows: apply only an approved proposal, and discard only a declined, superseded or stale one. "+
+		"Read the proposal's status in the newest evolve notification.")
+	InvalidBacktest = callCode("invalid_backtest", "The change's backtest.json or open-runs.json does not decode, or a gate refuses it (its code is in the message): "+
+		"rerun superverse-evolve compare and open-runs on the placed folder in a change subagent, fix what the gate names, or report no_change or a trial.")
+	ExportMismatch = callCode("export_mismatch", "The backtest or open-run check is not bound to this review's placed Live export: another review, another goals commit, edited runs, "+
+		"another goal set or another definition of a goal. Compute it again with superverse-evolve over .local/superverse-evolve/<review_id>/ and its goals.md only.")
+	EvolveResultTooLarge = callCode("evolve_result_too_large", "A file of the change's result is over its limit: proposal.md 32 KiB, backtest.json 256 KiB, open-runs.json 64 KiB, "+
+		"or a backtest summary over 8 KiB. Shorten it in a change subagent and report again.")
+	EvolveExportTooLarge = platformCode("export_too_large", "The review's runs exceed the 256 MiB a workspace folder holds, so nothing was placed.")
+	EvolveExportNotLive  = platformCode("evolve_export_not_live", "The review's stored export is not its export of the Live runs, so nothing was placed.")
+)
+
 // The application source is wrong; the model repairs it.
 var (
 	FlowDefinitionInvalid      = sourceGateCode("flow_definition_invalid", "Preview and Release render every Flow of the pushed commit the same way. Fix every reported problem in the source, then call commit_and_push again.")
@@ -183,6 +201,7 @@ var (
 	SourceGateWeakened         = applicationCode("source_gate_weakened", "The working tree changed a gate command that HEAD declares (checkStatic or testApplication). Restore it, or call commit_and_push with blocked=true only when the user asked to change the source gate.")
 	ConnectorMockInProduction  = sourceGateCode("connector_mock_in_production", "A production package imports a connector mock. Keep mocks in internal/apptest behind the apptest build tag, then call commit_and_push again.")
 	AttachmentInSource         = sourceGateCode("attachment_in_source", "Files under .local/superverse-attachments/ are the user's attachments and never enter the repository. Keep /.local/ in .gitignore, then call commit_and_push again.")
+	EvolveExportInSource       = sourceGateCode("evolve_export_in_source", "Files under .local/superverse-evolve/ are an agent review's Live runs and never enter the repository. Keep /.local/ in .gitignore, remove them from the index, then call commit_and_push again.")
 	ApplicationTestsFailed     = sourceGateCode("application_tests_failed", "Fix the failing tests and engine problems above in the source or the tests, rerun them with the make test-app command shown, then call commit_and_push again.")
 	ApplicationTestsIncomplete = sourceGateCode("application_tests_incomplete", "The API tests do not exercise what the source declares. Add tests through apptest.Start for every Flow and every wired branch of a mocked connector named above, then call commit_and_push again.")
 	RequirementsUntested       = sourceGateCode("requirements_untested", "Trace every confirmed requirement to tests that pass, or give an untested_reason when no test can prove it; add the missing tests, then call commit_and_push again.")

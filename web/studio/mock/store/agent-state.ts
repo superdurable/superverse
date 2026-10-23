@@ -175,6 +175,8 @@ export function mockNotification(
     remedy: "FAILURE_REMEDY_UNSPECIFIED",
     resolvedNoticeId: "",
     url: "",
+    reviewId: "",
+    evolvePhase: "EVOLVE_PHASE_UNSPECIFIED",
     ...value,
   };
 }

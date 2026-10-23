@@ -647,6 +647,33 @@ application template's `.gitignore` ignores; `commit_and_push` refuses a staged 
 a file (`attachment_in_source`). It is mutating, so it joins no wave, and loose, so the measured
 strict tool set is unchanged. Neither attachment tool is offered to a connected local agent.
 
+`place_evolve_export` is the same kind of tool for an agent review: the Session's Step reads the
+review's export of the Live runs from its own Project's evolve objects in storage, and `goals.md` at
+the review's goals commit through the repository host from the lease's repository, with no Flow read
+(`SessionAgentFlowDependency.EvolveExport`): the `runs.jsonl` that `ComputeMetrics` stored once with
+its index, streamed one object at a time and decompressed, never decoded into records, and checked
+against the index's size and digest at its end. The tool streams it in chunks of at most 4 MiB
+through sandboxd, refusing above 256 MiB by the stored size before it writes, with `manifest.json` (with `runs_sha256`), `metrics.json` and `goals.md`, to
+`/workspace/.local/superverse-evolve/<review_id>/`, read-only, at most 256 MiB (`export_too_large`).
+The helper checks the placed `runs.jsonl` against the export's SHA-256 and keeps the newest two
+review folders. A review without a stored export is `stale_review`, and a manifest that is not the
+review's export of the Live runs `evolve_export_not_live`. `commit_and_push` refuses these files
+(`evolve_export_in_source`). It is mutating and loose, and platform-only.
+
+`report_evolve_review` ends an agent review, or reports what became of its proposal (`phase`
+`reported`, `applied` or `discarded`). For a proposal it reads `.superverse/evolve/<review_id>/`
+`proposal.md` (at most 32 KiB), `backtest.json` (256 KiB) and `open-runs.json` (64 KiB) from the
+change subagent's result ref through sandboxd (the worktree helper's `read`, with no checkout),
+and reports them to EvolveFlow through `SessionFlowService`, whose `ReportReview` checks, in
+order, that the review waits (`stale_review`), the files (`invalid_backtest`,
+`evolve_result_too_large`), their export binding, goal set and definition digests against the
+review (`export_mismatch`) and the gates (`invalid_backtest`, with the gate's code); a refused
+report stores nothing. An offered proposal pins the change subagent's record, and `applied` or
+`discarded` unpins it ([subagents.md](subagents.md#agent-review-inputs-and-pinned-results)). The
+image's `superverse-evolve` (`check`, `metrics`, `compare`, `open-runs`, reading only the placed
+folder) produces the files; the procedure is the evolve reference of the Dex skills. It is
+mutating and loose, platform-only, and loads the Session's subagent records.
+
 The platform Dex is shared by every Project, so the Agent never gets raw platform engine access. For
 the Preview the Agent runs `dexcli` against the Sandbox-local engine (read subcommands, `--no-hydrate`)
 and reads the Preview logs.

@@ -14,9 +14,12 @@ import (
 	"errors"
 
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace"
+	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/workspace/git"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agentloop"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/agenttasks"
 	"github.com/superdurable/superversev2/internal/dexai/agents/session/conversation"
+	"github.com/superdurable/superversev2/internal/dexai/agents/session/sandboxtools"
+	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 )
 
 // ErrWorkspaceCommandRejected marks a workspace command that asking again
@@ -31,7 +34,8 @@ var ErrWorkspaceCommandRejected = errors.New("session workspace command rejected
 // Steps, from ReportPlatformIssue beside the turn and from the stop of a
 // background command's watch at the Session's close, never from a tool, except
 // the AgentTaskLauncher, which the delegation tools start_agent and stop_task
-// and the Stop button call.
+// and the Stop button call, and the agent review's EvolveExport and
+// ReportEvolveReview, which place_evolve_export and report_evolve_review call.
 type SessionAgentFlowDependency interface {
 	agenttasks.AgentTaskLauncher
 	// ReportPlatformIssue starts the PlatformIssueFlow of the incident's
@@ -71,6 +75,15 @@ type SessionAgentFlowDependency interface {
 	// SubmitConnectorContribution reconciles the Project and slug's existing
 	// contribution before accepting the remote worktree's committed head.
 	SubmitConnectorContribution(ctx context.Context, projectID string, contributed conversation.ConnectorContribution, summary string) error
+	// EvolveExport reads, for place_evolve_export, the export of review
+	// reviewID of the Session's own Project from storage, and the goals file
+	// at its goals commit through the repository host from the lease's
+	// repository, with no Flow read; nil when the review has no stored export.
+	EvolveExport(ctx context.Context, projectID, reviewID string, repository git.Repository) (*sandboxtools.EvolveExport, error)
+	// ReportEvolveReview reports the Session's report on an agent review of
+	// its Project, with a proposal's files, to the Project's goal measurement,
+	// which checks the files against the review; a refusal is an answer.
+	ReportEvolveReview(ctx context.Context, projectID string, report evolve.ReviewReport, files *evolve.ReviewFiles) (evolve.ReportAnswer, error)
 }
 
 // ProjectDiagnosticsReader runs the Agent's read-only platform tools on the

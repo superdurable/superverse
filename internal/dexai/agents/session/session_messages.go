@@ -543,10 +543,15 @@ func (flow *SessionAgentFlow) appendNotifications(ctx dex.Context, notifications
 
 // consumeIdleNotifications records the notifications AwaitUser consumed and
 // reports whether they open an automatic turn; at a bound, or after a Stop,
-// automatic turns pause, which is recorded once.
+// automatic turns pause, which is recorded once. A remote Session drops evolve
+// ones, and a review notice that would open no turn is dropped and expires.
 func (flow *SessionAgentFlow) consumeIdleNotifications(ctx dex.Context, notifications []conversation.SessionNotification, isStopped bool) bool {
+	if currentExecutor(ctx).Mode == remoteexec.ModeRemote {
+		notifications = agentloop.WithoutEvolve(notifications)
+	}
+	notifications = agentloop.WithoutLapsedReviews(comm.Must(agentStateAttribute.Get(ctx)), notifications, flow.automaticTurns, isStopped)
 	recorded, sequences := flow.appendNotifications(ctx, notifications)
-	state, decision := agentloop.ConsumeIdleNotifications(comm.Must(agentStateAttribute.Get(ctx)), recorded, sequences, flow.automaticTurns, isStopped)
+	state, decision := agentloop.ConsumeIdleNotifications(comm.Must(agentStateAttribute.Get(ctx)), recorded, sequences, flow.automaticTurns, isStopped, time.Now().UTC())
 	comm.MustDo(agentStateAttribute.Set(ctx, state))
 	if decision.Paused {
 		appendEntry(ctx, agentloop.PausedEntry())
@@ -677,7 +682,7 @@ func (flow *SessionAgentFlow) executeRemote(ctx dex.Context) agentloop.Continuat
 		}
 		return ""
 	}
-	flow.appendNotifications(ctx, comm.Must(sessionNotificationsChannel.GetConditionResults(ctx)))
+	flow.appendNotifications(ctx, agentloop.WithoutEvolve(comm.Must(sessionNotificationsChannel.GetConditionResults(ctx))))
 	if steered := comm.Must(steeredUserMessagesChannel.GetConditionResults(ctx)); len(steered) > 0 {
 		beginSteeredTurn(ctx, steered)
 	}

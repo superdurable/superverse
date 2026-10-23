@@ -141,7 +141,9 @@ replay stays deterministic. Input 1 of a scenario starts it again. A reply sets
 whose first line holds that text, the scenario stops with "... no tool failed with <text>", so the
 next reply proves what the model read. `expect_failure_contains` lists texts the failed result
 must hold anywhere; `expect_result_contains` lists texts that the results of the reply's tools
-must hold together, failed or not, such as a background task's output.
+must hold together, failed or not, such as a background task's output. Like the
+`expect_segment_start` texts, these texts may hold the scenario's `{{name}}` placeholders, filled
+with the arguments in force when the reply was made, such as `{{review}}` below.
 
 ## Background tasks
 
@@ -152,7 +154,9 @@ task ID that each user message holds, in a tool result or in a notification, as 
 there on; `read_task_output`, `stop_task` and `merge_agent_changes` steps name it. A task
 notification continues the replies of the last input: the automatic turn it opens is the next
 reply, which declares `notification: task`, so a request without that notification is rejected.
-The catalog does not list `task` among the arguments a person sets.
+The catalog does not list `task` among the arguments a person sets. Likewise `review` is the last
+review ID (`r-<n>`) a user message names as `"review_id"`, in an evolve notification or a tool
+result, and `commit` the last commit a `commit_and_push` result names as `"commit"`.
 
 ## Subagents
 
@@ -164,7 +168,8 @@ replies in order, with the same replay check; a compaction summary of it carries
 `[[subagent:<scenario>/<name>]] [[scenario-step:<k>]]`. The subagent scripts are no scenarios of
 the catalog. At startup every schema-valid `start_agent` call must name a declared script of the call's kind,
 every declared script must be started, and each script's tools must be its kind's tool set
-(`agentloop.SubagentTools`, whose `bash` has no `run_in_background`). A reply marked
+(`agentloop.SubagentTools`, whose `bash` has no `run_in_background`); its file tools play on the
+scenario's workspace, the files its worktree starts with. A reply marked
 A `connector_develop` subagent's root is a worktree of the connectors
 library, which the template does not describe: its file tools play only on the files its script
 writes, and a read or edit of another library file is not checked.
@@ -241,6 +246,7 @@ inputs:
         chunk_delay_ms: 40        # pause between deltas, to stream slowly
         repeat: 100               # the same reply this many times, to exercise a long turn
         notification: task        # this reply answers a task notification, which the request must hold
+        notification_source: evolve  # with notification: the notification must come from this source
         expect_failure: true      # keep going when a tool of this reply fails (default: stop)
         expect_failure_text: "Error: invalid_arguments"
         expect_failure_contains: ["owner: call"]
@@ -323,8 +329,11 @@ tools counting for its scenario, and every scenario is launched by a Dex integra
 any other string launches nothing. A notification kind counts only as a reply that declares it
 (`notification: task`), and the mock model rejects that reply's call (`400
 invalid_request_error`) unless the newest user message of the request holds a notification of that
-kind, so the declaration is proved whenever the scenario runs. A new or changed tool, interaction
-or subagent kind ships with its scenario and the test that runs it.
+kind, so the declaration is proved whenever the scenario runs. A source the Session takes unlike
+the others of its kind, `evolve`, which opens its own turn only while the Agent waits for the
+user, must be answered by a reply that declares it (`notification_source: evolve`), which the
+newest user message must hold. A new or changed tool, interaction or subagent kind ships with its
+scenario and the test that runs it.
 
 | Scenario | Category | Inputs | Used by |
 | --- | --- | --- | --- |
@@ -364,6 +373,7 @@ or subagent kind ships with its scenario and the test that runs it.
 | `background-command` | `agent_feature` | message | A `run_in_background` command whose exit notification opens a turn that reads its output |
 | `background-long-turn` | `agent_feature` | message | A turn of 60 model calls beside a running background command, long enough for the Session to move to a new run before the command's exit notification opens a turn that reads its output |
 | `background-chain` | `agent_feature` | message | Background commands whose notifications each open a turn that starts the next, until the automatic-turn bound pauses them |
+| `evolve-budget` | `agent_feature` | message | Agent reviews and the automatic-turn bounds: a chain of background steps to the bound, a review that lifts the pause and opens its own turn, a review after a Stop that is dropped and opens none, and a review sent during a timer that waits for the turn's end: `TestEvolveNotificationBudgetDexIntegration` |
 | `stop-turn` | `agent_feature` | message, message | A background server and a long check that the test stops; input 2 reads the `interrupted_by_user` result |
 | `task-tools` | `agent_feature` | message | `read_task_output` of a running background command and `stop_task` |
 | `file-edit-failure` | `agent_error` | message | An `edit` that fails with `edit_ambiguous`, a `read` and an `edit` with more context, then three replies to the handoff continuations |

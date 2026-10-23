@@ -10,10 +10,14 @@ package evolve
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	pb "github.com/superdurable/superversev2/gen/superverse/v2"
+	"github.com/superdurable/superversev2/internal/comm"
 	"github.com/superdurable/superversev2/internal/dexai/api/boundary"
 	evolveflow "github.com/superdurable/superversev2/internal/dexai/delivery/evolve"
 	"github.com/superdurable/superversev2/internal/dexai/delivery/evolve/goals"
@@ -85,6 +89,74 @@ func (s *evolveServer) StartEvolveReview(ctx context.Context, in *pb.StartEvolve
 	return &pb.StartEvolveReviewResponse{ReviewId: admission.ReviewID, Refusal: boundary.Enum[pb.EvolveReviewRefusal](admission.Refusal)}, nil
 }
 
+// DecideEvolveProposal records a decision on a review's offered proposal for
+// a caller who may build the Project; a stale revision is an answer, not an error.
+func (s *evolveServer) DecideEvolveProposal(ctx context.Context, in *pb.DecideEvolveProposalRequest) (*pb.DecideEvolveProposalResponse, error) {
+	account, err := s.Authenticate(ctx, in.GetCaller())
+	if err != nil {
+		return nil, err
+	}
+	decision, err := boundary.DomainValue(in.GetDecision())
+	if err != nil {
+		return nil, err
+	}
+	reason := in.GetReason()
+	for _, invalid := range []error{
+		boundary.InvalidIf(evolveflow.ValidateReviewID(in.GetReviewId()) != nil, "review_id must name a review r-<n>"),
+		boundary.InvalidIf(in.GetRevision() == 0, "revision must be the proposal revision the page showed"),
+		boundary.InvalidIf(!utf8.ValidString(reason) || utf8.RuneCountInString(reason) > evolveflow.MaximumReasonRunes, "reason must be at most 500 characters"),
+	} {
+		if invalid != nil {
+			return nil, invalid
+		}
+	}
+	if _, err = s.projects.Authorize(ctx, account.AccountID, in.GetProjectId(), projects.CapabilityBuild); err != nil {
+		return nil, boundary.RPCStatus(err)
+	}
+	answer, err := s.evolve.DecideProposal(ctx, in.GetProjectId(), evolveflow.DecisionRequest{
+		ReviewID: in.GetReviewId(), Revision: in.GetRevision(), Decision: evolveflow.ProposalDecision(strings.ToLower(decision)), Reason: reason, Actor: account.AccountID,
+	})
+	if errors.Is(err, evolveflow.ErrNotStarted) {
+		return nil, errNotMeasured
+	}
+	if err != nil {
+		return nil, boundary.RPCStatus(err)
+	}
+	out := &pb.DecideEvolveProposalResponse{Refusal: boundary.Enum[pb.EvolveProposalRefusal](answer.Refusal)}
+	if answer.Proposal != nil {
+		out.Proposal = proposalSnapshot(*answer.Proposal)
+	}
+	return out, nil
+}
+
+// GetEvolveProposal reads the proposal document of a review for a caller
+// who may operate the Project's Live.
+func (s *evolveServer) GetEvolveProposal(ctx context.Context, in *pb.GetEvolveProposalRequest) (*pb.GetEvolveProposalResponse, error) {
+	account, err := s.Authenticate(ctx, in.GetCaller())
+	if err != nil {
+		return nil, err
+	}
+	if err = boundary.InvalidIf(evolveflow.ValidateReviewID(in.GetReviewId()) != nil, "review_id must name a review r-<n>"); err != nil {
+		return nil, err
+	}
+	if _, err = s.projects.Authorize(ctx, account.AccountID, in.GetProjectId(), projects.CapabilityOperateLive); err != nil {
+		return nil, boundary.RPCStatus(err)
+	}
+	document, err := s.evolve.ReadProposal(ctx, in.GetProjectId(), in.GetReviewId())
+	switch {
+	case errors.Is(err, evolveflow.ErrNotStarted):
+		return nil, errNotMeasured
+	case errors.Is(err, evolveflow.ErrNoProposal):
+		return nil, errNoProposal
+	case err != nil:
+		return nil, boundary.RPCStatus(err)
+	}
+	return &pb.GetEvolveProposalResponse{Markdown: string(document)}, nil
+}
+
+// errNoProposal answers a review without a kept proposal.
+var errNoProposal = status.Error(codes.NotFound, "the review has no proposal")
+
 // evolveSnapshot is the public view of a goal measurement.
 func evolveSnapshot(s evolveflow.Snapshot, agentReviews bool, now time.Time) *pb.Evolve {
 	out := &pb.Evolve{
@@ -98,7 +170,34 @@ func evolveSnapshot(s evolveflow.Snapshot, agentReviews bool, now time.Time) *pb
 	for _, review := range s.Reviews {
 		out.Reviews = append(out.Reviews, reviewSnapshot(review))
 	}
+	for _, proposal := range s.Proposals {
+		out.Proposals = append(out.Proposals, proposalSnapshot(proposal))
+	}
 	return out
+}
+
+func proposalSnapshot(p evolveflow.ProposalRecord) *pb.EvolveProposal {
+	out := &pb.EvolveProposal{
+		ReviewId: p.ReviewID, Kind: boundary.Enum[pb.EvolveProposalKind](p.Kind), Undoes: p.Undoes, Title: p.Title, Summary: p.Summary,
+		AgentId: p.AgentID, BacktestJson: backtestJSON(p.Backtest), Status: boundary.Enum[pb.EvolveProposalStatus](p.Status), StatusAt: timestamp(p.StatusAt),
+		Revision: p.Revision, OfferedAt: timestamp(p.OfferedAt), NotifyFailed: p.NotifyFailed, AppliedCommit: p.AppliedCommit,
+		AppliedAt: timestamp(p.AppliedAt), LiveRevision: p.LiveRevision, LiveAt: timestamp(p.LiveAt), PreviousLiveReleaseId: p.PreviousLiveReleaseID,
+	}
+	if d := p.Decision; d != nil {
+		out.Decision = &pb.EvolveProposalDecisionRecord{
+			Decision: boundary.Enum[pb.EvolveProposalDecision](d.Decision), ActorAccountId: d.Actor, DecidedAt: timestamp(d.At), Reason: d.Reason,
+		}
+	}
+	return out
+}
+
+// backtestJSON is the stored summary of a proposal's backtest as JSON, with
+// the keys of backtest.json; empty for none.
+func backtestJSON(summary *goals.BacktestSummary) string {
+	if summary == nil {
+		return ""
+	}
+	return string(comm.Must(json.Marshal(summary)))
 }
 
 func goalsSnapshot(g evolveflow.Goals) *pb.EvolveGoals {

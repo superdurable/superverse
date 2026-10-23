@@ -25,6 +25,11 @@ MODULE = "github.com/superdurable/superversev2/"
 # package at that path and every package below it, test helpers included (dexflowtest, kubeapitest).
 SHARED_ROOTS = ("internal/comm", "internal/dexai/app", "internal/comm/platform", "internal/dexai/studio/flowapi",
                 "internal/dexai/agents/session/toolinput/generated", "internal/dexai/agents/remoteagent/bridgeapi")
+# The coding image builds these packages from the source tree into its own superverse-evolve command
+# (sandbox/coding/Dockerfile), with no module but yaml.v3: they import only the standard library,
+# gopkg.in/yaml.v3 and each other.
+IMAGE_BUILT = ("internal/dexai/delivery/evolve/goals", "internal/dexai/delivery/evolve/runexport")
+IMAGE_MODULES = ("gopkg.in/yaml.v3",)
 # The server configuration schema is read only where the process starts, validates and composes from it.
 CONFIG = "cmd/superverse-server/config"
 CONFIG_IMPORTERS = ("cmd/superverse-server", "cmd/tools/check-config", "internal/dexai/bootstrap")
@@ -83,6 +88,7 @@ LEVELS = {
     "internal/dexai/api/watch": 1,
     "internal/dexai/delivery/deliverydao": 1,
     "internal/dexai/delivery/evolve/goals": 2,
+    "internal/dexai/delivery/evolve/runexport/history": 2,
     "internal/dexai/delivery/evolve/runexport": 1,
     "internal/dexai/delivery/releases/build": 1,
     "internal/dexai/projects/infra": 1,
@@ -193,6 +199,17 @@ def violations(package, imported):
         yield f"{package} (level {LEVELS[package]}) imports {imported} (level {LEVELS[imported]}); a business package imports only lower levels"
 
 
+def image_violations(package, imported):
+    """Yield the imports of a package the coding image builds that its build cannot resolve."""
+    if package not in IMAGE_BUILT:
+        return
+    for name in imported:
+        standard = "." not in name.split("/", 1)[0]
+        if not (standard or name in IMAGE_MODULES or name.removeprefix(MODULE) in IMAGE_BUILT):
+            yield (f"{package} imports {name}; the coding image builds it with only the standard library, "
+                   f"{', '.join(IMAGE_MODULES)} and {', '.join(IMAGE_BUILT)}")
+
+
 def boundary_violations(api, package, directory, files):
     """Yield the files of package that import the runtime API client api without being one of its packages."""
     runtime, packages, single_files = BOUNDARIES[api]
@@ -229,6 +246,36 @@ def memory_safety_violations():
                        f"{', '.join(MEMORY_SAFE)} must be memory-safe Go")
 
 
+def image_module_violations(root):
+    """The coding image builds superverse-evolve offline with sandbox/coding/go.mod.imported and
+    go.sum.imported: each module of IMAGE_MODULES is pinned there at the root module's version with the
+    root's go.sum lines, so the server's goals parser and the image's agree, and app-template/go.sum
+    holds it, so the image's module proxy, built from the template's module graph, serves it."""
+    def lines(path):
+        with open(os.path.join(root, path), encoding="utf-8") as file:
+            return [line.split() for line in file if line.strip()]
+
+    def sums(path, module, version):
+        return sorted(" ".join(fields) for fields in lines(path)
+                      if fields[0] == module and fields[1] in (version, version + "/go.mod"))
+
+    for module in IMAGE_MODULES:
+        versions = [fields[fields.index(module) + 1] for fields in lines("go.mod")
+                    if module in fields and len(fields) > fields.index(module) + 1]
+        imported = [fields[fields.index(module) + 1] for fields in lines("sandbox/coding/go.mod.imported")
+                    if module in fields and len(fields) > fields.index(module) + 1]
+        if len(set(versions)) != 1 or imported != versions[:1]:
+            yield (f"sandbox/coding/go.mod.imported requires {module} {' '.join(imported) or 'at no version'}; "
+                   f"the root go.mod requires {' '.join(versions) or 'none'}: pin the root's version")
+            continue
+        version = versions[0]
+        if sums("sandbox/coding/go.sum.imported", module, version) != sums("go.sum", module, version) or not sums("go.sum", module, version):
+            yield f"sandbox/coding/go.sum.imported must hold the root go.sum's lines of {module} {version}"
+        if not any(fields[:2] == [module, version] for fields in lines("app-template/go.sum")):
+            yield (f"app-template/go.sum holds no {module} {version}, so the coding image's module proxy lacks it "
+                   f"and superverse-evolve does not build offline")
+
+
 def main():
     listing = subprocess.check_output(
         # The tags select the files of the live and hosted tests, so the Kubernetes boundary covers them.
@@ -237,7 +284,7 @@ def main():
          "./cmd/...", "./internal/...", "./sandbox/coding/cmd/...", "./sandbox/coding/internal/..."],
         env={**os.environ, "GOWORK": "off"}, text=True)
     decoder = json.JSONDecoder()
-    imports, clients = {}, {}
+    imports, clients, everything_imported = {}, {}, {}
     position = 0
     while True:
         while position < len(listing) and listing[position].isspace():
@@ -248,6 +295,7 @@ def main():
         package = entry["ImportPath"].removeprefix(MODULE)
         imports[package] = [name.removeprefix(MODULE) for name in entry.get("Imports", [])
                             if name.removeprefix(MODULE).startswith(("internal/", "cmd/"))]
+        everything_imported[package] = entry.get("Imports", [])
         # Test files count for the runtime boundaries, so every import list is searched.
         everything = entry.get("Imports", []) + entry.get("TestImports", []) + entry.get("XTestImports", [])
         for api in BOUNDARIES:
@@ -263,12 +311,16 @@ def main():
                 failures.extend(violations(package, name))
         for (api, package), (directory, files) in sorted(clients.items()):
             failures.extend(boundary_violations(api, package, directory, files))
+        for package, imported in sorted(everything_imported.items()):
+            failures.extend(image_violations(package, imported))
         failures.extend(sorted(set(memory_safety_violations())))
+        failures.extend(image_module_violations(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
     print("Package layers: shared packages stay below business packages, each business package imports only lower levels, "
-          "only the Kubernetes and Docker packages import their API clients and the file extractor depends on memory-safe Go only")
+          "only the Kubernetes and Docker packages import their API clients, the packages the coding image builds import only "
+          "the standard library and yaml.v3 at the root's pinned version, and the file extractor depends on memory-safe Go only")
     return 0
 
 

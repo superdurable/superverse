@@ -227,9 +227,23 @@ A notification may open a turn when the Session is idle. These rules decide whic
   `configuration`, stale failures, and `ready`.
 - Both counters count consecutive automatic turns. A user-initiated turn start (a message, a
   steered or queued message, or an answer) resets both counters and `AutomaticTurnsPaused`.
-- Pressing Stop, or reaching a bound, sets `AutomaticTurnsPaused`. The Session records once
-  "automatic continuation paused; reply to continue". While paused, notifications are appended
-  to the log but open no turn, including those that arrive after Stop.
+- Pressing Stop, or reaching a bound, sets `AutomaticTurnsPaused` with its cause,
+  `AutomaticTurnsPauseCause` `stop` or `cap` (a pause recorded without a cause reads as `stop`).
+  The Session records once "automatic continuation paused; reply to continue". While paused,
+  notifications are appended to the log but open no turn, including those that arrive after Stop.
+- An `evolve` notification (source `evolve`, kind `task`: an agent review of the Project's goals,
+  or a person's decision on its proposal) is taken only while the Agent waits for the user: a turn's
+  boundary that takes one publishes it again, behind later notifications, so it never enters the
+  user's turn. Consuming it resets `AutomaticTaskTurns` and `SubagentsStartedWithoutUser` and lifts
+  a `cap` pause, as a user turn does, then opens its own turn, charged to the task bound even beside
+  a delivery failure; a `stop` pause stays until the user's next message. A review's notification
+  consumed under a `stop` pause, or with a Stop pending, is dropped and the review expires; a
+  decision is only recorded. A Session in remote mode drops both: a local agent runs neither the
+  platform model nor the review's tools. Taking a review's notification records
+  `AgentState.EvolveReview` with the turn it opened and its time. The review owns that turn, the
+  subagents started in a turn it owns, and the automatic turn an end of one of those subagents
+  opens; its report carries the platform model usage of those turns and subagents only, never of
+  a user's turn in between.
 
 ## Task notifications
 

@@ -64,6 +64,10 @@ type Call struct {
 	// which the Session read from its Project's bound attachments; nil when
 	// the Project bound none of that ID.
 	Attachment *conversation.AttachmentFile
+	// EvolveExport is the export of the agent review a place_evolve_export
+	// call names, which the Session read from its Project's evolve objects
+	// and repository; nil when the review has no stored export.
+	EvolveExport *EvolveExport
 }
 
 // ConfirmedRequirements is the version and the feature IDs (R1, R2, ...) of
@@ -93,6 +97,8 @@ var (
 	ConnectorCatalog Tool = (*Execution).connectorCatalog
 	CommitAndPush    Tool = (*Execution).commitAndPush
 	PlaceAttachment  Tool = (*Execution).placeAttachment
+	// PlaceEvolveExport places an agent review's export in the workspace (tool_files.go).
+	PlaceEvolveExport Tool = (*Execution).placeEvolveExport
 )
 
 // The bash tool's ledger operations (tool_bash.go): BeginCommand is the
@@ -134,6 +140,9 @@ var (
 	// library instead, which its finish commits and pushes.
 	CreateContributionWorktree Tool = (*Execution).createContributionWorktree
 	FinishContribution         Tool = (*Execution).finishContribution
+	// ReadEvolveResult reads an agent review's proposal files from the result
+	// of its change subagent, for report_evolve_review.
+	ReadEvolveResult Tool = (*Execution).readEvolveResult
 )
 
 func NewRunner(workspaces *workspace.SandboxResolver, commits *git.GitOperations) *Runner {
