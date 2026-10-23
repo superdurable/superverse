@@ -599,7 +599,7 @@ class Render:
         metadata = json.loads(profile["data"]["contract.json"])
         self.fail_if(metadata.get("profile") != CODING_PROFILE or metadata.get("sandboxImageContractRevision") != 8 or not profile["metadata"]["name"].startswith(
             "coding-sandbox-profile-" + CODING_PROFILE + "-"), "the coding profile is not coding-v4 with image contract revision 8")
-        self.fail_if(metadata.get("metadataRevision") != 10 or "databaseIdentifiers" in metadata or
+        self.fail_if(metadata.get("metadataRevision") != 11 or "databaseIdentifiers" in metadata or
                      metadata.get("ownerIdentifiers") != ["namespaceName", "namespaceUid", "sandboxName", "sandboxUid", "workspacePvcName", "workspacePvcUid", "profileVersion"],
                      "profile owner metadata revision differs")
         self.fail_if(not profile.get("immutable") or profile["metadata"].get("annotations", {}).get("helm.sh/resource-policy") != "keep", "admitted Session profile retention changed")
@@ -616,6 +616,15 @@ class Render:
         server_rules = [rule for rule in egress if rule["to"][0].get("podSelector") == peer["podSelector"]]
         self.fail_if(server_rules != [{"to": [peer], "ports": [{"protocol": "TCP", "port": CREDENTIAL_READ_PORT}]}],
                      "a Sandbox must reach the platform server only on the credential read endpoint")
+        quota = yaml.safe_load(profile["data"]["baseline-resource-quota.yaml"])["spec"]["hard"]
+        self.fail_if({key: quota[key] for key in ("requests.cpu", "requests.memory", "limits.cpu", "limits.memory", "pods")} !=
+                     {"requests.cpu": "200m", "requests.memory": "512Mi", "limits.cpu": "4", "limits.memory": "4Gi", "pods": "2"},
+                     "the coding namespace must preserve requests and memory while allowing two 2 CPU Pods")
+        limits = yaml.safe_load(profile["data"]["baseline-limit-range.yaml"])["spec"]["limits"][0]
+        self.fail_if(limits["defaultRequest"] != {"cpu": "100m", "memory": "256Mi", "ephemeral-storage": "1Gi"} or
+                     limits["default"] != {"cpu": "2", "memory": "2Gi", "ephemeral-storage": "8Gi"} or
+                     limits["max"] != {"cpu": "2", "memory": "2Gi", "ephemeral-storage": "20Gi"},
+                     "the coding LimitRange must match the 2 CPU Sandbox burst budget")
         volume_claim = yaml.safe_load(profile["data"]["pvc.yaml"])["spec"]
         self.fail_if(volume_claim["accessModes"] != ["ReadWriteOncePod" if self.hosted else "ReadWriteOnce"], "the workspace volume must be single-writer where the storage enforces it")
         self.fail_if(volume_claim["resources"]["requests"]["storage"] != "1Gi", "the default workspace claim must request 1 GiB")
@@ -634,8 +643,8 @@ class Render:
         """coding-v4: tini as PID 1, the Preview engine state on the workspace volume, its preStop stop and the Preview Dex port."""
         container = pod["containers"][0]
         self.fail_if(container["resources"] != {"requests": {"cpu": "100m", "memory": "256Mi", "ephemeral-storage": "1Gi"},
-                                                "limits": {"cpu": "1", "memory": "2Gi", "ephemeral-storage": "8Gi"}},
-                     "the coding Sandbox must request 256 MiB without changing its CPU or resource limits")
+                                                "limits": {"cpu": "2", "memory": "2Gi", "ephemeral-storage": "8Gi"}},
+                     "the coding Sandbox must request 100m / 256 MiB with a 2 CPU / 2 GiB burst limit")
         self.fail_if(pod["terminationGracePeriodSeconds"] != 45 or container["command"] != ["/usr/bin/tini", "--", "/usr/local/bin/sandboxd"],
                      "the Sandbox must run sandboxd under tini with the preStop grace period")
         self.fail_if(container["lifecycle"] != {"preStop": {"exec": {"command": ["/usr/local/bin/superverse-previewctl", "shutdown", "--timeout", "30s"]}}},

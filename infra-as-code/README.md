@@ -23,8 +23,9 @@ A Spot interruption causes a short platform outage until the replacement node is
 this pre-launch tradeoff. Requests reserve scheduling capacity; burst limits are deliberately overcommitted.
 
 The coding Sandbox and Preview share one Pod. The profile requests 100m CPU and
-256 MiB memory, with 1 CPU / 2 GiB limits, and defaults new workspace
-claims to 1 GiB. Repository files and Preview engine state share that volume;
+256 MiB memory, with 2 CPU / 2 GiB limits, and defaults new workspace
+claims to 1 GiB. The CPU limit reserves no capacity; the unchanged 100m request
+controls packing and node provisioning. Repository files and Preview engine state share that volume;
 large repositories and accumulated build or engine data can exhaust it. New
 subagent and connector worktrees require at least 256 MiB free, while dirty
 snapshots remain capped at 100 MiB. The server's default `sandbox.previewHold`

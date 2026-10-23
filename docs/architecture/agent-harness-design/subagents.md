@@ -310,7 +310,7 @@ agent, so it needs the workspace lease, and the normal path needs no Flow RPC:
 
 ## Resource rules
 
-A Sandbox container is limited to 1 CPU and 2 GiB, and the main agent, the Preview and
+A Sandbox container is limited to 2 CPU and 2 GiB, and the main agent, the Preview and
 the application test engine run in it too. The platform applies these rules to every
 subagent command:
 

@@ -57,7 +57,7 @@ namespaceBaseline:
     secrets: 4
     requestsCpu: 200m
     requestsMemory: 512Mi
-    limitsCpu: "2"
+    limitsCpu: "4"
     limitsMemory: 4Gi
     requestsEphemeralStorage: 20Gi
     limitsEphemeralStorage: 20Gi
@@ -65,9 +65,9 @@ namespaceBaseline:
   limits:
     container:
       defaultRequest: {cpu: 100m, memory: 256Mi, ephemeral-storage: 1Gi}
-      default: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
+      default: {cpu: "2", memory: 2Gi, ephemeral-storage: 8Gi}
       min: {cpu: 50m, memory: 64Mi}
-      max: {cpu: "1", memory: 2Gi, ephemeral-storage: 20Gi}
+      max: {cpu: "2", memory: 2Gi, ephemeral-storage: 20Gi}
     persistentVolumeClaim:
       minStorage: 1Gi
       maxStorage: 20Gi
@@ -81,7 +81,7 @@ securityContext:
   fsGroup: 1000
 resources:
   requests: {cpu: 100m, memory: 256Mi, ephemeral-storage: 1Gi}
-  limits: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
+  limits: {cpu: "2", memory: 2Gi, ephemeral-storage: 8Gi}
 workspace:
   pvcName: workspace
   # One volume holds the repository checkout and the Preview engine state.
@@ -133,9 +133,10 @@ revision 7 is coding-v4 with image contract revision 8, whose file helper refuse
 permissions deny as a failure of the call; revision 8 lets the Sandbox reach the platform
 server's credential read endpoint; revision 9 matches the platform Service selector so
 Preview credential reads work through the ClusterIP; revision 10 reduces the coding container
-and its namespace baseline to the shared-node budget.
+and its namespace baseline to the shared-node budget; revision 11 restores only the 2 CPU
+burst limit to give the shared Preview engine more admission headroom.
 */}}
-{{- define "v2.codingProfile.metadataRevision" -}}10{{- end -}}
+{{- define "v2.codingProfile.metadataRevision" -}}11{{- end -}}
 
 {{/* Called with the merged sandboxProfiles dict. */}}
 {{- define "v2.codingProfile.configName" -}}

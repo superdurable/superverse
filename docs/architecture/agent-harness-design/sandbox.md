@@ -66,11 +66,11 @@ reach the Session through [notifications](notifications-and-feedback.md).
 
 The coding profile `coding-v4` (an immutable ConfigMap content-addressed by the chart)
 defines the Pod: one container from the coding image; `tini` as PID 1 with `sandboxd`
-as its child; UID/GID 1000; requests 100m CPU and 256 MiB, limits 1 CPU and 2 GiB, 8 GiB
+as its child; UID/GID 1000; requests 100m CPU and 256 MiB, limits 2 CPU and 2 GiB, 8 GiB
 ephemeral storage; a 2 GiB `/tmp` volume; a 45-second termination grace period with a
 preStop hook that stops the Preview engine; `containerPort` 8801 beside sandboxd's 8080
 and 9090. The namespace is bounded by a quota of one Sandbox, two Pods, three Services,
-one PVC, four Secrets, 200m CPU / 512 MiB requests and 2 CPU / 4 GiB limits. Local Native runs the same profile: the server
+one PVC, four Secrets, 200m CPU / 512 MiB requests and 4 CPU / 4 GiB limits. Local Native runs the same profile: the server
 reads the chart's rendering of it and starts the Pod template's container with the Pod's
 hardening (UID 1000, a read-only root, every capability dropped, `no-new-privileges`, the
 CPU and memory limits), the workspace subPaths as two named volumes, `/tmp` as a volume on
@@ -967,7 +967,7 @@ measures take them off the agent's path:
 
 | Component | Budget | Lives in |
 |---|---|---|
-| Coding container | 100m / 256 MiB requests; 1 CPU / 2 GiB limits; 1 GiB default PVC; 8 GiB ephemeral; 2 GiB `/tmp` | `_coding-profile.tpl`; Terraform `coding_profile.workspace_size` |
+| Coding container | 100m / 256 MiB requests; 2 CPU / 2 GiB limits; 1 GiB default PVC; 8 GiB ephemeral; 2 GiB `/tmp` | `_coding-profile.tpl`; Terraform `coding_profile.workspace_size` |
 | Platform Dex | 10m / 64 MiB to 2 CPU / 2 GiB | chart `dex.resources` |
 | Server | 10m / 64 MiB to 2 CPU / 3 GiB | `server.resources` |
 | Studio | 10m / 96 MiB to 1 CPU / 1 GiB | `studio.resources` |
@@ -976,9 +976,17 @@ measures take them off the agent's path:
 | Deployed application default | 100m / 128 MiB to 1 CPU / 1 GiB | `live_serving_application.go` |
 | Platform nodes | one shared diversified ARM64 Spot baseline node (test and staging); Karpenter shares platform, gVisor Sandbox and gVisor Live pools across Pods with On-Demand fallback; ceilings per environment in `node_pool_limits`  | `environments/{test,staging}/cloud.tfvars`, `terraform/cloud/karpenter.tf` and the chart's node pools |
 
+### Resource Scalability
+
+CPU limits reserve no scheduling capacity: the 100m request still controls packing and
+node provisioning. The 2 CPU burst limit gives the Sandbox-local engine and application
+headroom during Flow admission; it does not guarantee spare host CPU. No resource count,
+retention, cleanup path or per-request control-plane work changes. Existing admitted
+Sessions retain their immutable profile; newly admitted Sessions select revision 11.
+
 Limits are concurrency limits, not larger budgets. The namespace quota is
-200m / 512 MiB requests and 2 CPU / 4 GiB limits for at most two Pods. Each
-container is capped at 1 CPU / 2 GiB. A Sandbox runs the engine (Temporal and Dex), the Preview application, the
+200m / 512 MiB requests and 4 CPU / 4 GiB limits for at most two Pods. Each
+container is capped at 2 CPU / 2 GiB. A Sandbox runs the engine (Temporal and Dex), the Preview application, the
 builds of the main agent, up to three subagents' builds and at most one application test
 engine (about 300 MiB), all in a 2 GiB container. That is why subagent commands run with
 `nice -n 10`, `GOMAXPROCS=2` and a bounded Node heap, why at most three subagents run at
