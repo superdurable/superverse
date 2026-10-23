@@ -12,10 +12,13 @@ import (
 	"github.com/superdurable/dex/sdk-go/dex"
 )
 
-type Handler struct{ client *dex.Client }
+type Handler struct {
+	client         *dex.Client
+	registryFlowID string
+}
 
-func NewHandler(client *dex.Client) (*generated.Server, error) {
-	return generated.NewServer(&Handler{client: client},
+func NewHandler(client *dex.Client, registryFlowID string) (*generated.Server, error) {
+	return generated.NewServer(&Handler{client: client, registryFlowID: registryFlowID},
 		generated.WithErrorHandler(writeGeneratedError),
 		generated.WithNotFound(func(w http.ResponseWriter, _ *http.Request) {
 			writeError(w, http.StatusNotFound, "not_found", "unknown API route")
@@ -46,7 +49,7 @@ func (handler *Handler) Subscribe(ctx context.Context, request *generated.Subscr
 	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	_, err = process.Subscribe(ctx, handler.client, process.SubscriptionRequest{RequestID: request.RequestId.String(), Email: email})
+	_, err = process.Subscribe(ctx, handler.client, handler.registryFlowID, process.SubscriptionRequest{RequestID: request.RequestId.String(), Email: email})
 	if err != nil {
 		return nil, err
 	}

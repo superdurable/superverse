@@ -1,11 +1,11 @@
 {
-  "templateRevision": "app-template/github-releases-newsletter@ee5831df464fbf99438ed10fdcccf10f7f0aacfb",
+  "templateRevision": "app-template/github-releases-newsletter@3cde5fcab6a20893d16ad890b47bf31c79955de8",
   "definitions": [
     {
       "flowType": "NewsletterCampaignFlow",
       "sourcePath": "internal/process/newsletter_campaign_flow.go",
       "schemaVersion": "2.0",
-      "digest": "sha256:dc1b8d8991d5b221fd21188c108a0ab3eb8b0723c3d5c9c2021d88d1f703513d",
+      "digest": "sha256:d7486108017de7086387e6ba7c7fe4975144e6622ae12dda043f7cc78d14a99f",
       "valid": true,
       "graph": {
         "schemaVersion": "2.0",
@@ -18,9 +18,9 @@
           "name": "NewsletterCampaignFlow",
           "startStepId": "step:PrepareNewsletterRun",
           "span": {
-            "startLine": 169,
+            "startLine": 181,
             "startColumn": 1,
-            "endLine": 238,
+            "endLine": 250,
             "endColumn": 2
           }
         },
@@ -32,9 +32,9 @@
             "parentId": "step:PrepareNewsletterReport",
             "phase": "execute",
             "span": {
-              "startLine": 399,
+              "startLine": 411,
               "startColumn": 1,
-              "endLine": 426,
+              "endLine": 438,
               "endColumn": 2
             }
           },
@@ -45,9 +45,9 @@
             "parentId": "step:RecordConnectorReleasePage",
             "phase": "execute",
             "span": {
-              "startLine": 316,
+              "startLine": 328,
               "startColumn": 1,
-              "endLine": 336,
+              "endLine": 348,
               "endColumn": 2
             }
           },
@@ -58,9 +58,9 @@
             "parentId": "step:RecordDexReleasePage",
             "phase": "execute",
             "span": {
-              "startLine": 284,
+              "startLine": 296,
               "startColumn": 1,
-              "endLine": 308,
+              "endLine": 320,
               "endColumn": 2
             }
           },
@@ -71,9 +71,9 @@
             "parentId": "step:SaveNewsletterReport",
             "phase": "execute",
             "span": {
-              "startLine": 434,
+              "startLine": 446,
               "startColumn": 1,
-              "endLine": 448,
+              "endLine": 460,
               "endColumn": 2
             }
           },
@@ -84,22 +84,22 @@
             "parentId": "step:SelectNextRecipient",
             "phase": "execute",
             "span": {
-              "startLine": 544,
+              "startLine": 556,
               "startColumn": 1,
-              "endLine": 575,
+              "endLine": 587,
               "endColumn": 2
             }
           },
           {
-            "id": "decision:rpc:GetDexDisplay:690:9",
+            "id": "decision:rpc:GetDexDisplay:702:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexDisplay",
             "phase": "rpc",
             "span": {
-              "startLine": 690,
+              "startLine": 702,
               "startColumn": 9,
-              "endLine": 695,
+              "endLine": 707,
               "endColumn": 4
             },
             "decision": {
@@ -107,15 +107,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetDexSummary:673:9",
+            "id": "decision:rpc:GetDexSummary:685:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexSummary",
             "phase": "rpc",
             "span": {
-              "startLine": 673,
+              "startLine": 685,
               "startColumn": 9,
-              "endLine": 673,
+              "endLine": 685,
               "endColumn": 173
             },
             "decision": {
@@ -123,15 +123,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetNewsletterSnapshot:704:9",
+            "id": "decision:rpc:GetNewsletterSnapshot:716:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetNewsletterSnapshot",
             "phase": "rpc",
             "span": {
-              "startLine": 704,
+              "startLine": 716,
               "startColumn": 9,
-              "endLine": 704,
+              "endLine": 716,
               "endColumn": 61
             },
             "decision": {
@@ -139,15 +139,15 @@
             }
           },
           {
-            "id": "decision:step:FinishNewsletter:642:9",
+            "id": "decision:step:FinishNewsletter:654:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:FinishNewsletter",
             "phase": "execute",
             "span": {
-              "startLine": 642,
+              "startLine": 654,
               "startColumn": 9,
-              "endLine": 642,
+              "endLine": 654,
               "endColumn": 34
             },
             "decision": {
@@ -155,15 +155,15 @@
             }
           },
           {
-            "id": "decision:step:LoadSubscribers:531:9",
+            "id": "decision:step:LoadSubscribers:543:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:LoadSubscribers",
             "phase": "execute",
             "span": {
-              "startLine": 531,
+              "startLine": 543,
               "startColumn": 9,
-              "endLine": 531,
+              "endLine": 543,
               "endColumn": 119
             },
             "decision": {
@@ -171,16 +171,16 @@
             }
           },
           {
-            "id": "decision:step:PrepareNewsletterReport:407:10",
+            "id": "decision:step:PrepareNewsletterReport:419:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:PrepareNewsletterReport",
             "condition": "len(keys) == 0",
             "phase": "execute",
             "span": {
-              "startLine": 407,
+              "startLine": 419,
               "startColumn": 10,
-              "endLine": 407,
+              "endLine": 419,
               "endColumn": 46
             },
             "decision": {
@@ -188,16 +188,16 @@
             }
           },
           {
-            "id": "decision:step:PrepareNewsletterReport:418:11",
+            "id": "decision:step:PrepareNewsletterReport:430:11",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:PrepareNewsletterReport",
             "condition": "!(len(keys) == 0) and builder.Len() > maximumReportInputBytes",
             "phase": "execute",
             "span": {
-              "startLine": 418,
+              "startLine": 430,
               "startColumn": 11,
-              "endLine": 418,
+              "endLine": 430,
               "endColumn": 72
             },
             "decision": {
@@ -205,16 +205,16 @@
             }
           },
           {
-            "id": "decision:step:PrepareNewsletterReport:425:9",
+            "id": "decision:step:PrepareNewsletterReport:437:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:PrepareNewsletterReport",
             "condition": "!(len(keys) == 0)",
             "phase": "execute",
             "span": {
-              "startLine": 425,
+              "startLine": 437,
               "startColumn": 9,
-              "endLine": 425,
+              "endLine": 437,
               "endColumn": 75
             },
             "decision": {
@@ -222,15 +222,15 @@
             }
           },
           {
-            "id": "decision:step:PrepareNewsletterRun:275:9",
+            "id": "decision:step:PrepareNewsletterRun:287:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:PrepareNewsletterRun",
             "phase": "execute",
             "span": {
-              "startLine": 275,
+              "startLine": 287,
               "startColumn": 9,
-              "endLine": 275,
+              "endLine": 287,
               "endColumn": 41
             },
             "decision": {
@@ -238,16 +238,16 @@
             }
           },
           {
-            "id": "decision:step:RecordConnectorReleasePage:319:10",
+            "id": "decision:step:RecordConnectorReleasePage:331:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordConnectorReleasePage",
             "condition": "result.Branch != github.ListReleasesBranchListed",
             "phase": "execute",
             "span": {
-              "startLine": 319,
+              "startLine": 331,
               "startColumn": 10,
-              "endLine": 319,
+              "endLine": 331,
               "endColumn": 50
             },
             "decision": {
@@ -255,16 +255,16 @@
             }
           },
           {
-            "id": "decision:step:RecordConnectorReleasePage:326:10",
+            "id": "decision:step:RecordConnectorReleasePage:338:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordConnectorReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and nextPage < 0",
             "phase": "execute",
             "span": {
-              "startLine": 326,
+              "startLine": 338,
               "startColumn": 10,
-              "endLine": 326,
+              "endLine": 338,
               "endColumn": 50
             },
             "decision": {
@@ -272,16 +272,16 @@
             }
           },
           {
-            "id": "decision:step:RecordConnectorReleasePage:333:10",
+            "id": "decision:step:RecordConnectorReleasePage:345:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordConnectorReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and nextPage > 0",
             "phase": "execute",
             "span": {
-              "startLine": 333,
+              "startLine": 345,
               "startColumn": 10,
-              "endLine": 333,
+              "endLine": 345,
               "endColumn": 87
             },
             "decision": {
@@ -289,16 +289,16 @@
             }
           },
           {
-            "id": "decision:step:RecordConnectorReleasePage:335:9",
+            "id": "decision:step:RecordConnectorReleasePage:347:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordConnectorReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and !(nextPage > 0)",
             "phase": "execute",
             "span": {
-              "startLine": 335,
+              "startLine": 347,
               "startColumn": 9,
-              "endLine": 335,
+              "endLine": 347,
               "endColumn": 49
             },
             "decision": {
@@ -306,15 +306,15 @@
             }
           },
           {
-            "id": "decision:step:RecordDelivery:609:9",
+            "id": "decision:step:RecordDelivery:621:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDelivery",
             "phase": "execute",
             "span": {
-              "startLine": 609,
+              "startLine": 621,
               "startColumn": 9,
-              "endLine": 609,
+              "endLine": 621,
               "endColumn": 45
             },
             "decision": {
@@ -322,15 +322,15 @@
             }
           },
           {
-            "id": "decision:step:RecordDeliveryUncertainty:628:9",
+            "id": "decision:step:RecordDeliveryUncertainty:640:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDeliveryUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 628,
+              "startLine": 640,
               "startColumn": 9,
-              "endLine": 628,
+              "endLine": 640,
               "endColumn": 45
             },
             "decision": {
@@ -338,16 +338,16 @@
             }
           },
           {
-            "id": "decision:step:RecordDexReleasePage:287:10",
+            "id": "decision:step:RecordDexReleasePage:299:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDexReleasePage",
             "condition": "result.Branch != github.ListReleasesBranchListed",
             "phase": "execute",
             "span": {
-              "startLine": 287,
+              "startLine": 299,
               "startColumn": 10,
-              "endLine": 287,
+              "endLine": 299,
               "endColumn": 50
             },
             "decision": {
@@ -355,16 +355,16 @@
             }
           },
           {
-            "id": "decision:step:RecordDexReleasePage:294:10",
+            "id": "decision:step:RecordDexReleasePage:306:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDexReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and nextPage < 0",
             "phase": "execute",
             "span": {
-              "startLine": 294,
+              "startLine": 306,
               "startColumn": 10,
-              "endLine": 294,
+              "endLine": 306,
               "endColumn": 50
             },
             "decision": {
@@ -372,16 +372,16 @@
             }
           },
           {
-            "id": "decision:step:RecordDexReleasePage:301:10",
+            "id": "decision:step:RecordDexReleasePage:313:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDexReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and nextPage > 0",
             "phase": "execute",
             "span": {
-              "startLine": 301,
+              "startLine": 313,
               "startColumn": 10,
-              "endLine": 301,
+              "endLine": 313,
               "endColumn": 81
             },
             "decision": {
@@ -389,16 +389,16 @@
             }
           },
           {
-            "id": "decision:step:RecordDexReleasePage:307:9",
+            "id": "decision:step:RecordDexReleasePage:319:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:RecordDexReleasePage",
             "condition": "!(result.Branch != github.ListReleasesBranchListed) and !(nextPage < 0) and !(nextPage > 0)",
             "phase": "execute",
             "span": {
-              "startLine": 307,
+              "startLine": 319,
               "startColumn": 9,
-              "endLine": 307,
+              "endLine": 319,
               "endColumn": 86
             },
             "decision": {
@@ -406,15 +406,15 @@
             }
           },
           {
-            "id": "decision:step:RecordGenerationFailure:484:9",
+            "id": "decision:step:RecordGenerationFailure:496:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordGenerationFailure",
             "phase": "execute",
             "span": {
-              "startLine": 484,
+              "startLine": 496,
               "startColumn": 9,
-              "endLine": 484,
+              "endLine": 496,
               "endColumn": 34
             },
             "decision": {
@@ -422,15 +422,15 @@
             }
           },
           {
-            "id": "decision:step:RecordGenerationUncertainty:499:9",
+            "id": "decision:step:RecordGenerationUncertainty:511:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordGenerationUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 499,
+              "startLine": 511,
               "startColumn": 9,
-              "endLine": 499,
+              "endLine": 511,
               "endColumn": 34
             },
             "decision": {
@@ -438,15 +438,15 @@
             }
           },
           {
-            "id": "decision:step:RecordReleaseFailure:386:9",
+            "id": "decision:step:RecordReleaseFailure:398:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordReleaseFailure",
             "phase": "execute",
             "span": {
-              "startLine": 386,
+              "startLine": 398,
               "startColumn": 9,
-              "endLine": 386,
+              "endLine": 398,
               "endColumn": 34
             },
             "decision": {
@@ -454,16 +454,16 @@
             }
           },
           {
-            "id": "decision:step:SaveNewsletterReport:437:10",
+            "id": "decision:step:SaveNewsletterReport:449:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:SaveNewsletterReport",
             "condition": "result.Branch != llm.GenerateTextBranchGenerated || strings.TrimSpace(result.Value.Text) == \"\"",
             "phase": "execute",
             "span": {
-              "startLine": 437,
+              "startLine": 449,
               "startColumn": 10,
-              "endLine": 437,
+              "endLine": 449,
               "endColumn": 53
             },
             "decision": {
@@ -471,16 +471,16 @@
             }
           },
           {
-            "id": "decision:step:SaveNewsletterReport:447:9",
+            "id": "decision:step:SaveNewsletterReport:459:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:SaveNewsletterReport",
             "condition": "!(result.Branch != llm.GenerateTextBranchGenerated || strings.TrimSpace(result.Value.Text) == \"\")",
             "phase": "execute",
             "span": {
-              "startLine": 447,
+              "startLine": 459,
               "startColumn": 9,
-              "endLine": 447,
+              "endLine": 459,
               "endColumn": 45
             },
             "decision": {
@@ -488,15 +488,15 @@
             }
           },
           {
-            "id": "decision:step:SaveNoReleaseReport:469:9",
+            "id": "decision:step:SaveNoReleaseReport:481:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:SaveNoReleaseReport",
             "phase": "execute",
             "span": {
-              "startLine": 469,
+              "startLine": 481,
               "startColumn": 9,
-              "endLine": 469,
+              "endLine": 481,
               "endColumn": 45
             },
             "decision": {
@@ -504,15 +504,15 @@
             }
           },
           {
-            "id": "decision:step:SelectNextRecipient:572:10",
+            "id": "decision:step:SelectNextRecipient:584:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:SelectNextRecipient",
             "phase": "execute",
             "span": {
-              "startLine": 572,
+              "startLine": 584,
               "startColumn": 10,
-              "endLine": 572,
+              "endLine": 584,
               "endColumn": 88
             },
             "decision": {
@@ -520,15 +520,15 @@
             }
           },
           {
-            "id": "decision:step:SelectNextRecipient:574:9",
+            "id": "decision:step:SelectNextRecipient:586:9",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:SelectNextRecipient",
             "phase": "execute",
             "span": {
-              "startLine": 574,
+              "startLine": 586,
               "startColumn": 9,
-              "endLine": 574,
+              "endLine": 586,
               "endColumn": 42
             },
             "decision": {
@@ -540,9 +540,9 @@
             "kind": "attribute",
             "name": "campaign-notice",
             "span": {
-              "startLine": 110,
+              "startLine": 122,
               "startColumn": 2,
-              "endLine": 110,
+              "endLine": 122,
               "endColumn": 72
             },
             "resource": {
@@ -554,9 +554,9 @@
             "kind": "attribute",
             "name": "campaign-status",
             "span": {
-              "startLine": 94,
+              "startLine": 106,
               "startColumn": 2,
-              "endLine": 94,
+              "endLine": 106,
               "endColumn": 72
             },
             "resource": {
@@ -568,9 +568,9 @@
             "kind": "attribute",
             "name": "current-recipient",
             "span": {
-              "startLine": 104,
+              "startLine": 116,
               "startColumn": 2,
-              "endLine": 104,
+              "endLine": 116,
               "endColumn": 87
             },
             "resource": {
@@ -582,9 +582,9 @@
             "kind": "attribute",
             "name": "current-release-page",
             "span": {
-              "startLine": 97,
+              "startLine": 109,
               "startColumn": 2,
-              "endLine": 97,
+              "endLine": 109,
               "endColumn": 89
             },
             "resource": {
@@ -596,9 +596,9 @@
             "kind": "attribute",
             "name": "delivery-results",
             "span": {
-              "startLine": 103,
+              "startLine": 115,
               "startColumn": 2,
-              "endLine": 103,
+              "endLine": 115,
               "endColumn": 84
             },
             "resource": {
@@ -611,9 +611,9 @@
             "kind": "attribute",
             "name": "failed-count",
             "span": {
-              "startLine": 108,
+              "startLine": 120,
               "startColumn": 2,
-              "endLine": 108,
+              "endLine": 120,
               "endColumn": 68
             },
             "resource": {
@@ -625,9 +625,9 @@
             "kind": "attribute",
             "name": "newsletter-report",
             "span": {
-              "startLine": 101,
+              "startLine": 113,
               "startColumn": 2,
-              "endLine": 101,
+              "endLine": 113,
               "endColumn": 84
             },
             "resource": {
@@ -639,9 +639,9 @@
             "kind": "attribute",
             "name": "newsletter-window",
             "span": {
-              "startLine": 96,
+              "startLine": 108,
               "startColumn": 2,
-              "endLine": 96,
+              "endLine": 108,
               "endColumn": 84
             },
             "resource": {
@@ -653,9 +653,9 @@
             "kind": "attribute",
             "name": "recipient-count",
             "span": {
-              "startLine": 106,
+              "startLine": 118,
               "startColumn": 2,
-              "endLine": 106,
+              "endLine": 118,
               "endColumn": 71
             },
             "resource": {
@@ -667,9 +667,9 @@
             "kind": "attribute",
             "name": "recipients",
             "span": {
-              "startLine": 102,
+              "startLine": 114,
               "startColumn": 2,
-              "endLine": 102,
+              "endLine": 114,
               "endColumn": 74
             },
             "resource": {
@@ -682,9 +682,9 @@
             "kind": "attribute",
             "name": "release-count",
             "span": {
-              "startLine": 105,
+              "startLine": 117,
               "startColumn": 2,
-              "endLine": 105,
+              "endLine": 117,
               "endColumn": 69
             },
             "resource": {
@@ -696,9 +696,9 @@
             "kind": "attribute",
             "name": "release-items",
             "span": {
-              "startLine": 99,
+              "startLine": 111,
               "startColumn": 2,
-              "endLine": 99,
+              "endLine": 111,
               "endColumn": 84
             },
             "resource": {
@@ -711,9 +711,9 @@
             "kind": "attribute",
             "name": "release-pages",
             "span": {
-              "startLine": 98,
+              "startLine": 110,
               "startColumn": 2,
-              "endLine": 98,
+              "endLine": 110,
               "endColumn": 70
             },
             "resource": {
@@ -726,9 +726,9 @@
             "kind": "attribute",
             "name": "report-input",
             "span": {
-              "startLine": 100,
+              "startLine": 112,
               "startColumn": 2,
-              "endLine": 100,
+              "endLine": 112,
               "endColumn": 69
             },
             "resource": {
@@ -740,9 +740,9 @@
             "kind": "attribute",
             "name": "sent-count",
             "span": {
-              "startLine": 107,
+              "startLine": 119,
               "startColumn": 2,
-              "endLine": 107,
+              "endLine": 119,
               "endColumn": 66
             },
             "resource": {
@@ -754,9 +754,9 @@
             "kind": "attribute",
             "name": "trigger-identity",
             "span": {
-              "startLine": 95,
+              "startLine": 107,
               "startColumn": 2,
-              "endLine": 95,
+              "endLine": 107,
               "endColumn": 90
             },
             "resource": {
@@ -768,9 +768,9 @@
             "kind": "attribute",
             "name": "unknown-count",
             "span": {
-              "startLine": 109,
+              "startLine": 121,
               "startColumn": 2,
-              "endLine": 109,
+              "endLine": 121,
               "endColumn": 69
             },
             "resource": {
@@ -782,9 +782,9 @@
             "kind": "rpc",
             "name": "GetDexDisplay",
             "span": {
-              "startLine": 684,
+              "startLine": 696,
               "startColumn": 1,
-              "endLine": 696,
+              "endLine": 708,
               "endColumn": 2
             }
           },
@@ -793,9 +793,9 @@
             "kind": "rpc",
             "name": "GetDexSummary",
             "span": {
-              "startLine": 667,
+              "startLine": 679,
               "startColumn": 1,
-              "endLine": 674,
+              "endLine": 686,
               "endColumn": 2
             }
           },
@@ -804,9 +804,9 @@
             "kind": "rpc",
             "name": "GetNewsletterSnapshot",
             "span": {
-              "startLine": 698,
+              "startLine": 710,
               "startColumn": 1,
-              "endLine": 705,
+              "endLine": 717,
               "endColumn": 2
             }
           },
@@ -816,9 +816,9 @@
             "name": "FinishNewsletter",
             "phase": "execute",
             "span": {
-              "startLine": 236,
+              "startLine": 248,
               "startColumn": 3,
-              "endLine": 236,
+              "endLine": 248,
               "endColumn": 37
             },
             "metadata": {
@@ -831,9 +831,9 @@
             "name": "GenerateNewsletterReport",
             "phase": "execute",
             "span": {
-              "startLine": 194,
+              "startLine": 206,
               "startColumn": 3,
-              "endLine": 213,
+              "endLine": 225,
               "endColumn": 6
             },
             "metadata": {
@@ -860,9 +860,9 @@
             "name": "ListConnectorReleases",
             "phase": "execute",
             "span": {
-              "startLine": 182,
+              "startLine": 194,
               "startColumn": 3,
-              "endLine": 190,
+              "endLine": 202,
               "endColumn": 6
             },
             "metadata": {
@@ -889,9 +889,9 @@
             "name": "ListDexReleases",
             "phase": "execute",
             "span": {
-              "startLine": 172,
+              "startLine": 184,
               "startColumn": 3,
-              "endLine": 180,
+              "endLine": 192,
               "endColumn": 6
             },
             "metadata": {
@@ -918,9 +918,9 @@
             "name": "LoadSubscribers",
             "phase": "execute",
             "span": {
-              "startLine": 218,
+              "startLine": 230,
               "startColumn": 3,
-              "endLine": 218,
+              "endLine": 230,
               "endColumn": 57
             },
             "metadata": {
@@ -933,9 +933,9 @@
             "name": "PrepareNewsletterReport",
             "phase": "execute",
             "span": {
-              "startLine": 193,
+              "startLine": 205,
               "startColumn": 3,
-              "endLine": 193,
+              "endLine": 205,
               "endColumn": 44
             },
             "metadata": {
@@ -949,9 +949,9 @@
             "phase": "execute",
             "start": true,
             "span": {
-              "startLine": 171,
+              "startLine": 183,
               "startColumn": 3,
-              "endLine": 171,
+              "endLine": 183,
               "endColumn": 46
             },
             "metadata": {
@@ -964,9 +964,9 @@
             "name": "RecordConnectorReleasePage",
             "phase": "execute",
             "span": {
-              "startLine": 191,
+              "startLine": 203,
               "startColumn": 3,
-              "endLine": 191,
+              "endLine": 203,
               "endColumn": 47
             },
             "metadata": {
@@ -979,9 +979,9 @@
             "name": "RecordDelivery",
             "phase": "execute",
             "span": {
-              "startLine": 234,
+              "startLine": 246,
               "startColumn": 3,
-              "endLine": 234,
+              "endLine": 246,
               "endColumn": 35
             },
             "metadata": {
@@ -994,9 +994,9 @@
             "name": "RecordDeliveryUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 235,
+              "startLine": 247,
               "startColumn": 3,
-              "endLine": 235,
+              "endLine": 247,
               "endColumn": 46
             },
             "metadata": {
@@ -1009,9 +1009,9 @@
             "name": "RecordDexReleasePage",
             "phase": "execute",
             "span": {
-              "startLine": 181,
+              "startLine": 193,
               "startColumn": 3,
-              "endLine": 181,
+              "endLine": 193,
               "endColumn": 41
             },
             "metadata": {
@@ -1024,9 +1024,9 @@
             "name": "RecordGenerationFailure",
             "phase": "execute",
             "span": {
-              "startLine": 216,
+              "startLine": 228,
               "startColumn": 3,
-              "endLine": 216,
+              "endLine": 228,
               "endColumn": 44
             },
             "metadata": {
@@ -1039,9 +1039,9 @@
             "name": "RecordGenerationUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 217,
+              "startLine": 229,
               "startColumn": 3,
-              "endLine": 217,
+              "endLine": 229,
               "endColumn": 48
             },
             "metadata": {
@@ -1054,9 +1054,9 @@
             "name": "RecordReleaseFailure",
             "phase": "execute",
             "span": {
-              "startLine": 192,
+              "startLine": 204,
               "startColumn": 3,
-              "endLine": 192,
+              "endLine": 204,
               "endColumn": 41
             },
             "metadata": {
@@ -1069,9 +1069,9 @@
             "name": "SaveNewsletterReport",
             "phase": "execute",
             "span": {
-              "startLine": 214,
+              "startLine": 226,
               "startColumn": 3,
-              "endLine": 214,
+              "endLine": 226,
               "endColumn": 41
             },
             "metadata": {
@@ -1084,9 +1084,9 @@
             "name": "SaveNoReleaseReport",
             "phase": "execute",
             "span": {
-              "startLine": 215,
+              "startLine": 227,
               "startColumn": 3,
-              "endLine": 215,
+              "endLine": 227,
               "endColumn": 40
             },
             "metadata": {
@@ -1099,9 +1099,9 @@
             "name": "SelectNextRecipient",
             "phase": "execute",
             "span": {
-              "startLine": 219,
+              "startLine": 231,
               "startColumn": 3,
-              "endLine": 219,
+              "endLine": 231,
               "endColumn": 40
             },
             "metadata": {
@@ -1114,9 +1114,9 @@
             "name": "SendNewsletterEmail",
             "phase": "execute",
             "span": {
-              "startLine": 220,
+              "startLine": 232,
               "startColumn": 3,
-              "endLine": 233,
+              "endLine": 245,
               "endColumn": 6
             },
             "metadata": {
@@ -1142,260 +1142,260 @@
           {
             "id": "edge:0001",
             "kind": "transition",
-            "from": "decision:step:LoadSubscribers:531:9",
+            "from": "decision:step:LoadSubscribers:543:9",
             "to": "step:ListDexReleases",
             "label": "GoTo",
             "span": {
-              "startLine": 531,
+              "startLine": 543,
               "startColumn": 9,
-              "endLine": 531,
+              "endLine": 543,
               "endColumn": 119
             }
           },
           {
             "id": "edge:0002",
             "kind": "transition",
-            "from": "decision:step:PrepareNewsletterReport:407:10",
+            "from": "decision:step:PrepareNewsletterReport:419:10",
             "to": "step:SaveNoReleaseReport",
             "label": "GoTo",
             "span": {
-              "startLine": 407,
+              "startLine": 419,
               "startColumn": 10,
-              "endLine": 407,
+              "endLine": 419,
               "endColumn": 46
             }
           },
           {
             "id": "edge:0003",
             "kind": "transition",
-            "from": "decision:step:PrepareNewsletterReport:418:11",
+            "from": "decision:step:PrepareNewsletterReport:430:11",
             "to": "step:RecordReleaseFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 418,
+              "startLine": 430,
               "startColumn": 11,
-              "endLine": 418,
+              "endLine": 430,
               "endColumn": 72
             }
           },
           {
             "id": "edge:0004",
             "kind": "transition",
-            "from": "decision:step:PrepareNewsletterReport:425:9",
+            "from": "decision:step:PrepareNewsletterReport:437:9",
             "to": "step:GenerateNewsletterReport",
             "label": "GoTo",
             "span": {
-              "startLine": 425,
+              "startLine": 437,
               "startColumn": 9,
-              "endLine": 425,
+              "endLine": 437,
               "endColumn": 75
             }
           },
           {
             "id": "edge:0005",
             "kind": "transition",
-            "from": "decision:step:PrepareNewsletterRun:275:9",
+            "from": "decision:step:PrepareNewsletterRun:287:9",
             "to": "step:LoadSubscribers",
             "label": "GoTo",
             "span": {
-              "startLine": 275,
+              "startLine": 287,
               "startColumn": 9,
-              "endLine": 275,
+              "endLine": 287,
               "endColumn": 41
             }
           },
           {
             "id": "edge:0006",
             "kind": "transition",
-            "from": "decision:step:RecordConnectorReleasePage:319:10",
+            "from": "decision:step:RecordConnectorReleasePage:331:10",
             "to": "step:RecordReleaseFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 319,
+              "startLine": 331,
               "startColumn": 10,
-              "endLine": 319,
+              "endLine": 331,
               "endColumn": 50
             }
           },
           {
             "id": "edge:0007",
             "kind": "transition",
-            "from": "decision:step:RecordConnectorReleasePage:326:10",
+            "from": "decision:step:RecordConnectorReleasePage:338:10",
             "to": "step:RecordReleaseFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 326,
+              "startLine": 338,
               "startColumn": 10,
-              "endLine": 326,
+              "endLine": 338,
               "endColumn": 50
             }
           },
           {
             "id": "edge:0008",
             "kind": "transition",
-            "from": "decision:step:RecordConnectorReleasePage:333:10",
+            "from": "decision:step:RecordConnectorReleasePage:345:10",
             "to": "step:ListConnectorReleases",
             "label": "GoTo",
             "span": {
-              "startLine": 333,
+              "startLine": 345,
               "startColumn": 10,
-              "endLine": 333,
+              "endLine": 345,
               "endColumn": 87
             }
           },
           {
             "id": "edge:0009",
             "kind": "transition",
-            "from": "decision:step:RecordConnectorReleasePage:335:9",
+            "from": "decision:step:RecordConnectorReleasePage:347:9",
             "to": "step:PrepareNewsletterReport",
             "label": "GoTo",
             "span": {
-              "startLine": 335,
+              "startLine": 347,
               "startColumn": 9,
-              "endLine": 335,
+              "endLine": 347,
               "endColumn": 49
             }
           },
           {
             "id": "edge:0010",
             "kind": "transition",
-            "from": "decision:step:RecordDelivery:609:9",
+            "from": "decision:step:RecordDelivery:621:9",
             "to": "step:SelectNextRecipient",
             "label": "GoTo",
             "span": {
-              "startLine": 609,
+              "startLine": 621,
               "startColumn": 9,
-              "endLine": 609,
+              "endLine": 621,
               "endColumn": 45
             }
           },
           {
             "id": "edge:0011",
             "kind": "transition",
-            "from": "decision:step:RecordDeliveryUncertainty:628:9",
+            "from": "decision:step:RecordDeliveryUncertainty:640:9",
             "to": "step:SelectNextRecipient",
             "label": "GoTo",
             "span": {
-              "startLine": 628,
+              "startLine": 640,
               "startColumn": 9,
-              "endLine": 628,
+              "endLine": 640,
               "endColumn": 45
             }
           },
           {
             "id": "edge:0012",
             "kind": "transition",
-            "from": "decision:step:RecordDexReleasePage:287:10",
+            "from": "decision:step:RecordDexReleasePage:299:10",
             "to": "step:RecordReleaseFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 287,
+              "startLine": 299,
               "startColumn": 10,
-              "endLine": 287,
+              "endLine": 299,
               "endColumn": 50
             }
           },
           {
             "id": "edge:0013",
             "kind": "transition",
-            "from": "decision:step:RecordDexReleasePage:294:10",
+            "from": "decision:step:RecordDexReleasePage:306:10",
             "to": "step:RecordReleaseFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 294,
+              "startLine": 306,
               "startColumn": 10,
-              "endLine": 294,
+              "endLine": 306,
               "endColumn": 50
             }
           },
           {
             "id": "edge:0014",
             "kind": "transition",
-            "from": "decision:step:RecordDexReleasePage:301:10",
+            "from": "decision:step:RecordDexReleasePage:313:10",
             "to": "step:ListDexReleases",
             "label": "GoTo",
             "span": {
-              "startLine": 301,
+              "startLine": 313,
               "startColumn": 10,
-              "endLine": 301,
+              "endLine": 313,
               "endColumn": 81
             }
           },
           {
             "id": "edge:0015",
             "kind": "transition",
-            "from": "decision:step:RecordDexReleasePage:307:9",
+            "from": "decision:step:RecordDexReleasePage:319:9",
             "to": "step:ListConnectorReleases",
             "label": "GoTo",
             "span": {
-              "startLine": 307,
+              "startLine": 319,
               "startColumn": 9,
-              "endLine": 307,
+              "endLine": 319,
               "endColumn": 86
             }
           },
           {
             "id": "edge:0016",
             "kind": "transition",
-            "from": "decision:step:SaveNewsletterReport:437:10",
+            "from": "decision:step:SaveNewsletterReport:449:10",
             "to": "step:RecordGenerationFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 437,
+              "startLine": 449,
               "startColumn": 10,
-              "endLine": 437,
+              "endLine": 449,
               "endColumn": 53
             }
           },
           {
             "id": "edge:0017",
             "kind": "transition",
-            "from": "decision:step:SaveNewsletterReport:447:9",
+            "from": "decision:step:SaveNewsletterReport:459:9",
             "to": "step:SelectNextRecipient",
             "label": "GoTo",
             "span": {
-              "startLine": 447,
+              "startLine": 459,
               "startColumn": 9,
-              "endLine": 447,
+              "endLine": 459,
               "endColumn": 45
             }
           },
           {
             "id": "edge:0018",
             "kind": "transition",
-            "from": "decision:step:SaveNoReleaseReport:469:9",
+            "from": "decision:step:SaveNoReleaseReport:481:9",
             "to": "step:SelectNextRecipient",
             "label": "GoTo",
             "span": {
-              "startLine": 469,
+              "startLine": 481,
               "startColumn": 9,
-              "endLine": 469,
+              "endLine": 481,
               "endColumn": 45
             }
           },
           {
             "id": "edge:0019",
             "kind": "transition",
-            "from": "decision:step:SelectNextRecipient:572:10",
+            "from": "decision:step:SelectNextRecipient:584:10",
             "to": "step:SendNewsletterEmail",
             "label": "GoTo",
             "span": {
-              "startLine": 572,
+              "startLine": 584,
               "startColumn": 10,
-              "endLine": 572,
+              "endLine": 584,
               "endColumn": 88
             }
           },
           {
             "id": "edge:0020",
             "kind": "transition",
-            "from": "decision:step:SelectNextRecipient:574:9",
+            "from": "decision:step:SelectNextRecipient:586:9",
             "to": "step:FinishNewsletter",
             "label": "GoTo",
             "span": {
-              "startLine": 574,
+              "startLine": 586,
               "startColumn": 9,
-              "endLine": 574,
+              "endLine": 586,
               "endColumn": 42
             }
           },
@@ -1406,9 +1406,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1424,9 +1424,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1442,9 +1442,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1460,9 +1460,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1478,9 +1478,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1496,9 +1496,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1514,9 +1514,9 @@
             "to": "step:RecordDelivery",
             "label": "Get",
             "span": {
-              "startLine": 585,
+              "startLine": 597,
               "startColumn": 20,
-              "endLine": 585,
+              "endLine": 597,
               "endColumn": 45
             },
             "metadata": {
@@ -1530,9 +1530,9 @@
             "to": "step:RecordConnectorReleasePage",
             "label": "Get",
             "span": {
-              "startLine": 343,
+              "startLine": 355,
               "startColumn": 18,
-              "endLine": 343,
+              "endLine": 355,
               "endColumn": 45
             },
             "metadata": {
@@ -1548,9 +1548,9 @@
             "to": "step:RecordDexReleasePage",
             "label": "Get",
             "span": {
-              "startLine": 343,
+              "startLine": 355,
               "startColumn": 18,
-              "endLine": 343,
+              "endLine": 355,
               "endColumn": 45
             },
             "metadata": {
@@ -1566,9 +1566,9 @@
             "to": "step:SelectNextRecipient",
             "label": "Get",
             "span": {
-              "startLine": 556,
+              "startLine": 568,
               "startColumn": 16,
-              "endLine": 556,
+              "endLine": 568,
               "endColumn": 45
             },
             "metadata": {
@@ -1582,9 +1582,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1600,9 +1600,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1618,9 +1618,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1636,9 +1636,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1654,9 +1654,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1672,9 +1672,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1690,9 +1690,9 @@
             "to": "step:SelectNextRecipient",
             "label": "Get",
             "span": {
-              "startLine": 551,
+              "startLine": 563,
               "startColumn": 17,
-              "endLine": 551,
+              "endLine": 563,
               "endColumn": 47
             },
             "metadata": {
@@ -1706,9 +1706,9 @@
             "to": "step:RecordConnectorReleasePage",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 351,
               "startColumn": 17,
-              "endLine": 339,
+              "endLine": 351,
               "endColumn": 47
             },
             "metadata": {
@@ -1724,9 +1724,9 @@
             "to": "step:RecordDexReleasePage",
             "label": "Get",
             "span": {
-              "startLine": 339,
+              "startLine": 351,
               "startColumn": 17,
-              "endLine": 339,
+              "endLine": 351,
               "endColumn": 47
             },
             "metadata": {
@@ -1742,9 +1742,9 @@
             "to": "step:SaveNewsletterReport",
             "label": "Get",
             "span": {
-              "startLine": 439,
+              "startLine": 451,
               "startColumn": 17,
-              "endLine": 439,
+              "endLine": 451,
               "endColumn": 47
             },
             "metadata": {
@@ -1758,9 +1758,9 @@
             "to": "step:SaveNoReleaseReport",
             "label": "Get",
             "span": {
-              "startLine": 458,
+              "startLine": 470,
               "startColumn": 17,
-              "endLine": 458,
+              "endLine": 470,
               "endColumn": 47
             },
             "metadata": {
@@ -1774,9 +1774,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1792,9 +1792,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1810,9 +1810,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1828,9 +1828,9 @@
             "to": "step:SelectNextRecipient",
             "label": "AllInstanceKeys",
             "span": {
-              "startLine": 549,
+              "startLine": 561,
               "startColumn": 10,
-              "endLine": 549,
+              "endLine": 561,
               "endColumn": 41
             },
             "metadata": {
@@ -1844,9 +1844,9 @@
             "to": "step:SelectNextRecipient",
             "label": "Get",
             "span": {
-              "startLine": 564,
+              "startLine": 576,
               "startColumn": 25,
-              "endLine": 564,
+              "endLine": 576,
               "endColumn": 49
             },
             "metadata": {
@@ -1860,9 +1860,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1878,9 +1878,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1896,9 +1896,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -1914,9 +1914,9 @@
             "to": "step:PrepareNewsletterReport",
             "label": "AllInstanceKeys",
             "span": {
-              "startLine": 401,
+              "startLine": 413,
               "startColumn": 10,
-              "endLine": 401,
+              "endLine": 413,
               "endColumn": 43
             },
             "metadata": {
@@ -1930,9 +1930,9 @@
             "to": "step:PrepareNewsletterReport",
             "label": "Get",
             "span": {
-              "startLine": 411,
+              "startLine": 423,
               "startColumn": 22,
-              "endLine": 411,
+              "endLine": 423,
               "endColumn": 48
             },
             "metadata": {
@@ -1946,9 +1946,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -1964,9 +1964,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -1982,9 +1982,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -2000,9 +2000,9 @@
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 686,
+              "startLine": 698,
               "startColumn": 19,
-              "endLine": 686,
+              "endLine": 698,
               "endColumn": 42
             },
             "metadata": {
@@ -2018,9 +2018,9 @@
             "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 669,
+              "startLine": 681,
               "startColumn": 19,
-              "endLine": 669,
+              "endLine": 681,
               "endColumn": 42
             },
             "metadata": {
@@ -2036,9 +2036,9 @@
             "to": "rpc:GetNewsletterSnapshot",
             "label": "Get",
             "span": {
-              "startLine": 700,
+              "startLine": 712,
               "startColumn": 19,
-              "endLine": 700,
+              "endLine": 712,
               "endColumn": 42
             },
             "metadata": {
@@ -2054,9 +2054,9 @@
             "to": "step:RecordDelivery",
             "label": "Get",
             "span": {
-              "startLine": 601,
+              "startLine": 613,
               "startColumn": 18,
-              "endLine": 601,
+              "endLine": 613,
               "endColumn": 38
             },
             "metadata": {
@@ -2072,9 +2072,9 @@
             "to": "step:RecordDeliveryUncertainty",
             "label": "Get",
             "span": {
-              "startLine": 620,
+              "startLine": 632,
               "startColumn": 16,
-              "endLine": 620,
+              "endLine": 632,
               "endColumn": 43
             },
             "metadata": {
@@ -2090,9 +2090,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 639,
+              "startLine": 651,
               "startColumn": 12,
-              "endLine": 639,
+              "endLine": 651,
               "endColumn": 48
             },
             "metadata": {
@@ -2106,9 +2106,9 @@
             "to": "step:RecordGenerationFailure",
             "label": "blocked",
             "span": {
-              "startLine": 205,
+              "startLine": 217,
               "startColumn": 13,
-              "endLine": 205,
+              "endLine": 217,
               "endColumn": 50
             },
             "metadata": {
@@ -2122,9 +2122,9 @@
             "to": "step:RecordGenerationFailure",
             "label": "defect",
             "span": {
-              "startLine": 206,
+              "startLine": 218,
               "startColumn": 68,
-              "endLine": 206,
+              "endLine": 218,
               "endColumn": 105
             },
             "metadata": {
@@ -2138,9 +2138,9 @@
             "to": "step:RecordGenerationFailure",
             "label": "invalidResponse",
             "span": {
-              "startLine": 206,
+              "startLine": 218,
               "startColumn": 21,
-              "endLine": 206,
+              "endLine": 218,
               "endColumn": 58
             },
             "metadata": {
@@ -2154,9 +2154,9 @@
             "to": "step:RecordGenerationFailure",
             "label": "providerRejected",
             "span": {
-              "startLine": 205,
+              "startLine": 217,
               "startColumn": 70,
-              "endLine": 205,
+              "endLine": 217,
               "endColumn": 107
             },
             "metadata": {
@@ -2170,9 +2170,9 @@
             "to": "step:RecordGenerationFailure",
             "label": "truncated",
             "span": {
-              "startLine": 204,
+              "startLine": 216,
               "startColumn": 62,
-              "endLine": 204,
+              "endLine": 216,
               "endColumn": 99
             },
             "metadata": {
@@ -2196,9 +2196,9 @@
             "to": "step:SaveNewsletterReport",
             "label": "generated",
             "span": {
-              "startLine": 204,
+              "startLine": 216,
               "startColumn": 15,
-              "endLine": 204,
+              "endLine": 216,
               "endColumn": 49
             },
             "metadata": {
@@ -2212,9 +2212,9 @@
             "to": "step:RecordConnectorReleasePage",
             "label": "listed",
             "span": {
-              "startLine": 188,
+              "startLine": 200,
               "startColumn": 12,
-              "endLine": 188,
+              "endLine": 200,
               "endColumn": 52
             },
             "metadata": {
@@ -2228,9 +2228,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "authorizationRevoked",
             "span": {
-              "startLine": 188,
+              "startLine": 200,
               "startColumn": 131,
-              "endLine": 188,
+              "endLine": 200,
               "endColumn": 165
             },
             "metadata": {
@@ -2244,9 +2244,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "defect",
             "span": {
-              "startLine": 189,
+              "startLine": 201,
               "startColumn": 165,
-              "endLine": 189,
+              "endLine": 201,
               "endColumn": 199
             },
             "metadata": {
@@ -2260,9 +2260,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "insufficientScope",
             "span": {
-              "startLine": 188,
+              "startLine": 200,
               "startColumn": 73,
-              "endLine": 188,
+              "endLine": 200,
               "endColumn": 107
             },
             "metadata": {
@@ -2276,9 +2276,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "invalidResponse",
             "span": {
-              "startLine": 189,
+              "startLine": 201,
               "startColumn": 121,
-              "endLine": 189,
+              "endLine": 201,
               "endColumn": 155
             },
             "metadata": {
@@ -2292,9 +2292,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "notFound",
             "span": {
-              "startLine": 189,
+              "startLine": 201,
               "startColumn": 14,
-              "endLine": 189,
+              "endLine": 201,
               "endColumn": 48
             },
             "metadata": {
@@ -2308,9 +2308,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "providerRejected",
             "span": {
-              "startLine": 189,
+              "startLine": 201,
               "startColumn": 68,
-              "endLine": 189,
+              "endLine": 201,
               "endColumn": 102
             },
             "metadata": {
@@ -2324,9 +2324,9 @@
             "to": "step:RecordDexReleasePage",
             "label": "listed",
             "span": {
-              "startLine": 178,
+              "startLine": 190,
               "startColumn": 12,
-              "endLine": 178,
+              "endLine": 190,
               "endColumn": 46
             },
             "metadata": {
@@ -2340,9 +2340,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "authorizationRevoked",
             "span": {
-              "startLine": 178,
+              "startLine": 190,
               "startColumn": 125,
-              "endLine": 178,
+              "endLine": 190,
               "endColumn": 159
             },
             "metadata": {
@@ -2356,9 +2356,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "defect",
             "span": {
-              "startLine": 179,
+              "startLine": 191,
               "startColumn": 165,
-              "endLine": 179,
+              "endLine": 191,
               "endColumn": 199
             },
             "metadata": {
@@ -2372,9 +2372,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "insufficientScope",
             "span": {
-              "startLine": 178,
+              "startLine": 190,
               "startColumn": 67,
-              "endLine": 178,
+              "endLine": 190,
               "endColumn": 101
             },
             "metadata": {
@@ -2388,9 +2388,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "invalidResponse",
             "span": {
-              "startLine": 179,
+              "startLine": 191,
               "startColumn": 121,
-              "endLine": 179,
+              "endLine": 191,
               "endColumn": 155
             },
             "metadata": {
@@ -2404,9 +2404,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "notFound",
             "span": {
-              "startLine": 179,
+              "startLine": 191,
               "startColumn": 14,
-              "endLine": 179,
+              "endLine": 191,
               "endColumn": 48
             },
             "metadata": {
@@ -2420,9 +2420,9 @@
             "to": "step:RecordReleaseFailure",
             "label": "providerRejected",
             "span": {
-              "startLine": 179,
+              "startLine": 191,
               "startColumn": 68,
-              "endLine": 179,
+              "endLine": 191,
               "endColumn": 102
             },
             "metadata": {
@@ -2436,9 +2436,9 @@
             "to": "resource:attribute:RecipientCount",
             "label": "Set",
             "span": {
-              "startLine": 528,
+              "startLine": 540,
               "startColumn": 11,
-              "endLine": 528,
+              "endLine": 540,
               "endColumn": 59
             },
             "metadata": {
@@ -2452,9 +2452,9 @@
             "to": "resource:attribute:Recipients",
             "label": "Set",
             "span": {
-              "startLine": 524,
+              "startLine": 536,
               "startColumn": 13,
-              "endLine": 524,
+              "endLine": 536,
               "endColumn": 77
             },
             "metadata": {
@@ -2468,9 +2468,9 @@
             "to": "resource:attribute:ReleaseCount",
             "label": "Set",
             "span": {
-              "startLine": 403,
+              "startLine": 415,
               "startColumn": 12,
-              "endLine": 403,
+              "endLine": 415,
               "endColumn": 51
             },
             "metadata": {
@@ -2484,9 +2484,9 @@
             "to": "resource:attribute:ReportInput",
             "label": "Set",
             "span": {
-              "startLine": 422,
+              "startLine": 434,
               "startColumn": 12,
-              "endLine": 422,
+              "endLine": 434,
               "endColumn": 39
             },
             "metadata": {
@@ -2500,9 +2500,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 269,
+              "startLine": 281,
               "startColumn": 3,
-              "endLine": 269,
+              "endLine": 281,
               "endColumn": 49
             },
             "metadata": {
@@ -2516,9 +2516,9 @@
             "to": "resource:attribute:CurrentReleasePage",
             "label": "Set",
             "span": {
-              "startLine": 270,
+              "startLine": 282,
               "startColumn": 3,
-              "endLine": 270,
+              "endLine": 282,
               "endColumn": 78
             },
             "metadata": {
@@ -2532,9 +2532,9 @@
             "to": "resource:attribute:NewsletterWindowValue",
             "label": "Set",
             "span": {
-              "startLine": 268,
+              "startLine": 280,
               "startColumn": 3,
-              "endLine": 268,
+              "endLine": 280,
               "endColumn": 98
             },
             "metadata": {
@@ -2548,9 +2548,9 @@
             "to": "resource:attribute:TriggerIdentity",
             "label": "Set",
             "span": {
-              "startLine": 267,
+              "startLine": 279,
               "startColumn": 3,
-              "endLine": 267,
+              "endLine": 279,
               "endColumn": 34
             },
             "metadata": {
@@ -2564,9 +2564,9 @@
             "to": "resource:attribute:CurrentReleasePage",
             "label": "Set",
             "span": {
-              "startLine": 330,
+              "startLine": 342,
               "startColumn": 13,
-              "endLine": 330,
+              "endLine": 342,
               "endColumn": 49
             },
             "metadata": {
@@ -2580,9 +2580,9 @@
             "to": "resource:attribute:ReleaseItems",
             "label": "Set",
             "span": {
-              "startLine": 361,
+              "startLine": 373,
               "startColumn": 13,
-              "endLine": 361,
+              "endLine": 373,
               "endColumn": 90
             },
             "metadata": {
@@ -2598,9 +2598,9 @@
             "to": "resource:attribute:ReleasePages",
             "label": "Set",
             "span": {
-              "startLine": 365,
+              "startLine": 377,
               "startColumn": 12,
-              "endLine": 365,
+              "endLine": 377,
               "endColumn": 59
             },
             "metadata": {
@@ -2616,9 +2616,9 @@
             "to": "resource:attribute:DeliveryResults",
             "label": "Set",
             "span": {
-              "startLine": 605,
+              "startLine": 617,
               "startColumn": 20,
-              "endLine": 605,
+              "endLine": 617,
               "endColumn": 67
             },
             "metadata": {
@@ -2632,9 +2632,9 @@
             "to": "resource:attribute:UnknownCount",
             "label": "Set",
             "span": {
-              "startLine": 605,
+              "startLine": 617,
               "startColumn": 69,
-              "endLine": 605,
+              "endLine": 617,
               "endColumn": 94
             },
             "metadata": {
@@ -2648,9 +2648,9 @@
             "to": "resource:attribute:DeliveryResults",
             "label": "Set",
             "span": {
-              "startLine": 624,
+              "startLine": 636,
               "startColumn": 20,
-              "endLine": 624,
+              "endLine": 636,
               "endColumn": 94
             },
             "metadata": {
@@ -2664,9 +2664,9 @@
             "to": "resource:attribute:UnknownCount",
             "label": "Set",
             "span": {
-              "startLine": 624,
+              "startLine": 636,
               "startColumn": 96,
-              "endLine": 624,
+              "endLine": 636,
               "endColumn": 126
             },
             "metadata": {
@@ -2680,9 +2680,9 @@
             "to": "resource:attribute:CurrentReleasePage",
             "label": "Set",
             "span": {
-              "startLine": 298,
+              "startLine": 310,
               "startColumn": 13,
-              "endLine": 298,
+              "endLine": 310,
               "endColumn": 49
             },
             "metadata": {
@@ -2696,9 +2696,9 @@
             "to": "resource:attribute:ReleaseItems",
             "label": "Set",
             "span": {
-              "startLine": 361,
+              "startLine": 373,
               "startColumn": 13,
-              "endLine": 361,
+              "endLine": 373,
               "endColumn": 90
             },
             "metadata": {
@@ -2714,9 +2714,9 @@
             "to": "resource:attribute:ReleasePages",
             "label": "Set",
             "span": {
-              "startLine": 365,
+              "startLine": 377,
               "startColumn": 12,
-              "endLine": 365,
+              "endLine": 377,
               "endColumn": 59
             },
             "metadata": {
@@ -2732,9 +2732,9 @@
             "to": "resource:attribute:CampaignNotice",
             "label": "Set",
             "span": {
-              "startLine": 480,
+              "startLine": 492,
               "startColumn": 66,
-              "endLine": 480,
+              "endLine": 492,
               "endColumn": 152
             },
             "metadata": {
@@ -2748,9 +2748,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 480,
+              "startLine": 492,
               "startColumn": 20,
-              "endLine": 480,
+              "endLine": 492,
               "endColumn": 64
             },
             "metadata": {
@@ -2764,9 +2764,9 @@
             "to": "resource:attribute:CampaignNotice",
             "label": "Set",
             "span": {
-              "startLine": 495,
+              "startLine": 507,
               "startColumn": 67,
-              "endLine": 495,
+              "endLine": 507,
               "endColumn": 168
             },
             "metadata": {
@@ -2780,9 +2780,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 495,
+              "startLine": 507,
               "startColumn": 20,
-              "endLine": 495,
+              "endLine": 507,
               "endColumn": 65
             },
             "metadata": {
@@ -2796,9 +2796,9 @@
             "to": "resource:attribute:CampaignNotice",
             "label": "Set",
             "span": {
-              "startLine": 382,
+              "startLine": 394,
               "startColumn": 63,
-              "endLine": 382,
+              "endLine": 394,
               "endColumn": 154
             },
             "metadata": {
@@ -2812,9 +2812,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 382,
+              "startLine": 394,
               "startColumn": 20,
-              "endLine": 382,
+              "endLine": 394,
               "endColumn": 61
             },
             "metadata": {
@@ -2828,9 +2828,9 @@
             "to": "resource:attribute:NewsletterReportValue",
             "label": "Set",
             "span": {
-              "startLine": 444,
+              "startLine": 456,
               "startColumn": 11,
-              "endLine": 444,
+              "endLine": 456,
               "endColumn": 49
             },
             "metadata": {
@@ -2844,9 +2844,9 @@
             "to": "resource:attribute:NewsletterReportValue",
             "label": "Set",
             "span": {
-              "startLine": 466,
+              "startLine": 478,
               "startColumn": 12,
-              "endLine": 466,
+              "endLine": 478,
               "endColumn": 50
             },
             "metadata": {
@@ -2860,9 +2860,9 @@
             "to": "resource:attribute:CampaignStatus",
             "label": "Set",
             "span": {
-              "startLine": 546,
+              "startLine": 558,
               "startColumn": 11,
-              "endLine": 546,
+              "endLine": 558,
               "endColumn": 45
             },
             "metadata": {
@@ -2876,9 +2876,9 @@
             "to": "resource:attribute:CurrentRecipient",
             "label": "Set",
             "span": {
-              "startLine": 569,
+              "startLine": 581,
               "startColumn": 13,
-              "endLine": 569,
+              "endLine": 581,
               "endColumn": 49
             },
             "metadata": {
@@ -2892,9 +2892,9 @@
             "to": "step:RecordDelivery",
             "label": "defect",
             "span": {
-              "startLine": 227,
+              "startLine": 239,
               "startColumn": 53,
-              "endLine": 227,
+              "endLine": 239,
               "endColumn": 81
             },
             "metadata": {
@@ -2908,9 +2908,9 @@
             "to": "step:RecordDelivery",
             "label": "providerRejected",
             "span": {
-              "startLine": 226,
+              "startLine": 238,
               "startColumn": 58,
-              "endLine": 226,
+              "endLine": 238,
               "endColumn": 86
             },
             "metadata": {
@@ -2924,9 +2924,9 @@
             "to": "step:RecordDelivery",
             "label": "sent",
             "span": {
-              "startLine": 226,
+              "startLine": 238,
               "startColumn": 10,
-              "endLine": 226,
+              "endLine": 238,
               "endColumn": 38
             },
             "metadata": {
@@ -2940,9 +2940,9 @@
             "to": "step:RecordDelivery",
             "label": "uncertain",
             "span": {
-              "startLine": 227,
+              "startLine": 239,
               "startColumn": 15,
-              "endLine": 227,
+              "endLine": 239,
               "endColumn": 43
             },
             "metadata": {

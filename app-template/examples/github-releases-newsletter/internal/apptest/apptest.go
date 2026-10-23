@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	api "github.com/superdurable/dex-template-basic-process/internal/api"
 	"github.com/superdurable/dex-template-basic-process/internal/api/generated"
 	"github.com/superdurable/dex-template-basic-process/internal/process"
@@ -40,6 +41,8 @@ type Env struct {
 	// Dex is for what Studio does: an Inbox Action, a Display read or a
 	// Start Flow. Never use it to bypass the API.
 	Dex *dex.Client
+	// RegistryFlowID is the subscription registry owned by this fixture.
+	RegistryFlowID string
 }
 
 // Start runs the Flows of worker.Application with connections on a Worker of
@@ -54,7 +57,7 @@ func Start(t *testing.T, connections worker.Connections) *Env {
 	if flowService == "" {
 		t.Fatal("the test engine is not configured: run the tests with make test-app")
 	}
-	clients := &process.Clients{}
+	clients := &process.Clients{RegistryFlowID: process.SubscriberRegistryFlowID + "-" + uuid.NewString()}
 	registry, err := dex.NewRegistry(worker.Application(connections, clients))
 	if err != nil {
 		t.Fatalf("register the Flows: %v", err)
@@ -95,7 +98,7 @@ func Start(t *testing.T, connections worker.Connections) *Env {
 	}
 	t.Cleanup(func() { _ = client.Close() })
 	clients.Dex = client
-	handler, err := api.NewHandler(client)
+	handler, err := api.NewHandler(client, clients.SubscriberRegistryID())
 	if err != nil {
 		t.Fatalf("create the API handler: %v", err)
 	}
@@ -105,7 +108,7 @@ func Start(t *testing.T, connections worker.Connections) *Env {
 	if err != nil {
 		t.Fatalf("create the API client: %v", err)
 	}
-	return &Env{API: apiClient, Dex: client}
+	return &Env{API: apiClient, Dex: client, RegistryFlowID: clients.SubscriberRegistryID()}
 }
 
 // Keep addresses for this test process: Dex caches a connection per address,

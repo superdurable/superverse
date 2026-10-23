@@ -37,7 +37,7 @@ func run() error {
 		return runWorker(worker)
 	}
 	defer worker.Close()
-	apiHandler, err := api.NewHandler(worker.Client)
+	apiHandler, err := api.NewHandler(worker.Client, process.SubscriberRegistryFlowID)
 	if err != nil {
 		return fmt.Errorf("create OpenAPI handler: %w", err)
 	}

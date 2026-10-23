@@ -54,7 +54,7 @@ func subscribe(t *testing.T, env *apptest.Env, email string, requestID uuid.UUID
 func subscriberCount(t *testing.T, env *apptest.Env) int64 {
 	t.Helper()
 	var display map[string]any
-	err := env.Dex.InvokeRPC(env.Context(t), process.SubscriberRegistryFlowID, process.SubscriptionRegistryFlow{}.GetDexDisplay, nil, &display)
+	err := env.Dex.InvokeRPC(env.Context(t), env.RegistryFlowID, process.SubscriptionRegistryFlow{}.GetDexDisplay, nil, &display)
 	if err != nil {
 		return 0
 	}

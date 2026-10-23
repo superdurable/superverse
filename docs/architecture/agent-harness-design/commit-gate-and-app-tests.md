@@ -384,6 +384,10 @@ container has 4 GiB of memory, to which the engine adds about 300 MiB beside bui
   retries on a fresh address, at most ten Worker attempts. It remembers used addresses for the test process,
   with at most 100 selection attempts per Worker attempt, and never reuses one: Dex caches gRPC connections by
   address, whose reconnect backoff can outlive a stopped Worker ([dex#754](https://github.com/superdurable/dex/issues/754)).
+  The newsletter example also gives each fixture its own `newsletter-subscribers-<uuid>` registry FlowID,
+  injected consistently into the subscription HTTP handler and campaign client. Production continues to use
+  `newsletter-subscribers`. This prevents a persistent registry from retaining a stopped fixture target; the
+  disposable engine owns cleanup of all fixture registries.
 - **`Env`** exposes `API` (the generated ogen client), `Dex` (for Studio operations only) and
   `Eventually(t, timeout, cond)`. Tests run sequentially, without `t.Parallel`; the harness reports test outcomes
   and the mocks report their calls.

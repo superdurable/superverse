@@ -187,9 +187,9 @@ func (SubscriptionRegistryFlow) GetDexDisplay(ctx dex.Context, _ dex.None) (_ *d
 	return &dex.RPCResult[map[string]any]{Output: map[string]any{"registry-status": status, "subscriber-count": count}}, nil
 }
 
-func Subscribe(ctx context.Context, client *dex.Client, request SubscriptionRequest) (SubscriptionAccepted, error) {
-	requestID := SubscriberRegistryFlowID
-	_, err := client.StartFlow(ctx, SubscriptionRegistryFlow{}, SubscriberRegistryFlowID, nil, dex.StartFlowOptions{
+func Subscribe(ctx context.Context, client *dex.Client, registryFlowID string, request SubscriptionRequest) (SubscriptionAccepted, error) {
+	requestID := registryFlowID
+	_, err := client.StartFlow(ctx, SubscriptionRegistryFlow{}, registryFlowID, nil, dex.StartFlowOptions{
 		IDReusePolicy:  dex.IDReuseDisallow,
 		AlreadyStarted: &dex.AlreadyStartedOptions{IgnoreError: true},
 		RequestID:      &requestID,
@@ -198,7 +198,7 @@ func Subscribe(ctx context.Context, client *dex.Client, request SubscriptionRequ
 		return SubscriptionAccepted{}, err
 	}
 	var result SubscriptionAccepted
-	err = client.InvokeRPC(ctx, SubscriberRegistryFlowID, SubscriptionRegistryFlow{}.SubmitSubscription, request, &result)
+	err = client.InvokeRPC(ctx, registryFlowID, SubscriptionRegistryFlow{}.SubmitSubscription, request, &result)
 	return result, err
 }
 

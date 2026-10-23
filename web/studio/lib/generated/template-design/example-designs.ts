@@ -22,7 +22,7 @@ interface ExampleDesignImport {
 /** Every example's design, by example ID; the default example's is app-template.json. */
 export const EXAMPLE_DESIGNS: Readonly<Record<string, ExampleDesignImport>> = {
   "text-summary": { tree: "b73d862e932925506c63675d430584513f48f776", definitions: () => import("./app-template.json") },
-  "github-releases-newsletter": { tree: "ee5831df464fbf99438ed10fdcccf10f7f0aacfb", definitions: () => import("./examples/github-releases-newsletter.json") },
+  "github-releases-newsletter": { tree: "3cde5fcab6a20893d16ad890b47bf31c79955de8", definitions: () => import("./examples/github-releases-newsletter.json") },
   "slack-thread-approval": { tree: "5e022af7ab0e70027a9e16f96dc6968c180db77f", definitions: () => import("./examples/slack-thread-approval.json") },
   "summary-approval": { tree: "3718b4bd4f024093b681bbc28d6591c8112f4140", definitions: () => import("./examples/summary-approval.json") },
 };

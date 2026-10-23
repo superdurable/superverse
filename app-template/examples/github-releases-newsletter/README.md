@@ -18,3 +18,5 @@ Studio provides Flow runs and their display. The application also exposes `GET /
 ## Source verification
 
 `make check-fdg-v2` validates the Flow definitions. `make test-app RUN='TestSubscriptionValidationAndDeduplication|TestNewsletter'` runs the HTTP API tests against the test Dex engine with connector mocks. These tests verify application source and do not establish that the configured Slack, GitHub, OpenAI, or Gmail accounts work. Verify those integrations in configured Preview before Live use.
+
+Each API test fixture uses `newsletter-subscribers-<uuid>` as its registry FlowID. The API handler and campaign client receive that same identity, so the registry stays on its fixture's Worker and cannot retain another fixture's subscribers or stopped endpoint. The production server and campaign client continue to use the singleton `newsletter-subscribers`. Fixture registries and campaigns are removed with the disposable engine.

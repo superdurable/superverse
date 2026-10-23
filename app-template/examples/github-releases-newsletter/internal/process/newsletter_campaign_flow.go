@@ -31,7 +31,19 @@ const (
 	maximumReportInputBytes  = 120 << 10
 )
 
-type Clients struct{ Dex *dex.Client }
+type Clients struct {
+	Dex *dex.Client
+	// RegistryFlowID selects the registry shared by this application instance.
+	// Empty uses the production singleton; API fixtures supply their own identity.
+	RegistryFlowID string
+}
+
+func (clients *Clients) SubscriberRegistryID() string {
+	if clients.RegistryFlowID != "" {
+		return clients.RegistryFlowID
+	}
+	return SubscriberRegistryFlowID
+}
 
 type NewsletterCampaignInput struct {
 	EventID   string `json:"eventId"`
@@ -512,7 +524,7 @@ func (step LoadSubscribers) Execute(ctx dex.Context, _ dex.None) (_ *dex.StepDec
 		return nil, fmt.Errorf("Dex client is unavailable")
 	}
 	var subscribers []Subscriber
-	err = step.Clients.Dex.InvokeRPC(ctx, SubscriberRegistryFlowID, SubscriptionRegistryFlow{}.ListSubscribers, nil, &subscribers)
+	err = step.Clients.Dex.InvokeRPC(ctx, step.Clients.SubscriberRegistryID(), SubscriptionRegistryFlow{}.ListSubscribers, nil, &subscribers)
 	var missing *dex.FlowNotActiveOrNotFoundError
 	if errors.As(err, &missing) {
 		subscribers, err = nil, nil
