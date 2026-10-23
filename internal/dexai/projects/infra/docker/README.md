@@ -74,6 +74,14 @@ Kubernetes observes a new Pod only through its readiness probe. The storage is
 ready when MinIO answers its readiness endpoint within five seconds; until then,
 also while MinIO is paused, `EnsureStorage` returns `infra.ErrPending`.
 
+Opening existing storage also starts a stopped MinIO after checking its exact
+container name, Project and Native instance owner labels, service identity when
+supplied, and accepted network identity. This lets Preview configuration and
+grant cleanup recover after a Native stop/start without repeating Project setup.
+The restart uses the inspected container ID, preserves its volume and service
+UID, and returns `infra.ErrPending` for the first call. Absent storage is not
+created by cleanup, and removal and paused states are never restarted.
+
 ## Network and addresses
 
 - Every network takes a /24 of the configured network prefix (`native.networkPrefix`),

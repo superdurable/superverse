@@ -398,11 +398,39 @@ func (k *Infrastructure) openStorage(ctx context.Context, project, networkID str
 	if service.UID != "" {
 		labels = WithLabel(labels, serviceUIDLabel, service.UID)
 	}
-	address, err := k.published(ctx, k.componentName(project, infra.ComponentStorage), labels, infra.StoragePort)
+	address, err := k.storagePublishedAddress(ctx, project, networkID, labels)
 	if err != nil {
 		return minioConnection{}, fmt.Errorf("%w: the project storage is not reachable yet: %w", infra.ErrPending, err)
 	}
 	objects := &infra.ApplicationObjects{Client: infra.ProjectS3("http://"+address, root.Access, root.Secret, nil), Bucket: infra.LocalApplicationBucket}
 	admin := comm.Must(madmin.NewWithOptions(address, &madmin.Options{Creds: credentials.NewStaticV4(root.Access, root.Secret, "")}))
 	return minioConnection{objects: objects, admin: admin, root: root.Access, address: address}, nil
+}
+
+// storagePublishedAddress recovers an owned stopped MinIO even after project
+// setup completed, when Preview cleanup opens storage without EnsureStorage.
+func (k *Infrastructure) storagePublishedAddress(ctx context.Context, project, networkID string, labels map[string]string) (string, error) {
+	if _, err := k.CurrentNetwork(ctx, k.ProjectNetwork(project), networkID, k.OwnerLabels(project, infra.ComponentInfrastructure)); err != nil {
+		return "", err
+	}
+	name := k.componentName(project, infra.ComponentStorage)
+	container, err := k.OwnedContainer(ctx, name, labels)
+	if err != nil {
+		return "", err
+	}
+	if container == nil {
+		return "", fmt.Errorf("container %s is absent", name)
+	}
+	switch container.State.Status {
+	case dockerapi.StateCreated, dockerapi.StateExited, dockerapi.StateDead:
+		if container.Config.Labels[serviceUIDLabel] == "" {
+			return "", fmt.Errorf("%w: the project storage container has no service identity", infra.ErrOwnershipConflict)
+		}
+		if err = k.api.StartContainer(ctx, container.ID); err != nil {
+			return "", fmt.Errorf("start the project storage container: %w", err)
+		}
+		return "", fmt.Errorf("%w: the project storage container is starting", infra.ErrPending)
+	default:
+		return container.PublishedAddress(infra.StoragePort)
+	}
 }
