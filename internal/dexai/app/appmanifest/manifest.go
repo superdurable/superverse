@@ -37,6 +37,7 @@ type Manifest struct {
 	} `json:"flowDefinitions"`
 	Connectors []struct {
 		ConnectionName  string   `json:"connectionName"`
+		Optional        bool     `json:"optional,omitempty"`
 		ConnectorID     string   `json:"connectorId"`
 		ModulePath      string   `json:"modulePath"`
 		Version         string   `json:"version"`
@@ -162,7 +163,7 @@ func connectorRequirements(manifest Manifest) ([]*pb.ConnectorRequirement, error
 			seen[key] = true
 			bindings = append(bindings, &pb.ConnectorTriggerBinding{TriggerName: binding.TriggerName, BindingName: binding.BindingName})
 		}
-		requirements = append(requirements, &pb.ConnectorRequirement{ConnectionName: connector.ConnectionName, ConnectorId: connector.ConnectorID, ModulePath: connector.ModulePath, Version: connector.Version, AuthMethodId: *connector.AuthMethodID, Operations: connector.Operations, TriggerBindings: bindings})
+		requirements = append(requirements, &pb.ConnectorRequirement{ConnectionName: connector.ConnectionName, Optional: connector.Optional, ConnectorId: connector.ConnectorID, ModulePath: connector.ModulePath, Version: connector.Version, AuthMethodId: *connector.AuthMethodID, Operations: connector.Operations, TriggerBindings: bindings})
 	}
 	return canonicalRequirements(requirements), nil
 }

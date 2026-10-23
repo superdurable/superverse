@@ -16,6 +16,7 @@ import (
 	"github.com/superdurable/dex-connectors-library/sdkgo/connectormock"
 	"github.com/superdurable/dex-template-basic-process/internal/api/generated"
 	"github.com/superdurable/dex-template-basic-process/internal/apptest"
+	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
 	"github.com/superdurable/dex-template-basic-process/internal/process"
 	"github.com/superdurable/dex-template-basic-process/internal/worker"
 )
@@ -132,5 +133,28 @@ func TestTextSummaryBranches(t *testing.T) {
 				t.Fatalf("the %s branch shows %+v", c.name, summary)
 			}
 		})
+	}
+}
+
+// The typed absence guard must finish before any model operation is invoked.
+func TestTextSummaryOptionalConnectionMissing(t *testing.T) {
+	model := llmmock.New(t, process.TextSummaryConnectionName)
+	model.GenerateText().Default(llmmock.GenerateTextShortSummary())
+	connections := worker.Connections{SummaryModel: model.Connection()}
+	connections.SummaryModelMissing = &connectorconfiguration.ConnectionNotConfiguredError{ConnectionName: process.TextSummaryConnectionName}
+	env := apptest.Start(t, connections)
+	id := uuid.New()
+	request := &generated.StartTextSummaryRequest{RequestId: id, Text: "This page works before a model is connected."}
+	for range 2 {
+		if _, err := env.API.StartTextSummary(env.Context(t), request); err != nil {
+			t.Fatal(err)
+		}
+	}
+	summary := requireStatus(t, env, id, generated.TextSummaryStatusDefect)
+	if summary.Summary != "" || summary.TotalTokens != 0 || !strings.Contains(summary.Notice, "Connect an LLM to summarize") || !strings.Contains(summary.Notice, process.TextSummaryConnectionName) {
+		t.Fatalf("missing optional connection did not produce its safe notice: %+v", summary)
+	}
+	if len(model.GenerateText().Calls()) != 0 {
+		t.Fatal("missing optional connection invoked the model")
 	}
 }

@@ -219,3 +219,8 @@ redirect only to the same HTTPS host.
 | `shared_connections.go` | Selections of TeamSpace connections, the credential broker, the settings a freeze copies and the selection views |
 | `connector_ui_sessions.go` | UI sessions and their Studio commands. A session's nonce is a token signed with the `signedtoken.ConnectorUISession` key, derived from `SharedConnections.FormKey`, that binds the actor, the Project scope, the prepared source and the connection's module for 10 minutes; the host keeps nothing, so any replica, and any host of the scope, serves it, and rotating `SUPERVERSE_COOKIE_SIGNING_KEY` voids the open sessions |
 | `next_publish.go` | Live's next-publish layer: its inputs, seed, resolution report, following Preview, a version's frozen copy and its derivation record, and the Preview's item diff |
+
+Optional AppManifest connections omit readiness gaps only while they have no
+selected TeamSpace connection. The same host owns Preview and Live validation;
+selected invalid or revoked connections still block admission. Connection views
+carry optionality separately from selection status.

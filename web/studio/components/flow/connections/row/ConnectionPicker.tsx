@@ -84,12 +84,32 @@ export function ConnectionPicker({
   const chosen = all.find((choice) => choice.connectionId === value) ?? null;
   const name = connectorDisplayName(connection);
   const working = Boolean(value) && isWorking(connection);
-  const ownTone: DropdownTone = !value || missing ? "none" : needsSignIn(connection) ? "warn" : working ? "ok" : "none";
+  const ownTone: DropdownTone =
+    !value && connection.optional
+      ? "neutral"
+      : !value || missing
+        ? "none"
+        : needsSignIn(connection)
+          ? "warn"
+          : working
+            ? "ok"
+            : "none";
   // A follower is quiet unless it needs a look, when it shows the connection it resolves to, Preview's.
   const attention = following && Boolean(value) && ownTone !== "ok";
-  const tone: DropdownTone = following ? (!value ? "none" : attention ? ownTone : "same") : ownTone;
+  const tone: DropdownTone = following
+    ? !value
+      ? connection.optional
+        ? "neutral"
+        : "none"
+      : attention
+        ? ownTone
+        : "same"
+    : ownTone;
   const reason = refusal ? endpointBoundReason(table.catalog.get(connection.connectorId), connection) : "";
   const note = [
+    connection.optional
+      ? "Optional. Connect this to use its features; the rest of the application can run without it."
+      : "",
     attention ? `${chosen?.name ?? "This connection"} is Preview's connection, which the next publish follows.` : "",
     refusal && !value ? `${reason} Set up a connection for Live's own address.` : "",
     refusal && value ? `${reason} Live keeps a connection of its own.` : "",
@@ -141,7 +161,9 @@ export function ConnectionPicker({
           ? "Loading the Teamspace's connections…"
           : refusal && next
             ? "Needs its own"
-            : "Not connected"
+            : connection.optional
+              ? "Optional · Not configured"
+              : "Not connected"
       }
       value={following ? (value ? SAME_AS_PREVIEW : null) : value || null}
       onChange={select}

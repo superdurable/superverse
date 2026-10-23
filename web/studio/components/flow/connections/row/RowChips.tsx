@@ -47,7 +47,11 @@ export function RowChips({
         const tone = rowTone(side, connection);
         const own = sideConnection(side, connection);
         const following = sideItem(side, connectionItemKey(connection)).item?.state === "STATE_FOLLOWS_PREVIEW";
-        const name = own?.sharedConnectionId ? nameOf(own.sharedConnectionId) : "not connected";
+        const name = own?.sharedConnectionId
+          ? nameOf(own.sharedConnectionId)
+          : own?.optional
+            ? "optional, not configured"
+            : "not connected";
         const which = side?.name === "next" ? "Next publish" : "Preview";
         return (
           <span

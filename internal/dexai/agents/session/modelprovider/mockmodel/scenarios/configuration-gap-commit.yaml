@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+name: configuration-gap-commit
+title: "Commit an edit despite unrelated connection setup"
+description: "First makes summary-model required; then completes and commits homepage text despite the real Preview configuration refusal."
+category: project_feature
+inputs:
+  - label: "Require the summary connection"
+    message: "Make summary-model required and push the source."
+    replies:
+      - text: "Making the summary connection required."
+        tool_uses:
+          - name: edit
+            input: {path: dex-app.yaml, old_string: '"optional": true,', new_string: '"optional": false,'}
+          - name: bash
+            input: {command: "make bootstrap", description: "Restore application dependencies", timeout_seconds: 600}
+      - text: "Verifying and committing the requested manifest change."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Require the summary-model connection"
+              verification: ["summary-model is explicitly required in dex-app.yaml"]
+      - text: "The source is committed. Connect summary-model in Studio Configuration and apply it to run the summary feature in Preview."
+  - label: "Edit the homepage despite setup"
+    message: "Change the homepage title to Welcome to my app and commit it, even though summary-model is not configured."
+    replies:
+      - text: "Checking delivery status, then finishing your homepage edit."
+        tool_uses:
+          - name: read_delivery_status
+            input: {}
+          - name: edit
+            input: {path: web/src/App.tsx, old_string: "<h1>Text Summary</h1>", new_string: "<h1>Welcome to my app</h1>"}
+      - text: "The unrelated connection gap does not block this source change. Running the source gate and committing it."
+        tool_uses:
+          - name: commit_and_push
+            input:
+              summary: "Update the homepage title"
+              verification: ["The homepage heading is Welcome to my app"]
+      - text: "The homepage title is changed and committed. Preview still needs you to connect summary-model in Studio Configuration and apply it; that setup is separate from the completed edit."

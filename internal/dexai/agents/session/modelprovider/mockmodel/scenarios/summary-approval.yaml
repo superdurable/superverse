@@ -68,7 +68,8 @@ inputs:
                     start_step: PrepareSummary
                     steps:
                       - {step_type: PrepareSummary, group: Text intake, explanation: "Validate and keep the text before any paid model request.",
-                         next: [{to: GenerateSummary, when: "the text is valid"}, {to: complete, when: "the text is empty, too long or not UTF-8"}]}
+                         next: [{to: GenerateSummary, when: "the text is valid"}, {to: complete, when: "the text is empty, too long or not UTF-8"},
+                                {to: RecordSummaryFailure, when: "the optional summary-model connection is not configured"}]}
                       - {step_type: GenerateSummary, group: Summary, explanation: "Ask the configured model for a short factual summary.",
                          next: [{to: AwaitSummaryApproval, when: "generated"}, {to: SaveSummaryResult, when: "truncated"},
                                 {to: RecordSummaryFailure, when: "blocked, rejected, invalid or a defect"},

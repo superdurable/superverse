@@ -79,7 +79,7 @@ async function overviewShown(page: Page): Promise<unknown> {
     await building.locator('[data-more-details="brief.more"] > button').click();
     await building.locator('[data-more-details="brief.code"] > button').click();
     await expect(building.getByRole("region", { name: "Outline", exact: true })).toContainText(
-      "TextSummaryFlow: PrepareSummary, GenerateSummary, AwaitSummaryApproval [Approve summary], SaveSummaryResult, RecordSummaryFailure; +1 failure-handling Step",
+      "TextSummaryFlow: PrepareSummary, GenerateSummary, RecordSummaryFailure, AwaitSummaryApproval [Approve summary], SaveSummaryResult; +1 failure-handling Step",
     );
     await expect(building.getByRole("list", { name: "What the design changes" })).toHaveText(
       "Text summary · changed: adds Await summary approval, Approve summary; changes Generate summary",

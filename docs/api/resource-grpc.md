@@ -2016,3 +2016,16 @@ fields require a custom endpoint. Invalid declarations are rejected before the
 provider probe or writer reservation. They share the key/endpoint revision and
 existing replay/readback/child cleanup protocol; replay uses its admitted values.
 The optional discovery context is a suggestion; saving remains authoritative.
+
+### Optional AppManifest connections
+
+Each `dex-app.yaml` connector declaration accepts `optional: true`; absence and
+false mean required. `ConnectorRequirement.optional` is additive protobuf field 9
+in the existing AppManifest snapshot. False remains omitted from canonical
+connector-contract JSON, preserving required applications' existing digests.
+A missing optional selection contributes no readiness gap in Preview or Live;
+a selected connection still passes authorization, settings and binding checks.
+`ListConnections` includes `optional` on each connection view, independently of
+its selection status, so Studio can show "Optional · Not configured". Apps must
+handle typed absence before connector invocation and show the exact connection
+action. No credentials or additional lifecycle state are included in this flag.

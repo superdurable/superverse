@@ -55,6 +55,7 @@ type projectConnectorDeclaration struct {
 	TriggerBindings []projectTriggerBinding `json:"triggerBindings,omitempty"`
 	ModulePath      string                  `json:"modulePath"`
 	ConnectionName  string                  `json:"connectionName"`
+	Optional        bool                    `json:"optional,omitempty"`
 	ConnectorID     string                  `json:"connectorId"`
 	Version         string                  `json:"version"`
 	// AuthMethodID is the one authentication method the application selected;
@@ -102,7 +103,7 @@ func parseProjectManifest(registration ManifestRegistration) (projectManifestRec
 	for _, requirement := range snapshot.GetConnectors() {
 		declaration := projectConnectorDeclaration{
 			ModulePath: requirement.GetModulePath(), ConnectionName: requirement.GetConnectionName(), ConnectorID: requirement.GetConnectorId(),
-			Version: requirement.GetVersion(), AuthMethodID: requirement.GetAuthMethodId(), Operations: requirement.GetOperations(),
+			Optional: requirement.GetOptional(), Version: requirement.GetVersion(), AuthMethodID: requirement.GetAuthMethodId(), Operations: requirement.GetOperations(),
 		}
 		for _, binding := range requirement.GetTriggerBindings() {
 			declaration.TriggerBindings = append(declaration.TriggerBindings, projectTriggerBinding{TriggerName: binding.GetTriggerName(), BindingName: binding.GetBindingName()})

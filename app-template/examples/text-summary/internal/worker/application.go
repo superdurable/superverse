@@ -10,6 +10,6 @@ import (
 // every Flow here and its source file in dex-app.yaml.
 func Application(connections Connections) []dex.Flow {
 	return []dex.Flow{
-		process.TextSummaryFlow{Connection: connections.SummaryModel},
+		process.TextSummaryFlow{Connection: connections.SummaryModel, MissingConnection: connections.SummaryModelMissing},
 	}
 }

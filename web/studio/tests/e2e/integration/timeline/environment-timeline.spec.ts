@@ -24,14 +24,13 @@ test("the Preview timeline lists the refused push with its version and no commit
   await register(page);
   const teamSpaceId = await createTeamSpace(page);
   if (!(await choosesMockModel(page))) throw new Error("The timeline case runs on the mock model");
-  const marker = `Timeline ${Date.now().toString(36)}`;
   const { projectId } = await createProject(
     page,
     teamSpaceId,
-    chooseMockFirstInput("build-basic", { heading: marker }),
+    chooseMockFirstInput("configuration-gap-commit"),
     testInfo,
   );
-  await waitForFirstMockInput(page, projectId, "build-basic");
+  await waitForFirstMockInput(page, projectId, "configuration-gap-commit");
   const headCommit = await readSession(page, projectId).then(async (first) => {
     await awaitConfigurationNotice(page, projectId, first.headCommit, "summary-model");
     return (await readSession(page, projectId)).headCommit;

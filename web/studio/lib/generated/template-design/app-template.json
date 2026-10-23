@@ -1,11 +1,11 @@
 {
-  "templateRevision": "app-template@6afeff73140f380fb20c5f5eff7d0ecbe021ee54",
+  "templateRevision": "app-template@64419f61a40e64511117989584daa0ce5603ce7a",
   "definitions": [
     {
       "flowType": "TextSummaryFlow",
       "sourcePath": "internal/process/text_summary_flow.go",
       "schemaVersion": "2.0",
-      "digest": "sha256:0ee43401d6c0063c348548e317c918caa74ed4e92f2e1111f4103ff11f5db88b",
+      "digest": "sha256:27b07d98e7054a0bcb73f20fc18c53c49e3dc473c69ba644fe065bc33b527eb4",
       "valid": true,
       "graph": {
         "schemaVersion": "2.0",
@@ -18,9 +18,9 @@
           "name": "TextSummaryFlow",
           "startStepId": "step:PrepareSummary",
           "span": {
-            "startLine": 85,
+            "startLine": 91,
             "startColumn": 1,
-            "endLine": 119,
+            "endLine": 125,
             "endColumn": 2
           }
         },
@@ -32,22 +32,22 @@
             "parentId": "step:PrepareSummary",
             "phase": "execute",
             "span": {
-              "startLine": 142,
+              "startLine": 149,
               "startColumn": 1,
-              "endLine": 162,
+              "endLine": 172,
               "endColumn": 2
             }
           },
           {
-            "id": "decision:rpc:GetDexDisplay:277:9",
+            "id": "decision:rpc:GetDexDisplay:290:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexDisplay",
             "phase": "rpc",
             "span": {
-              "startLine": 277,
+              "startLine": 290,
               "startColumn": 9,
-              "endLine": 282,
+              "endLine": 295,
               "endColumn": 4
             },
             "decision": {
@@ -55,15 +55,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetDexSummary:254:9",
+            "id": "decision:rpc:GetDexSummary:267:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetDexSummary",
             "phase": "rpc",
             "span": {
-              "startLine": 254,
+              "startLine": 267,
               "startColumn": 9,
-              "endLine": 256,
+              "endLine": 269,
               "endColumn": 4
             },
             "decision": {
@@ -71,15 +71,15 @@
             }
           },
           {
-            "id": "decision:rpc:GetSummarySnapshot:292:9",
+            "id": "decision:rpc:GetSummarySnapshot:305:9",
             "kind": "decision",
             "name": "rpcResult",
             "parentId": "rpc:GetSummarySnapshot",
             "phase": "rpc",
             "span": {
-              "startLine": 292,
+              "startLine": 305,
               "startColumn": 9,
-              "endLine": 292,
+              "endLine": 305,
               "endColumn": 62
             },
             "decision": {
@@ -87,16 +87,16 @@
             }
           },
           {
-            "id": "decision:step:PrepareSummary:156:10",
+            "id": "decision:step:PrepareSummary:163:10",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:PrepareSummary",
             "condition": "input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text)",
             "phase": "execute",
             "span": {
-              "startLine": 156,
+              "startLine": 163,
               "startColumn": 10,
-              "endLine": 156,
+              "endLine": 163,
               "endColumn": 35
             },
             "decision": {
@@ -104,16 +104,33 @@
             }
           },
           {
-            "id": "decision:step:PrepareSummary:161:9",
+            "id": "decision:step:PrepareSummary:166:10",
             "kind": "decision",
             "name": "goTo",
             "parentId": "step:PrepareSummary",
-            "condition": "!(input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text))",
+            "condition": "!(input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text)) and step.MissingConnection != nil",
             "phase": "execute",
             "span": {
-              "startLine": 161,
+              "startLine": 166,
+              "startColumn": 10,
+              "endLine": 166,
+              "endColumn": 106
+            },
+            "decision": {
+              "type": "goTo"
+            }
+          },
+          {
+            "id": "decision:step:PrepareSummary:171:9",
+            "kind": "decision",
+            "name": "goTo",
+            "parentId": "step:PrepareSummary",
+            "condition": "!(input.Text == \"\" || len(input.Text) > MaximumTextSummaryBytes || !utf8.ValidString(input.Text)) and !(step.MissingConnection != nil)",
+            "phase": "execute",
+            "span": {
+              "startLine": 171,
               "startColumn": 9,
-              "endLine": 161,
+              "endLine": 171,
               "endColumn": 76
             },
             "decision": {
@@ -121,15 +138,15 @@
             }
           },
           {
-            "id": "decision:step:RecordSummaryFailure:224:9",
+            "id": "decision:step:RecordSummaryFailure:237:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordSummaryFailure",
             "phase": "execute",
             "span": {
-              "startLine": 224,
+              "startLine": 237,
               "startColumn": 9,
-              "endLine": 224,
+              "endLine": 237,
               "endColumn": 34
             },
             "decision": {
@@ -137,15 +154,15 @@
             }
           },
           {
-            "id": "decision:step:RecordSummaryUncertainty:242:9",
+            "id": "decision:step:RecordSummaryUncertainty:255:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:RecordSummaryUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 242,
+              "startLine": 255,
               "startColumn": 9,
-              "endLine": 242,
+              "endLine": 255,
               "endColumn": 34
             },
             "decision": {
@@ -153,15 +170,15 @@
             }
           },
           {
-            "id": "decision:step:SaveSummaryResult:189:9",
+            "id": "decision:step:SaveSummaryResult:199:9",
             "kind": "decision",
             "name": "gracefulComplete",
             "parentId": "step:SaveSummaryResult",
             "phase": "execute",
             "span": {
-              "startLine": 189,
+              "startLine": 199,
               "startColumn": 9,
-              "endLine": 189,
+              "endLine": 199,
               "endColumn": 34
             },
             "decision": {
@@ -173,9 +190,9 @@
             "kind": "attribute",
             "name": "input-tokens",
             "span": {
-              "startLine": 46,
+              "startLine": 51,
               "startColumn": 2,
-              "endLine": 46,
+              "endLine": 51,
               "endColumn": 66
             },
             "resource": {
@@ -187,9 +204,9 @@
             "kind": "attribute",
             "name": "summary-model",
             "span": {
-              "startLine": 45,
+              "startLine": 50,
               "startColumn": 2,
-              "endLine": 45,
+              "endLine": 50,
               "endColumn": 68
             },
             "resource": {
@@ -201,9 +218,9 @@
             "kind": "attribute",
             "name": "summary-notice",
             "span": {
-              "startLine": 49,
+              "startLine": 54,
               "startColumn": 2,
-              "endLine": 49,
+              "endLine": 54,
               "endColumn": 69
             },
             "resource": {
@@ -215,9 +232,9 @@
             "kind": "attribute",
             "name": "output-tokens",
             "span": {
-              "startLine": 47,
+              "startLine": 52,
               "startColumn": 2,
-              "endLine": 47,
+              "endLine": 52,
               "endColumn": 67
             },
             "resource": {
@@ -229,9 +246,9 @@
             "kind": "attribute",
             "name": "source-text",
             "span": {
-              "startLine": 43,
+              "startLine": 48,
               "startColumn": 2,
-              "endLine": 43,
+              "endLine": 48,
               "endColumn": 66
             },
             "resource": {
@@ -243,9 +260,9 @@
             "kind": "attribute",
             "name": "summary-status",
             "span": {
-              "startLine": 42,
+              "startLine": 47,
               "startColumn": 2,
-              "endLine": 42,
+              "endLine": 47,
               "endColumn": 148
             },
             "resource": {
@@ -257,9 +274,9 @@
             "kind": "attribute",
             "name": "summary-text",
             "span": {
-              "startLine": 44,
+              "startLine": 49,
               "startColumn": 2,
-              "endLine": 44,
+              "endLine": 49,
               "endColumn": 67
             },
             "resource": {
@@ -271,9 +288,9 @@
             "kind": "attribute",
             "name": "total-tokens",
             "span": {
-              "startLine": 48,
+              "startLine": 53,
               "startColumn": 2,
-              "endLine": 48,
+              "endLine": 53,
               "endColumn": 66
             },
             "resource": {
@@ -285,9 +302,9 @@
             "kind": "rpc",
             "name": "GetDexDisplay",
             "span": {
-              "startLine": 267,
+              "startLine": 280,
               "startColumn": 1,
-              "endLine": 283,
+              "endLine": 296,
               "endColumn": 2
             }
           },
@@ -296,9 +313,9 @@
             "kind": "rpc",
             "name": "GetDexSummary",
             "span": {
-              "startLine": 248,
+              "startLine": 261,
               "startColumn": 1,
-              "endLine": 257,
+              "endLine": 270,
               "endColumn": 2
             }
           },
@@ -307,9 +324,9 @@
             "kind": "rpc",
             "name": "GetSummarySnapshot",
             "span": {
-              "startLine": 286,
+              "startLine": 299,
               "startColumn": 1,
-              "endLine": 293,
+              "endLine": 306,
               "endColumn": 2
             }
           },
@@ -319,9 +336,9 @@
             "name": "GenerateSummary",
             "phase": "execute",
             "span": {
-              "startLine": 88,
+              "startLine": 94,
               "startColumn": 3,
-              "endLine": 114,
+              "endLine": 120,
               "endColumn": 6
             },
             "metadata": {
@@ -349,10 +366,10 @@
             "phase": "execute",
             "start": true,
             "span": {
-              "startLine": 87,
+              "startLine": 93,
               "startColumn": 3,
-              "endLine": 87,
-              "endColumn": 40
+              "endLine": 93,
+              "endColumn": 81
             },
             "metadata": {
               "explanation": "Validate and keep the text before any paid model request."
@@ -364,9 +381,9 @@
             "name": "RecordSummaryFailure",
             "phase": "execute",
             "span": {
-              "startLine": 116,
+              "startLine": 122,
               "startColumn": 3,
-              "endLine": 116,
+              "endLine": 122,
               "endColumn": 41
             },
             "metadata": {
@@ -379,9 +396,9 @@
             "name": "RecordSummaryUncertainty",
             "phase": "execute",
             "span": {
-              "startLine": 117,
+              "startLine": 123,
               "startColumn": 3,
-              "endLine": 117,
+              "endLine": 123,
               "endColumn": 45
             },
             "metadata": {
@@ -394,9 +411,9 @@
             "name": "SaveSummaryResult",
             "phase": "execute",
             "span": {
-              "startLine": 115,
+              "startLine": 121,
               "startColumn": 3,
-              "endLine": 115,
+              "endLine": 121,
               "endColumn": 38
             },
             "metadata": {
@@ -408,44 +425,39 @@
           {
             "id": "edge:0001",
             "kind": "transition",
-            "from": "decision:step:PrepareSummary:161:9",
-            "to": "step:GenerateSummary",
+            "from": "decision:step:PrepareSummary:166:10",
+            "to": "step:RecordSummaryFailure",
             "label": "GoTo",
             "span": {
-              "startLine": 161,
-              "startColumn": 9,
-              "endLine": 161,
-              "endColumn": 76
+              "startLine": 166,
+              "startColumn": 10,
+              "endLine": 166,
+              "endColumn": 106
             }
           },
           {
             "id": "edge:0002",
-            "kind": "resource_read",
-            "from": "resource:attribute:SummaryInputTokens",
-            "to": "rpc:GetDexDisplay",
-            "label": "Get",
+            "kind": "transition",
+            "from": "decision:step:PrepareSummary:171:9",
+            "to": "step:GenerateSummary",
+            "label": "GoTo",
             "span": {
-              "startLine": 313,
-              "startColumn": 16,
-              "endLine": 313,
-              "endColumn": 34
-            },
-            "metadata": {
-              "function": "optional",
-              "phase": "rpc",
-              "via": "helper"
+              "startLine": 171,
+              "startColumn": 9,
+              "endLine": 171,
+              "endColumn": 76
             }
           },
           {
             "id": "edge:0003",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryInputTokens",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -458,12 +470,12 @@
             "id": "edge:0004",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryInputTokens",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -475,13 +487,13 @@
           {
             "id": "edge:0005",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryModel",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryInputTokens",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -494,12 +506,12 @@
             "id": "edge:0006",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryModel",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -512,12 +524,12 @@
             "id": "edge:0007",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryModel",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -529,13 +541,13 @@
           {
             "id": "edge:0008",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryNotice",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryModel",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -548,12 +560,12 @@
             "id": "edge:0009",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryNotice",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -566,12 +578,12 @@
             "id": "edge:0010",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryNotice",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -583,13 +595,13 @@
           {
             "id": "edge:0011",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryOutputTokens",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryNotice",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -602,12 +614,12 @@
             "id": "edge:0012",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryOutputTokens",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -620,12 +632,12 @@
             "id": "edge:0013",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryOutputTokens",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -637,13 +649,13 @@
           {
             "id": "edge:0014",
             "kind": "resource_read",
-            "from": "resource:attribute:SummarySourceText",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryOutputTokens",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -655,13 +667,13 @@
           {
             "id": "edge:0015",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryStatus",
+            "from": "resource:attribute:SummarySourceText",
             "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -674,12 +686,12 @@
             "id": "edge:0016",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryStatus",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -692,12 +704,12 @@
             "id": "edge:0017",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryStatus",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -709,13 +721,13 @@
           {
             "id": "edge:0018",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryText",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryStatus",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -728,12 +740,12 @@
             "id": "edge:0019",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryText",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -746,12 +758,12 @@
             "id": "edge:0020",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryText",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -763,13 +775,13 @@
           {
             "id": "edge:0021",
             "kind": "resource_read",
-            "from": "resource:attribute:SummaryTotalTokens",
-            "to": "rpc:GetDexDisplay",
+            "from": "resource:attribute:SummaryText",
+            "to": "rpc:GetSummarySnapshot",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -782,12 +794,12 @@
             "id": "edge:0022",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryTotalTokens",
-            "to": "rpc:GetDexSummary",
+            "to": "rpc:GetDexDisplay",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -800,12 +812,12 @@
             "id": "edge:0023",
             "kind": "resource_read",
             "from": "resource:attribute:SummaryTotalTokens",
-            "to": "rpc:GetSummarySnapshot",
+            "to": "rpc:GetDexSummary",
             "label": "Get",
             "span": {
-              "startLine": 313,
+              "startLine": 326,
               "startColumn": 16,
-              "endLine": 313,
+              "endLine": 326,
               "endColumn": 34
             },
             "metadata": {
@@ -816,18 +828,20 @@
           },
           {
             "id": "edge:0024",
-            "kind": "transition",
-            "from": "step:GenerateSummary",
-            "to": "step:RecordSummaryFailure",
-            "label": "blocked",
+            "kind": "resource_read",
+            "from": "resource:attribute:SummaryTotalTokens",
+            "to": "rpc:GetSummarySnapshot",
+            "label": "Get",
             "span": {
-              "startLine": 104,
-              "startColumn": 13,
-              "endLine": 104,
-              "endColumn": 47
+              "startLine": 326,
+              "startColumn": 16,
+              "endLine": 326,
+              "endColumn": 34
             },
             "metadata": {
-              "connectorBranch": true
+              "function": "optional",
+              "phase": "rpc",
+              "via": "helper"
             }
           },
           {
@@ -835,12 +849,12 @@
             "kind": "transition",
             "from": "step:GenerateSummary",
             "to": "step:RecordSummaryFailure",
-            "label": "defect",
+            "label": "blocked",
             "span": {
-              "startLine": 105,
-              "startColumn": 65,
-              "endLine": 105,
-              "endColumn": 99
+              "startLine": 110,
+              "startColumn": 13,
+              "endLine": 110,
+              "endColumn": 47
             },
             "metadata": {
               "connectorBranch": true
@@ -851,12 +865,12 @@
             "kind": "transition",
             "from": "step:GenerateSummary",
             "to": "step:RecordSummaryFailure",
-            "label": "invalidResponse",
+            "label": "defect",
             "span": {
-              "startLine": 105,
-              "startColumn": 21,
-              "endLine": 105,
-              "endColumn": 55
+              "startLine": 111,
+              "startColumn": 65,
+              "endLine": 111,
+              "endColumn": 99
             },
             "metadata": {
               "connectorBranch": true
@@ -867,12 +881,12 @@
             "kind": "transition",
             "from": "step:GenerateSummary",
             "to": "step:RecordSummaryFailure",
-            "label": "providerRejected",
+            "label": "invalidResponse",
             "span": {
-              "startLine": 104,
-              "startColumn": 67,
-              "endLine": 104,
-              "endColumn": 101
+              "startLine": 111,
+              "startColumn": 21,
+              "endLine": 111,
+              "endColumn": 55
             },
             "metadata": {
               "connectorBranch": true
@@ -880,6 +894,22 @@
           },
           {
             "id": "edge:0028",
+            "kind": "transition",
+            "from": "step:GenerateSummary",
+            "to": "step:RecordSummaryFailure",
+            "label": "providerRejected",
+            "span": {
+              "startLine": 110,
+              "startColumn": 67,
+              "endLine": 110,
+              "endColumn": 101
+            },
+            "metadata": {
+              "connectorBranch": true
+            }
+          },
+          {
+            "id": "edge:0029",
             "kind": "failure_transition",
             "from": "step:GenerateSummary",
             "to": "step:RecordSummaryUncertainty",
@@ -889,15 +919,15 @@
             }
           },
           {
-            "id": "edge:0029",
+            "id": "edge:0030",
             "kind": "transition",
             "from": "step:GenerateSummary",
             "to": "step:SaveSummaryResult",
             "label": "generated",
             "span": {
-              "startLine": 103,
+              "startLine": 109,
               "startColumn": 15,
-              "endLine": 103,
+              "endLine": 109,
               "endColumn": 46
             },
             "metadata": {
@@ -905,15 +935,15 @@
             }
           },
           {
-            "id": "edge:0030",
+            "id": "edge:0031",
             "kind": "transition",
             "from": "step:GenerateSummary",
             "to": "step:SaveSummaryResult",
             "label": "truncated",
             "span": {
-              "startLine": 103,
+              "startLine": 109,
               "startColumn": 59,
-              "endLine": 103,
+              "endLine": 109,
               "endColumn": 90
             },
             "metadata": {
@@ -921,32 +951,16 @@
             }
           },
           {
-            "id": "edge:0031",
+            "id": "edge:0032",
             "kind": "resource_write",
             "from": "step:PrepareSummary",
             "to": "resource:attribute:SummaryNotice",
             "label": "Set",
             "span": {
-              "startLine": 151,
+              "startLine": 158,
               "startColumn": 4,
-              "endLine": 151,
+              "endLine": 158,
               "endColumn": 99
-            },
-            "metadata": {
-              "phase": "execute"
-            }
-          },
-          {
-            "id": "edge:0032",
-            "kind": "resource_write",
-            "from": "step:PrepareSummary",
-            "to": "resource:attribute:SummarySourceText",
-            "label": "Set",
-            "span": {
-              "startLine": 145,
-              "startColumn": 11,
-              "endLine": 145,
-              "endColumn": 49
             },
             "metadata": {
               "phase": "execute"
@@ -956,13 +970,13 @@
             "id": "edge:0033",
             "kind": "resource_write",
             "from": "step:PrepareSummary",
-            "to": "resource:attribute:SummaryStatus",
+            "to": "resource:attribute:SummarySourceText",
             "label": "Set",
             "span": {
-              "startLine": 150,
-              "startColumn": 4,
-              "endLine": 150,
-              "endColumn": 43
+              "startLine": 152,
+              "startColumn": 11,
+              "endLine": 152,
+              "endColumn": 49
             },
             "metadata": {
               "phase": "execute"
@@ -971,14 +985,14 @@
           {
             "id": "edge:0034",
             "kind": "resource_write",
-            "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryInputTokens",
+            "from": "step:PrepareSummary",
+            "to": "resource:attribute:SummaryStatus",
             "label": "Set",
             "span": {
-              "startLine": 216,
-              "startColumn": 3,
-              "endLine": 216,
-              "endColumn": 62
+              "startLine": 157,
+              "startColumn": 4,
+              "endLine": 157,
+              "endColumn": 43
             },
             "metadata": {
               "phase": "execute"
@@ -988,13 +1002,13 @@
             "id": "edge:0035",
             "kind": "resource_write",
             "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryModel",
+            "to": "resource:attribute:SummaryInputTokens",
             "label": "Set",
             "span": {
-              "startLine": 215,
+              "startLine": 229,
               "startColumn": 3,
-              "endLine": 215,
-              "endColumn": 50
+              "endLine": 229,
+              "endColumn": 62
             },
             "metadata": {
               "phase": "execute"
@@ -1004,13 +1018,13 @@
             "id": "edge:0036",
             "kind": "resource_write",
             "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryNotice",
+            "to": "resource:attribute:SummaryModel",
             "label": "Set",
             "span": {
-              "startLine": 219,
+              "startLine": 228,
               "startColumn": 3,
-              "endLine": 219,
-              "endColumn": 33
+              "endLine": 228,
+              "endColumn": 50
             },
             "metadata": {
               "phase": "execute"
@@ -1020,13 +1034,13 @@
             "id": "edge:0037",
             "kind": "resource_write",
             "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryOutputTokens",
+            "to": "resource:attribute:SummaryNotice",
             "label": "Set",
             "span": {
-              "startLine": 217,
+              "startLine": 232,
               "startColumn": 3,
-              "endLine": 217,
-              "endColumn": 64
+              "endLine": 232,
+              "endColumn": 33
             },
             "metadata": {
               "phase": "execute"
@@ -1036,13 +1050,13 @@
             "id": "edge:0038",
             "kind": "resource_write",
             "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryStatus",
+            "to": "resource:attribute:SummaryOutputTokens",
             "label": "Set",
             "span": {
-              "startLine": 214,
+              "startLine": 230,
               "startColumn": 3,
-              "endLine": 214,
-              "endColumn": 33
+              "endLine": 230,
+              "endColumn": 64
             },
             "metadata": {
               "phase": "execute"
@@ -1052,13 +1066,13 @@
             "id": "edge:0039",
             "kind": "resource_write",
             "from": "step:RecordSummaryFailure",
-            "to": "resource:attribute:SummaryTotalTokens",
+            "to": "resource:attribute:SummaryStatus",
             "label": "Set",
             "span": {
-              "startLine": 218,
+              "startLine": 227,
               "startColumn": 3,
-              "endLine": 218,
-              "endColumn": 62
+              "endLine": 227,
+              "endColumn": 33
             },
             "metadata": {
               "phase": "execute"
@@ -1067,14 +1081,14 @@
           {
             "id": "edge:0040",
             "kind": "resource_write",
-            "from": "step:RecordSummaryUncertainty",
-            "to": "resource:attribute:SummaryNotice",
+            "from": "step:RecordSummaryFailure",
+            "to": "resource:attribute:SummaryTotalTokens",
             "label": "Set",
             "span": {
-              "startLine": 237,
+              "startLine": 231,
               "startColumn": 3,
-              "endLine": 237,
-              "endColumn": 167
+              "endLine": 231,
+              "endColumn": 62
             },
             "metadata": {
               "phase": "execute"
@@ -1084,13 +1098,13 @@
             "id": "edge:0041",
             "kind": "resource_write",
             "from": "step:RecordSummaryUncertainty",
-            "to": "resource:attribute:SummaryStatus",
+            "to": "resource:attribute:SummaryNotice",
             "label": "Set",
             "span": {
-              "startLine": 236,
+              "startLine": 250,
               "startColumn": 3,
-              "endLine": 236,
-              "endColumn": 36
+              "endLine": 250,
+              "endColumn": 167
             },
             "metadata": {
               "phase": "execute"
@@ -1099,14 +1113,14 @@
           {
             "id": "edge:0042",
             "kind": "resource_write",
-            "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryInputTokens",
+            "from": "step:RecordSummaryUncertainty",
+            "to": "resource:attribute:SummaryStatus",
             "label": "Set",
             "span": {
-              "startLine": 181,
+              "startLine": 249,
               "startColumn": 3,
-              "endLine": 181,
-              "endColumn": 62
+              "endLine": 249,
+              "endColumn": 36
             },
             "metadata": {
               "phase": "execute"
@@ -1116,13 +1130,13 @@
             "id": "edge:0043",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryModel",
+            "to": "resource:attribute:SummaryInputTokens",
             "label": "Set",
             "span": {
-              "startLine": 180,
+              "startLine": 191,
               "startColumn": 3,
-              "endLine": 180,
-              "endColumn": 50
+              "endLine": 191,
+              "endColumn": 62
             },
             "metadata": {
               "phase": "execute"
@@ -1132,13 +1146,13 @@
             "id": "edge:0044",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryNotice",
+            "to": "resource:attribute:SummaryModel",
             "label": "Set",
             "span": {
-              "startLine": 184,
+              "startLine": 190,
               "startColumn": 3,
-              "endLine": 184,
-              "endColumn": 33
+              "endLine": 190,
+              "endColumn": 50
             },
             "metadata": {
               "phase": "execute"
@@ -1148,13 +1162,13 @@
             "id": "edge:0045",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryOutputTokens",
+            "to": "resource:attribute:SummaryNotice",
             "label": "Set",
             "span": {
-              "startLine": 182,
+              "startLine": 194,
               "startColumn": 3,
-              "endLine": 182,
-              "endColumn": 64
+              "endLine": 194,
+              "endColumn": 33
             },
             "metadata": {
               "phase": "execute"
@@ -1164,13 +1178,13 @@
             "id": "edge:0046",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryStatus",
+            "to": "resource:attribute:SummaryOutputTokens",
             "label": "Set",
             "span": {
-              "startLine": 178,
+              "startLine": 192,
               "startColumn": 3,
-              "endLine": 178,
-              "endColumn": 33
+              "endLine": 192,
+              "endColumn": 64
             },
             "metadata": {
               "phase": "execute"
@@ -1180,13 +1194,13 @@
             "id": "edge:0047",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
-            "to": "resource:attribute:SummaryText",
+            "to": "resource:attribute:SummaryStatus",
             "label": "Set",
             "span": {
-              "startLine": 179,
+              "startLine": 188,
               "startColumn": 3,
-              "endLine": 179,
-              "endColumn": 42
+              "endLine": 188,
+              "endColumn": 33
             },
             "metadata": {
               "phase": "execute"
@@ -1196,12 +1210,28 @@
             "id": "edge:0048",
             "kind": "resource_write",
             "from": "step:SaveSummaryResult",
+            "to": "resource:attribute:SummaryText",
+            "label": "Set",
+            "span": {
+              "startLine": 189,
+              "startColumn": 3,
+              "endLine": 189,
+              "endColumn": 42
+            },
+            "metadata": {
+              "phase": "execute"
+            }
+          },
+          {
+            "id": "edge:0049",
+            "kind": "resource_write",
+            "from": "step:SaveSummaryResult",
             "to": "resource:attribute:SummaryTotalTokens",
             "label": "Set",
             "span": {
-              "startLine": 183,
+              "startLine": 193,
               "startColumn": 3,
-              "endLine": 183,
+              "endLine": 193,
               "endColumn": 62
             },
             "metadata": {

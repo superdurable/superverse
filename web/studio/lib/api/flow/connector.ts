@@ -63,6 +63,8 @@ export interface ConnectionView {
   /** The one authorization method the AppManifest declares, empty for a connector without methods. */
   authMethodId?: string;
   connectionName: string;
+  /** Absence is permitted; configured connections still require valid settings and authorization. */
+  optional?: boolean;
   modulePath?: string;
   /** The connector release the AppManifest declares; stored settings and credentials name no release. */
   moduleVersion?: string;

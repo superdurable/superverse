@@ -303,10 +303,14 @@ func requireDelivery(t *testing.T, notification *conversation.SessionNotificatio
 // failure opens a turn; each ID names the Revision its failure was committed
 // at, and the failure delivered again records nothing.
 func TestSessionMockLiveFailureFixDexIntegration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 2*mockTurnTimeout+liveSourceTimeout+2*liveBuildTimeout+liveDeploymentTimeout)
+	ctx, cancel := context.WithTimeout(t.Context(), 3*mockTurnTimeout+liveSourceTimeout+2*liveBuildTimeout+liveDeploymentTimeout)
 	defer cancel()
 	session := newMockSession(t, ctx, "")
 	session.setPreviewAutoDeploy(ctx, false)
+	// This case tests a required configuration refusal. The default
+	// template's connection is optional, so make this fixture explicit.
+	session.send(ctx, mockInput(t, "configuration-gap-commit", 1).Content)
+	requireNoFailure(t, session.finishedTurn(ctx).History)
 	session.send(ctx, mockInput(t, "live-failure-fix", 1).Content)
 	first := session.finishedTurn(ctx)
 	requireNoFailure(t, first.History)

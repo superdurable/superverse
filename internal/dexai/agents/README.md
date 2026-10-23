@@ -721,9 +721,10 @@ the operator's engine for the objects.
   lease and while they poll their provider, with a current Live that keeps
   serving, and the automatic deployment that a published build names.
 
-A Project's Preview configuration is its own, so the template's declared llm
-connection is unconfigured on every fresh Project, and a test that needs a
-READY Preview configures it first with `configurePreview`; a Live test
+A Project's Preview configuration is its own, so the template's optional llm
+connection is unconfigured on every fresh Project. Preview can be READY without
+it; a test that exercises actual summaries configures it first with
+`configurePreview`. A Live test
 configures a Release's draft the same way (`configureConnections` with the
 Release's target). Once the Preview
 prepared the source of the Session's HEAD, the helper sends the
@@ -813,3 +814,13 @@ held Preview race relays genuine requests for one logical Step across natural
 deadlines, preserving immutable input until the newer commit is admitted.
 It requires successful dead-end completion without old-request effects;
 compilation alone does not establish that race or the exact Stop windows.
+
+`TestOptionalConnectionPreviewDexIntegration` commits a homepage edit and runs
+Preview with no TeamSpace LLM connection or Project selection, checks Preview
+and Live readiness, and calls the real summary HTTP API twice with one request
+ID to read the durable connect-an-LLM notice. The selected-optional authorization
+test marks an actual stored credential as requiring reauthorization and checks
+that Preview and Live still reject it. `TestPreviewIncompatibleDeploymentDexIntegration`
+uses the configuration-gap-commit mock scenario to explicitly require the model,
+observe its real refusal, commit an independent homepage edit, and report the
+user's setup action before configuration restores Preview.

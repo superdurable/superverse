@@ -277,3 +277,24 @@ Read `examples/thread-approval` in the Slack connector module (`github.com/super
 Read `examples/thread-reply` in the Gmail connector module (`github.com/superdurable/dex-connectors-library/connectors/google/gmail`) for a polled root message, application-owned sender/text filters, message query, typed reply RPC, email-reply Mutation, and composed configuration UI units. Its polling transport is a local alpha path, not a production push-delivery design.
 
 Find the module directory with `go list -m -f '{{.Dir}}' <module path>` after adding the module with `go get`. Both examples derive one stable Flow ID from provider thread identity. They absorb root redelivery through deterministic starts, handle reply redelivery in bounded application-owned thread state, and move uncertain or rejected external writes into explicit recovery instead of blind resend. They load the local development store and Dex Web binding configuration; a Superverse application keeps the template's project configuration loader.
+
+## Optional application connections
+
+AppManifest `connectors[].optional: true` permits Preview and Live without a
+selection for that connection. Omitted or false remains required. Use optional
+only when the rest of the application meaningfully works without the feature.
+Selected optional connections still require valid configuration and authorization.
+The released connector opener may require settings at startup: check typed
+absence from the loaded immutable Project configuration before opening it, keep
+a typed availability fact, and route the unavailable feature to a durable
+`connection_not_configured` notice ("Connect <name> to use this feature") before
+any provider call. Carry the typed absence cause through the existing durable
+Step result; a result Step must not reinterpret it from replacement-Worker
+configuration. Never branch on error text or suppress malformed selected
+settings. Keep credentials in Studio. The text-summary template demonstrates
+typed absence routing; generic generated SDK support is separate work.
+
+An unrelated Studio configuration gap never replaces a requested source edit.
+Finish the edit and its source gate, call commit_and_push with blocked=false when
+source is complete, and report the exact connection and user action separately.
+Do not claim configured provider or Preview acceptance until it succeeds.

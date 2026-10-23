@@ -47,6 +47,7 @@ type connectionView struct {
 	DisplayName        string                     `json:"displayName,omitempty"`
 	AuthMethodID       string                     `json:"authMethodId,omitempty"`
 	ConnectionName     string                     `json:"connectionName"`
+	Optional           bool                       `json:"optional"`
 	ModulePath         string                     `json:"modulePath,omitempty"`
 	ModuleVersion      string                     `json:"moduleVersion,omitempty"`
 	VersionLine        string                     `json:"versionLine"`
@@ -163,7 +164,7 @@ func (host *ConfigurationHost) connectionView(
 	// empty single-method ID; a stored module or method that differs is a
 	// Conflict until the actor saves the connection again.
 	view := connectionView{
-		ConnectorID: module.ConnectorID, ConnectionName: module.ConnectionName, ModulePath: module.ModulePath,
+		Optional: declaration.Optional, ConnectorID: module.ConnectorID, ConnectionName: module.ConnectionName, ModulePath: module.ModulePath,
 		ModuleVersion: module.ModuleVersion, AuthMethodID: declaration.AuthMethodID, Status: viewMissing, Uses: []connectionStepUse{}, module: module,
 	}
 	configurations, err := draft.useConfigurations(module.ConnectorID, module.ConnectionName)

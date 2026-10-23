@@ -199,6 +199,44 @@ export async function awaitConfigurationNotice(
   await expect(notice.getByTestId("problem-fix").getByRole("link", { name: "Open Setup" })).toBeVisible();
 }
 
+/** Wait for the automatic start: optional absence serves; required absence names its setup action. */
+async function awaitInitialPreview(page: Page, projectId: string, headCommit: string, earlierNotice = false) {
+  let ready = false;
+  await expect
+    .poll(
+      async () => {
+        const current = (await readSession(page, projectId)).preview;
+        if (current?.status === "PREVIEW_STATUS_READY" && current.sourceCommit === headCommit) {
+          ready = true;
+          return true;
+        }
+        if (current?.failure?.code === "PREVIEW_CONFIGURATION_INCOMPATIBLE") return true;
+        if (current?.failure) throw new Error(`Preview failed: ${current.failure.code}`);
+        return false;
+      },
+      { timeout: 10 * 60_000, intervals: [1000, 2000] },
+    )
+    .toBe(true);
+  if (!ready) await awaitConfigurationNotice(page, projectId, headCommit, "summary-model", earlierNotice);
+  return ready;
+}
+
+/** A running optional Preview applies its newly selected model through Setup's ordinary autosave path. */
+async function awaitAppliedPreview(page: Page, projectId: string, headCommit: string) {
+  await expect
+    .poll(
+      async () => {
+        const { configuration } = await rpcResult(page.request, "GetProjectConfiguration", {
+          target: { projectId, scope: "PROJECT_SCOPE_PREVIEW" },
+        });
+        return configuration?.status === "CONFIGURATION_STATUS_READY" && configuration.unappliedChangeCount === 0;
+      },
+      { timeout: 5 * 60_000, intervals: [1000, 2000] },
+    )
+    .toBe(true);
+  return awaitDeployedPreview(page, projectId, headCommit);
+}
+
 /**
  * The push's automatic deployment stopped at the Session's unconfigured Preview with the configuration notice:
  * the person configures Preview and starts it, which then serves headCommit. earlierNotice is awaitConfigurationNotice's.
@@ -209,11 +247,14 @@ export async function configureAndStartPreview(
   headCommit: string,
   earlierNotice = false,
 ) {
-  await awaitConfigurationNotice(page, projectId, headCommit, "summary-model", earlierNotice);
+  const running = await awaitInitialPreview(page, projectId, headCommit, earlierNotice);
   await page.goto(`/p/${projectId}/tools?tool=publishing`);
   await configure(page, "Preview", fillTemplateSummaryConnection);
-  await startPreview(page, projectId);
-  await awaitDeployedPreview(page, projectId, headCommit);
+  if (running) await awaitAppliedPreview(page, projectId, headCommit);
+  else {
+    await startPreview(page, projectId);
+    await awaitDeployedPreview(page, projectId, headCommit);
+  }
 }
 
 /** The prompt that asks the Agent to change the template's main heading to marker and push the change. */
@@ -237,10 +278,12 @@ export async function previewTemplateEdit(
   afterPreviewStarted?: () => Promise<void>,
 ) {
   const { headCommit } = await readSession(page, projectId);
-  await awaitConfigurationNotice(page, projectId, headCommit, "summary-model");
+  const running = await awaitInitialPreview(page, projectId, headCommit);
   await page.goto(`/p/${projectId}/tools?tool=publishing`);
   await configure(page, "Preview", fillTemplateSummaryConnection);
-  const previewURL = await startPreview(page, projectId);
+  const previewURL = running
+    ? await awaitAppliedPreview(page, projectId, headCommit)
+    : await startPreview(page, projectId);
   await afterPreviewStarted?.();
   const app = await context.newPage();
   await app.goto(previewURL);

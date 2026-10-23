@@ -77,7 +77,7 @@ func TestLiveNextPublishDexIntegration(t *testing.T) {
 	// The read without a Release is checked against the Preview's source.
 	snapshot, items := read(next)
 	if snapshot.GetRevision() != 0 || snapshot.GetNextPublishRevision() != 0 || snapshot.GetPreviewConfigurationRevision() != 0 || snapshot.GetSourceCommit() != head ||
-		snapshot.GetStatus() != pb.ConfigurationStatus_CONFIGURATION_STATUS_NEEDS_REVIEW || len(snapshot.GetRequirementGaps()) == 0 || len(items) == 0 {
+		snapshot.GetStatus() != pb.ConfigurationStatus_CONFIGURATION_STATUS_READY || len(snapshot.GetRequirementGaps()) != 0 || len(items) == 0 {
 		t.Fatalf("the next publish of a Project without a layer reads revision %d of %s, %s with %d gaps and %d items",
 			snapshot.GetRevision(), snapshot.GetSourceCommit(), snapshot.GetStatus(), len(snapshot.GetRequirementGaps()), len(items))
 	}

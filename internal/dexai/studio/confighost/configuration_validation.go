@@ -327,6 +327,13 @@ func (host *ConfigurationHost) requirementGaps(
 		if err != nil {
 			return nil, err
 		}
+		// Source/release/trigger schemas were checked above even for absence.
+		// Only no selection is optional; selected stale or revoked entries
+		// still pass all ordinary validation below.
+		entry, found := draft.entry(declaration.module().Key())
+		if declaration.Optional && (!found || entry.SharedConnectionID == "") {
+			continue
+		}
 		useGaps, err := operationUseGaps(draft, declaration, stepUses[declaration.module()])
 		if err != nil {
 			return nil, err

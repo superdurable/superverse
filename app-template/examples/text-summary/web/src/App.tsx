@@ -49,6 +49,7 @@ export function App() {
   return (
     <main>
       <h1>Text Summary</h1>
+      <p>Connect an LLM in Studio Configuration to summarize. You can browse this page without a connection.</p>
       <form onSubmit={summarize}>
         <label htmlFor="source-text">Text to summarize</label>
         <textarea id="source-text" rows={8} maxLength={65536} required value={text} onChange={(event) => setText(event.target.value)} />

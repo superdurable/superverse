@@ -187,6 +187,8 @@ message ConnectorRequirement {
   repeated string operations = 5;
   string module_path = 7;
   repeated ConnectorTriggerBinding trigger_bindings = 8;
+  // Missing optional connections do not block admission; configured ones still validate.
+  bool optional = 9;
 }
 
 // Frozen with AppManifestSnapshot.

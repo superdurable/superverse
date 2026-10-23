@@ -32,6 +32,7 @@ type connectorRequirementJSON struct {
 	ConnectorID     string               `json:"connectorId"`
 	ModulePath      string               `json:"modulePath"`
 	Operations      []string             `json:"operations"`
+	Optional        bool                 `json:"optional,omitempty"`
 	TriggerBindings []triggerBindingJSON `json:"triggerBindings"`
 	Version         string               `json:"version"`
 }
@@ -54,7 +55,7 @@ func canonicalRequirements(requirements []*pb.ConnectorRequirement) []*pb.Connec
 			return cmp.Or(cmp.Compare(a.GetTriggerName(), b.GetTriggerName()), cmp.Compare(a.GetBindingName(), b.GetBindingName()))
 		})
 		canonical = append(canonical, &pb.ConnectorRequirement{
-			ConnectionName: r.GetConnectionName(), ConnectorId: r.GetConnectorId(), ModulePath: r.GetModulePath(), Version: r.GetVersion(), AuthMethodId: r.GetAuthMethodId(),
+			ConnectionName: r.GetConnectionName(), Optional: r.GetOptional(), ConnectorId: r.GetConnectorId(), ModulePath: r.GetModulePath(), Version: r.GetVersion(), AuthMethodId: r.GetAuthMethodId(),
 			Operations: slices.Compact(slices.Sorted(slices.Values(r.GetOperations()))), TriggerBindings: bindings,
 		})
 	}
@@ -74,7 +75,7 @@ func requirementsJSON(requirements []*pb.ConnectorRequirement) []connectorRequir
 		}
 		entries = append(entries, connectorRequirementJSON{
 			AuthMethodID: r.AuthMethodId, ConnectionName: r.ConnectionName, ConnectorID: r.ConnectorId, ModulePath: r.ModulePath,
-			Operations: append([]string{}, r.Operations...), TriggerBindings: bindings, Version: r.Version,
+			Optional: r.Optional, Operations: append([]string{}, r.Operations...), TriggerBindings: bindings, Version: r.Version,
 		})
 	}
 	return entries
@@ -86,7 +87,7 @@ func (r connectorRequirementJSON) requirement() *pb.ConnectorRequirement {
 	for _, b := range r.TriggerBindings {
 		bindings = append(bindings, &pb.ConnectorTriggerBinding{TriggerName: b.TriggerName, BindingName: b.BindingName})
 	}
-	return &pb.ConnectorRequirement{ConnectionName: r.ConnectionName, ConnectorId: r.ConnectorID, ModulePath: r.ModulePath, Version: r.Version, AuthMethodId: r.AuthMethodID, Operations: r.Operations, TriggerBindings: bindings}
+	return &pb.ConnectorRequirement{ConnectionName: r.ConnectionName, Optional: r.Optional, ConnectorId: r.ConnectorID, ModulePath: r.ModulePath, Version: r.Version, AuthMethodId: r.AuthMethodID, Operations: r.Operations, TriggerBindings: bindings}
 }
 
 // CanonicalRequirementsJSON returns the canonical JSON of the connector and

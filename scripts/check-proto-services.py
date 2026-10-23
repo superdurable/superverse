@@ -90,6 +90,7 @@ FROZEN = {
         "repeated string operations = 5 json=operations",
         "singular string module_path = 7 json=modulePath",
         "repeated ConnectorTriggerBinding trigger_bindings = 8 json=triggerBindings",
+        "singular bool optional = 9 json=optional",
     ],
     "ConnectorTriggerBinding": [
         "singular string trigger_name = 1 json=triggerName",

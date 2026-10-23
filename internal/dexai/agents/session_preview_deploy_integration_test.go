@@ -22,6 +22,7 @@ import (
 
 	"github.com/superdurable/dex/sdk-go/dex"
 	"github.com/superdurable/dex/sdk-go/gen/dexpb"
+	pb "github.com/superdurable/superversev2/gen/superverse/v2"
 	"github.com/superdurable/superversev2/internal/comm/dexflow"
 	"github.com/superdurable/superversev2/internal/comm/dexflow/dexflowtest"
 	"github.com/superdurable/superversev2/internal/dexai/agents/sandbox/preview"
@@ -400,16 +401,15 @@ func TestPreviewRefusedDeploymentKeepsServingProcessesDexIntegration(t *testing.
 func TestPreviewIncompatibleDeploymentDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*previewSetupTimeout+3*previewCommandTimeout)
 	defer cancel()
-	session := newMockSession(t, ctx, mockInput(t, "inspect-basic", 1).Content)
+	session := newMockSession(t, ctx, mockInput(t, "configuration-gap-commit", 1).Content)
 	agent := session.finishedTurn(ctx)
 	requireNoFailure(t, agent.History)
+	if pushed := lastToolResult(t, agent.History, conversation.ToolCommitAndPush); pushed.Outcome != conversation.ToolOutcomeSucceeded {
+		t.Fatalf("required manifest was not pushed: %+v", pushed)
+	}
 	summary := session.summary(ctx)
 	head := summary.Identity.HeadCommit
-	handoff := agentloop.PreviewHandoff{Commit: head, Sequence: 1, PublishedSequence: 1}
-	if err := session.service().RequestPreviewDeployment(ctx, session.identity, session.workspace(ctx).InstanceID, handoff); err != nil {
-		t.Fatalf("the deployment request failed (%T)", err)
-	}
-	refused := session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Sequence == 1 })
+	refused := session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Commit == head })
 	switch last := refused.Deployment.Last; {
 	case last.Status != preview.DeploymentIncompatible || last.Owner != conversation.DeliveryOwnerConfiguration ||
 		refused.Failure == nil || refused.Failure.Code != preview.FailureIncompatibleForTest ||
@@ -435,6 +435,34 @@ func TestPreviewIncompatibleDeploymentDexIntegration(t *testing.T) {
 		})
 	})
 
+	session.previews.Flow.Preview = preview.NewPreviewConfiguration(nil, nil, artifactStore(ctx, t), nil, nil, nil, nil)
+	live := newLiveDelivery(session)
+	required, _, err := live.configuration.Get(ctx, session.account, &pb.ProjectConfigurationTarget{ProjectId: session.identity.ProjectID, Scope: pb.ProjectScope_PROJECT_SCOPE_LIVE, NextPublish: true})
+	if err != nil || required.GetStatus() != pb.ConfigurationStatus_CONFIGURATION_STATUS_NEEDS_REVIEW || len(required.GetRequirementGaps()) == 0 {
+		t.Fatalf("missing required connection did not block Live: %s (%v)", required.GetStatus(), err)
+	}
+	// The next request is independent of the real configuration gap. It
+	// must complete a normal source-gated commit and tell the user what to set up.
+	session.send(ctx, mockInput(t, "configuration-gap-commit", 2).Content)
+	edited := session.finishedTurnAfter(ctx, agent.Description.LastSequence)
+	requireNoFailure(t, edited.History)
+	if pushed := lastToolResult(t, edited.History, conversation.ToolCommitAndPush); pushed.Outcome != conversation.ToolOutcomeSucceeded {
+		t.Fatalf("homepage edit was not committed: %+v", pushed)
+	}
+	nextHead := session.summary(ctx).Identity.HeadCommit
+	if nextHead == head {
+		t.Fatal("the unrelated homepage edit left HEAD unchanged")
+	}
+	session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Commit == nextHead })
+	foundAction := false
+	for _, reply := range replies(edited.History) {
+		foundAction = foundAction || strings.Contains(reply.Message.Content, "summary-model in Studio Configuration")
+	}
+	if !foundAction {
+		t.Fatal("the completed edit reported no connection action")
+	}
+	// Configure the still-required connection and start the edited source.
+	head = nextHead
 	// A person returns, configures the Preview and starts it.
 	session.send(ctx, mockInput(t, "inspect-basic", 1).Content)
 	requireNoFailure(t, session.finishedTurnAfter(ctx, agent.Description.LastSequence).History)
@@ -479,7 +507,7 @@ func (s *mockSession) startPreview(ctx context.Context) preview.Snapshot {
 
 // TestPreviewBuildResumesReclaimedInstanceDexIntegration lets the Session
 // reclaim its idle workspace, then admits a pinned commit build. It resumes a
-// new instance and builds processes before reporting missing Preview settings.
+// new instance and serves Preview without the optional summary connection.
 func TestPreviewBuildResumesReclaimedInstanceDexIntegration(t *testing.T) {
 	hold := sandboxHold(t)
 	ctx, cancel := context.WithTimeout(t.Context(), mockTurnTimeout+hold+sandboxReclaimTimeout+previewCommandTimeout)
@@ -495,7 +523,7 @@ func TestPreviewBuildResumesReclaimedInstanceDexIntegration(t *testing.T) {
 		t.Fatalf("the deployment request failed (%T)", err)
 	}
 	built := session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Sequence == 1 })
-	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentIncompatible {
+	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentReady {
 		t.Fatalf("the reclaimed workspace did not build processes: %s %s (%s)", built.PreparedSource.Status, built.Deployment.Last.Status, failureCode(built))
 	}
 	after := session.workspace(ctx)
@@ -579,7 +607,7 @@ func requireImmediatePreviewHandoff(t *testing.T, ctx context.Context, session *
 
 // TestSessionPushBuildsProcessesBeforeConfigurationDexIntegration pushes through
 // the real source gate with default auto refresh and no Preview settings. The
-// pinned processes become READY despite the later configuration refusal.
+// pinned processes and Preview become READY with the optional connection absent.
 func TestSessionPushBuildsProcessesBeforeConfigurationDexIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), previewSetupTimeout+previewDeployTimeout)
 	defer cancel()
@@ -595,15 +623,15 @@ func TestSessionPushBuildsProcessesBeforeConfigurationDexIntegration(t *testing.
 	requireNoFailure(t, agent.History)
 	head := session.summary(ctx).Identity.HeadCommit
 	built := session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Commit == head })
-	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentIncompatible || len(built.Preview.ConfigurationGaps) == 0 {
-		t.Fatalf("processes did not become ready before the missing configuration: %s %s (%s)", built.PreparedSource.Status, built.Deployment.Last.Status, failureCode(built))
+	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentReady || len(built.Preview.ConfigurationGaps) != 0 {
+		t.Fatalf("processes did not become ready with the optional connection absent: %s %s (%s)", built.PreparedSource.Status, built.Deployment.Last.Status, failureCode(built))
 	}
 	if built.PreparedSource.Version.Number == 0 || !strings.Contains(built.PreparedSource.Version.Subject, note) {
 		t.Fatalf("built processes have no Git-owned pushed version: %+v", built.PreparedSource.Version)
 	}
 	requireImmediatePreviewHandoff(t, ctx, session)
 	requirePublishedBuildVersion(t, ctx, session, built)
-	t.Logf("FlowID=%s build=%s version=V%d is READY while Preview needs configuration", session.id, built.PreparedSource.RequestID, built.PreparedSource.Version.Number)
+	t.Logf("FlowID=%s build=%s version=V%d and Preview are READY without the optional connection", session.id, built.PreparedSource.RequestID, built.PreparedSource.Version.Number)
 }
 
 // requirePublishedBuildVersion reads real engine history through the pinned
@@ -694,7 +722,7 @@ func TestSessionPushedProcessesSurviveStopDexIntegration(t *testing.T) {
 		return agent.Description.Status == agentloop.AgentStatusWaitingForMessage
 	})
 	built := session.awaitDeployment(ctx, func(state preview.Snapshot) bool { return state.Deployment.Last.Commit == head })
-	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentIncompatible {
+	if !built.PreparedForForTest(head) || built.Deployment.Last.Status != preview.DeploymentReady {
 		t.Fatalf("Stop lost the pushed processes: %s %s (%s)", built.PreparedSource.Status, built.Deployment.Last.Status, failureCode(built))
 	}
 	t.Logf("FlowID=%s Stop left pushed build %s READY", session.id, built.PreparedSource.RequestID)

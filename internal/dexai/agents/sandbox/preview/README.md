@@ -720,3 +720,11 @@ which Sandbox instance is current. Acquisition rebinds the existing READY prepar
 a manual start on a replacement; Preview serving-runtime instance/UID checks remain unchanged.
 `TestPreviewProcessesSurviveWorkspaceReplacementDexIntegration` removes its owned real instance,
 reads the retained process/configuration bundle, and starts it on the replacement without rendering again.
+
+An AppManifest connection with `optional: true` needs no selection for Preview
+admission. The configuration host applies this same rule to Live. An absent
+optional feature must be handled by the application with a typed availability
+check and a user-readable connect action; selected invalid or revoked
+connections keep their configuration refusal. The default text-summary example
+therefore starts Preview before a model is connected. Existing declarations
+without the flag remain required.

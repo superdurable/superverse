@@ -12,6 +12,7 @@
   "connectors": [
     {
       "connectionName": "summary-model",
+      "optional": true,
       "connectorId": "llm",
       "modulePath": "github.com/superdurable/dex-connectors-library/connectors/superdurable/llm",
       "version": "v0.22.1",

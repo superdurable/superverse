@@ -11,12 +11,17 @@ import (
 	"github.com/superdurable/dex-connectors-library/connectors/superdurable/llm"
 	"github.com/superdurable/dex-connectors-library/sdkgo"
 	"github.com/superdurable/dex-connectors-library/sdkgo/textgen"
+	"github.com/superdurable/dex-template-basic-process/internal/connectorconfiguration"
 	"github.com/superdurable/dex/sdk-go/dex"
 )
 
 // TextSummaryConnectionName is the dex-app.yaml connection that supplies the
 // provider, model and API key. Studio Configuration owns all three.
 const TextSummaryConnectionName = "summary-model"
+
+// SummaryConnectionNotConfigured is an application result tag, persisted in the
+// existing Step input so a replacement Worker cannot change the failure cause.
+const SummaryConnectionNotConfigured sdkgo.BranchID = connectorconfiguration.ConnectionNotConfiguredCode
 
 // MaximumTextSummaryBytes bounds the source text kept in Flow state.
 const MaximumTextSummaryBytes = 64 << 10
@@ -57,7 +62,8 @@ var SummaryApprovals = dex.DefineChannel[bool]("SummaryApprovals")
 // waits, child Flows or external state.
 type TextSummaryFlow struct {
 	dex.FlowDefaults
-	Connection llm.Connection
+	Connection        llm.Connection
+	MissingConnection *connectorconfiguration.ConnectionNotConfiguredError
 }
 
 // TextSummaryFlowID derives the FlowID from the API's per-request UUID.
@@ -88,7 +94,7 @@ func ReadTextSummary(ctx context.Context, client *dex.Client, summaryID string) 
 
 func (flow TextSummaryFlow) GetSteps() []dex.StepDef {
 	return []dex.StepDef{
-		dex.DefineStartStep(PrepareSummary{}),
+		dex.DefineStartStep(PrepareSummary{MissingConnection: flow.MissingConnection}),
 		dex.DefineStep(llm.NewGenerateTextStep(llm.GenerateTextStepConfig[TextSummaryInput]{
 			StepType:       "GenerateSummary",
 			Connection:     flow.Connection,
@@ -147,10 +153,11 @@ func (TextSummaryFlow) GetPersistenceSchema() dex.PersistenceSchema {
 // dex:group group-id:intake group-label:"Text intake"
 // dex:explanation text:"Validate and keep the text before any paid model request."
 type PrepareSummary struct {
+	MissingConnection *connectorconfiguration.ConnectionNotConfiguredError
 	dex.StepDefaultsNoWaitFor[TextSummaryInput]
 }
 
-func (PrepareSummary) Execute(ctx dex.Context, input TextSummaryInput) (_ *dex.StepDecision, err error) {
+func (step PrepareSummary) Execute(ctx dex.Context, input TextSummaryInput) (_ *dex.StepDecision, err error) {
 	defer logFailure(ctx, TextSummaryFlow{}, "PrepareSummary", &err)
 	input.Text = strings.TrimSpace(input.Text)
 	if err = errors.Join(SummarySourceText.Set(ctx, input.Text), SummarySourceBytes.Set(ctx, int64(len(input.Text)))); err != nil {
@@ -165,6 +172,9 @@ func (PrepareSummary) Execute(ctx dex.Context, input TextSummaryInput) (_ *dex.S
 			return nil, err
 		}
 		return dex.GracefulComplete(nil), nil
+	}
+	if step.MissingConnection != nil {
+		return dex.GoTo(RecordSummaryFailure{}, llm.GenerateTextResult{Branch: SummaryConnectionNotConfigured}), nil
 	}
 	if err = SummaryStatus.Set(ctx, "generating"); err != nil {
 		return nil, err
@@ -232,6 +242,9 @@ func (RecordSummaryFailure) Execute(ctx dex.Context, result llm.GenerateTextResu
 	defer logFailure(ctx, TextSummaryFlow{}, "RecordSummaryFailure", &err)
 	var status, notice string
 	switch result.Branch {
+	case SummaryConnectionNotConfigured:
+		missing := &connectorconfiguration.ConnectionNotConfiguredError{ConnectionName: TextSummaryConnectionName}
+		status, notice = "defect", "Connect an LLM to summarize. "+missing.Error()+" Select it in Studio Configuration, then apply the configuration."
 	case llm.GenerateTextBranchBlocked:
 		status, notice = "blocked", "The provider refused the request under its content policy."
 	case llm.GenerateTextBranchProviderRejected:

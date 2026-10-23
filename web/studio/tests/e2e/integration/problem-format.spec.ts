@@ -30,14 +30,13 @@ test("a refused Preview start shows what happened, why, Open Setup and the folde
   await register(page);
   const teamSpaceId = await createTeamSpace(page);
   if (!(await choosesMockModel(page))) throw new Error("The problem format case runs on the mock model");
-  const marker = `Problem format ${Date.now().toString(36)}`;
   const { projectId } = await createProject(
     page,
     teamSpaceId,
-    chooseMockFirstInput("build-basic", { heading: marker }),
+    chooseMockFirstInput("configuration-gap-commit"),
     testInfo,
   );
-  await waitForFirstMockInput(page, projectId, "build-basic");
+  await waitForFirstMockInput(page, projectId, "configuration-gap-commit");
   const { headCommit, preview } = await readSession(page, projectId).then(async (first) => {
     await awaitConfigurationNotice(page, projectId, first.headCommit, "summary-model");
     return readSession(page, projectId);

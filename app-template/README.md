@@ -24,3 +24,21 @@ the deterministic summary and token counts through real application Flows.
 Hosted profiles never enable this seam. An explicitly approved real-LLM local run
 uses `connections.mockLLM: false`; the ordinary connector then handles its actual
 provider credential.
+
+## Optional connections
+
+A `dex-app.yaml` connector entry may set `"optional": true`; omitted or false
+means required. Preview and Live can run without a selection for an optional
+connection. Selected connections still need valid settings and authorization.
+The application must handle typed absence before calling its connector and show
+"Connect <name> to use this feature" instead of failing startup. Text-summary
+and its inherited summary-approval example keep their pages available without
+summary-model; generation records a connect-an-LLM notice with no provider call.
+Newsletter and Slack approval connections remain required because their external
+triggers and delivery are essential. The released SDK's ordinary eager opener
+is unchanged; use the template's typed availability pattern for optional features.
+
+Text-summary persists `connection_not_configured` as a typed tag in its existing
+Step result before routing to RecordSummaryFailure. That Step uses the recorded
+cause, not the replacement Worker's current configuration, so applying settings
+or restarting a Worker cannot rewrite an already-decided failure notice.

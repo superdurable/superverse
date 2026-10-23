@@ -62,7 +62,7 @@ test("pushes build processes automatically, independently of Preview settings, u
       .poll(async () => (await readSession(page, projectId)).preview?.automaticDeployment?.status, {
         timeout: 5 * 60_000,
       })
-      .toBe("PREVIEW_DEPLOYMENT_STATUS_INCOMPATIBLE");
+      .toBe("PREVIEW_DEPLOYMENT_STATUS_READY");
     await expect(page.getByTestId("setup-checklist")).toBeVisible();
 
     // Off suppresses the next push's build; Setup then keeps Build processes, whose manual build still works.

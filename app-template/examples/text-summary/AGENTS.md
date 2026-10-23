@@ -1,21 +1,17 @@
 # Application Instructions
 
-This is a Dex `go-react-v1` application. `TextSummaryFlow` is a
-reference: a browser form calls the API, the API starts a Dex Flow, a Step
-calls a real connector, and the API and Studio read the result. Studio also
-provides Configuration, Runs, Start Flow, Display, Actions and Inbox.
+Dex `go-react-v1`: the page calls an API which starts TextSummaryFlow; a Step
+calls a connector and the API/Studio read its result. Studio owns management.
 
 ## Files to change for a feature
 
 1. `internal/process/<name>_flow.go`: one Flow per file with its Attributes,
-   Channels, Steps and RPCs, structured like `text_summary_flow.go` with its
-   start and read helpers and per-branch result handling. Records several
-   Flows share live in one domain Flow that the others read through its RPCs.
+   Channels, Steps and RPCs, following `text_summary_flow.go`. Shared records
+   belong to one domain Flow; others read its RPCs.
 2. `internal/worker/connections.go`: one `Connections` field per connection,
-   opened with the connector's generated `NewProjectConnection`; set every
+   opened with `NewProjectConnection`; set every
    Step's `ConnectionName` to the same name. `internal/worker/application.go`:
-   the Flow list. Never write credential codecs or providers, and leave
-   `internal/connectorconfiguration` unchanged.
+   the Flow list. Keep the configuration loader.
 3. `dex-app.yaml`: one `flowDefinitions` entry per Flow file and one
    `connectors` entry per connection. Find connectors with `connector_catalog`,
    `go get <module>@<version>`, then read `connector.yaml` in the directory
@@ -24,10 +20,15 @@ provides Configuration, Runs, Start Flow, Display, Actions and Inbox.
 5. `web/src/App.tsx` and `web/src/styles.css` for the UI.
 6. `internal/apptest/<name>_test.go`: the API tests (below).
 
+Use `optional: true` only for a feature the app can run without. Handle typed
+absence before calling its connector; never suppress invalid selected settings.
+Finish and commit unrelated edits despite a connection gap, then name its Studio
+setup action. See PrepareSummary and the connector architecture reference.
+
 If the application does not summarize text, delete `text_summary_flow.go`, its
 connection, its `dex-app.yaml` entries, endpoints, form and tests.
 
-## Read before using a feature
+## References
 
 Under `/opt/superverse/dex-skills/`:
 

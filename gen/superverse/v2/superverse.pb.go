@@ -5374,8 +5374,10 @@ type ConnectorRequirement struct {
 	Operations      []string                   `protobuf:"bytes,5,rep,name=operations,proto3" json:"operations,omitempty"`
 	ModulePath      string                     `protobuf:"bytes,7,opt,name=module_path,json=modulePath,proto3" json:"module_path,omitempty"`
 	TriggerBindings []*ConnectorTriggerBinding `protobuf:"bytes,8,rep,name=trigger_bindings,json=triggerBindings,proto3" json:"trigger_bindings,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Missing optional connections do not block admission; configured ones still validate.
+	Optional      bool `protobuf:"varint,9,opt,name=optional,proto3" json:"optional,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConnectorRequirement) Reset() {
@@ -5455,6 +5457,13 @@ func (x *ConnectorRequirement) GetTriggerBindings() []*ConnectorTriggerBinding {
 		return x.TriggerBindings
 	}
 	return nil
+}
+
+func (x *ConnectorRequirement) GetOptional() bool {
+	if x != nil {
+		return x.Optional
+	}
+	return false
 }
 
 // Frozen with AppManifestSnapshot.
@@ -30224,7 +30233,7 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
 	"\x06digest\x18\x03 \x01(\tR\x06digest\x12\x1d\n" +
 	"\n" +
-	"media_type\x18\x04 \x01(\tR\tmediaType\"\xb6\x02\n" +
+	"media_type\x18\x04 \x01(\tR\tmediaType\"\xd2\x02\n" +
 	"\x14ConnectorRequirement\x12'\n" +
 	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12!\n" +
 	"\fconnector_id\x18\x02 \x01(\tR\vconnectorId\x12\x18\n" +
@@ -30235,7 +30244,8 @@ const file_superverse_v2_superverse_proto_rawDesc = "" +
 	"operations\x12\x1f\n" +
 	"\vmodule_path\x18\a \x01(\tR\n" +
 	"modulePath\x12Q\n" +
-	"\x10trigger_bindings\x18\b \x03(\v2&.superverse.v2.ConnectorTriggerBindingR\x0ftriggerBindings\"_\n" +
+	"\x10trigger_bindings\x18\b \x03(\v2&.superverse.v2.ConnectorTriggerBindingR\x0ftriggerBindings\x12\x1a\n" +
+	"\boptional\x18\t \x01(\bR\boptional\"_\n" +
 	"\x17ConnectorTriggerBinding\x12!\n" +
 	"\ftrigger_name\x18\x01 \x01(\tR\vtriggerName\x12!\n" +
 	"\fbinding_name\x18\x02 \x01(\tR\vbindingName\"i\n" +

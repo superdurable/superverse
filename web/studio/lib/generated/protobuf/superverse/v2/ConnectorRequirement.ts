@@ -10,6 +10,7 @@ export interface ConnectorRequirement {
   'operations'?: (string)[];
   'modulePath'?: (string);
   'triggerBindings'?: (_superverse_v2_ConnectorTriggerBinding)[];
+  'optional'?: (boolean);
 }
 
 export interface ConnectorRequirement__Output {
@@ -20,4 +21,5 @@ export interface ConnectorRequirement__Output {
   'operations': (string)[];
   'modulePath': (string);
   'triggerBindings': (_superverse_v2_ConnectorTriggerBinding__Output)[];
+  'optional': (boolean);
 }

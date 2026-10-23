@@ -24,6 +24,8 @@ inputs:
       - text: "Declaring SUMMARY_GREETING in dex-app.yaml."
         tool_uses:
           - name: edit
+            input: {path: dex-app.yaml, old_string: '"optional": true,', new_string: '"optional": false,'}
+          - name: edit
             input:
               path: dex-app.yaml
               old_string: "\"healthPath\": \"/api/health\""

@@ -7,7 +7,7 @@
     "An AI model"
   ],
   "decider": "No one: the summary is written on its own",
-  "description": "When someone pastes a text into the page, the configured AI model writes a short factual summary of it. The page shows the summary with the model that wrote it and the tokens it used, and marks one the model cut short. A blank or too long text is refused before any paid request, and a refused or failed answer is shown with what went wrong instead of a summary.",
+  "description": "When someone pastes a text into the page, the configured AI model writes a short factual summary of it. The page shows the summary with the model that wrote it and the tokens it used, and marks one the model cut short. A blank or too long text is refused before any paid request, and a refused or failed answer is shown with what went wrong instead of a summary. Without its optional model connection, the page remains available and summaries show how to connect an LLM.",
   "requirements": {
     "title": "Text summary",
     "summary": "A page where a person submits a text and gets a short factual summary from the configured AI model, with the model and token usage shown.",
@@ -62,6 +62,18 @@
           "internal/process/text_summary_flow.go"
         ],
         "untested_reason": "The llm connector's mock package scripts no lost response, so no API test can make the request's outcome unknown."
+      },
+      {
+        "id": "R6",
+        "text": "Without the optional summary-model connection, the page stays available and a summary request shows how to connect an LLM without calling a provider.",
+        "evidence": [
+          "internal/process/text_summary_flow.go",
+          "internal/worker/connections.go",
+          "web/src/App.tsx"
+        ],
+        "tests": [
+          "TestTextSummaryOptionalConnectionMissing"
+        ]
       }
     ],
     "connections": [
@@ -72,7 +84,7 @@
           "generateText"
         ],
         "status": "existing",
-        "user_setup": "Configure the summary-model connection with a provider key and a model in Studio Configuration."
+        "user_setup": "Optional: configure summary-model with a provider key and model in Studio Configuration to enable summarization."
       }
     ],
     "user_setup": [],
@@ -81,7 +93,7 @@
     ]
   },
   "design": {
-    "summary": "One text is validated, summarized by the configured model and saved with the model and its token usage; every other answer is recorded with a notice.",
+    "summary": "One text is validated, summarized by the configured model and saved with the model and its token usage; every other answer is recorded with a notice. Missing optional model configuration produces a connect-an-LLM notice without a provider call.",
     "flows": [
       {
         "flow_type": "TextSummaryFlow",
@@ -100,6 +112,10 @@
               {
                 "to": "complete",
                 "when": "the text is empty, too long or not UTF-8"
+              },
+              {
+                "to": "RecordSummaryFailure",
+                "when": "the optional summary-model connection is not configured"
               }
             ],
             "features": [
@@ -191,8 +207,15 @@
     ]
   },
   "match": {
-    "core": ["summarize"],
-    "signals": ["page-form", "llm"],
-    "conflicts": ["schedule"]
+    "core": [
+      "summarize"
+    ],
+    "signals": [
+      "page-form",
+      "llm"
+    ],
+    "conflicts": [
+      "schedule"
+    ]
   }
 }
