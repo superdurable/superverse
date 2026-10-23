@@ -1,5 +1,5 @@
 {
-  "templateRevision": "app-template/slack-thread-approval@d00681ee4dd2105a36ab1ab0932aa9354da913f1",
+  "templateRevision": "app-template/slack-thread-approval@5e022af7ab0e70027a9e16f96dc6968c180db77f",
   "definitions": [
     {
       "flowType": "SlackThreadApprovalFlow",

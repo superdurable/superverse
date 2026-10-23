@@ -343,7 +343,10 @@ SIGTERM.
   `DEX_WORKER_TARGET` both `127.0.0.1:18813`; `DEX_BLOB_CACHE_DIR`, `SUPERVERSE_APPTEST_REPORT_DIR`,
   `DEX_CONNECTOR_MOCK_REPORT_DIR` (the same new report directory, where the connector mocks write their calls) and
   `SUPERVERSE_APPTEST_RUN` under the run directory. No `DEX_PROJECT_*`, so there is no project configuration and
-  no credential.
+  no credential. The current template harness ignores the Worker variables and selects a fresh loopback address
+  per test. The variables and fixed-port preflight remain for existing application-owned harnesses that still
+  require them; those harnesses can encounter the reconnect backoff of [dex#754](https://github.com/superdurable/dex/issues/754)
+  until updated. Preview retains its separate fixed address.
 - **Isolation.** Each run gets a new engine bound to 127.0.0.1 only; nothing reaches the Preview engine or the
   Studio Runs view. There is no Service and no NetworkPolicy. It is not a Flow.
 - **Teardown and summary.** Count the executions by Flow type and status with `dexcli flow search`; read
@@ -374,9 +377,13 @@ container has 4 GiB of memory, to which the engine adds about 300 MiB beside bui
 ### Template harness and `make test-app`
 
 - **`apptest.Start(t, worker.Connections{...}) *Env`** builds the registry from `worker.Application`, opens a blob
-  cache in `t.TempDir()`, starts a Worker on `DEX_WORKER_BIND_ADDRESS` (an unset or unreachable engine fails the
-  test within 30 seconds and never skips it), creates a Client with the same target, serves
-  `httptest.NewServer(api.NewHandler(client))` and stops everything at cleanup.
+  cache in `t.TempDir()`, selects a fresh `127.0.0.1:0` port and starts a Worker on that concrete address. An
+  unset or unreachable engine fails the test within 30 seconds and never skips it. It creates a Client with the
+  same target, serves `httptest.NewServer(api.NewHandler(client))` and stops everything at cleanup. The SDK owns
+  its listener, so the harness closes its reservation before starting the Worker; an address-in-use startup failure
+  retries on a fresh address, at most ten Worker attempts. It remembers used addresses for the test process,
+  with at most 100 selection attempts per Worker attempt, and never reuses one: Dex caches gRPC connections by
+  address, whose reconnect backoff can outlive a stopped Worker ([dex#754](https://github.com/superdurable/dex/issues/754)).
 - **`Env`** exposes `API` (the generated ogen client), `Dex` (for Studio operations only) and
   `Eventually(t, timeout, cond)`. Tests run sequentially, without `t.Parallel`; the harness reports test outcomes
   and the mocks report their calls.
@@ -517,3 +524,12 @@ package README (`internal/dexai/agents/sandbox/workspace/git/README.md`); `sandb
 documents `apptest`; The [Agent package README](../../../internal/dexai/agents/README.md) describes development checks. Application source
 handoff requires the staged gate and that connector mocks never enter production code.
 
+## Resource Scalability
+
+The port change adds no cloud, Kubernetes, Temporal, Dex Flow or database resource. Each application test owns
+one loopback Worker listener, stopped by test cleanup. The test process retains used endpoint strings until it
+exits, bounded by the 65,535 nonzero TCP ports (in practice, the operating system's smaller ephemeral range).
+Address selection stops after 100 attempts and Worker startup retries address-in-use at most ten times. Dex may
+retain one cached channel per test endpoint until the isolated engine exits; the run's existing timeout and teardown
+bound that lifetime. This test-only state does not grow with platform Projects or deployments and adds no
+control-plane operation to a production request, poll or event.

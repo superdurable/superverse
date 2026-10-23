@@ -9,12 +9,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -40,14 +42,15 @@ type Env struct {
 }
 
 // Start runs the Flows of worker.Application with connections on a Worker of
-// the test engine and serves the API on a loopback server. Everything stops
-// when the test ends. A missing or unreachable engine fails the test within
-// 30 seconds; it never skips it.
+// the test engine on a fresh loopback port, and serves the API. It ignores
+// DEX_WORKER_BIND_ADDRESS and DEX_WORKER_TARGET, supplied for older harnesses.
+// Everything stops when the test ends. A missing or unreachable engine fails
+// the test within 30 seconds; it never skips it.
 func Start(t *testing.T, connections worker.Connections) *Env {
 	t.Helper()
 	recordOutcome(t)
-	flowService, bindAddress, workerAddress := os.Getenv("DEX_FLOW_SERVICE_ADDRESS"), os.Getenv("DEX_WORKER_BIND_ADDRESS"), os.Getenv("DEX_WORKER_TARGET")
-	if flowService == "" || bindAddress == "" || workerAddress == "" {
+	flowService := os.Getenv("DEX_FLOW_SERVICE_ADDRESS")
+	if flowService == "" {
 		t.Fatal("the test engine is not configured: run the tests with make test-app")
 	}
 	registry, err := dex.NewRegistry(worker.Application(connections))
@@ -60,20 +63,30 @@ func Start(t *testing.T, connections worker.Connections) *Env {
 		t.Fatalf("create the blob cache: %v", err)
 	}
 	t.Cleanup(func() { _ = cache.Close() })
-	target := dex.WorkerTarget{Address: workerAddress}
-	dexWorker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{BindAddress: bindAddress, WorkerTarget: target,
-		FlowServiceAddress: flowService, AttributeIndexSyncTimeout: engineWait, Logger: logger})
-	if err != nil {
-		t.Fatalf("create the Worker: %v", err)
+	var target dex.WorkerTarget
+	for attempt := range 10 {
+		address := freshWorkerAddress(t)
+		target = dex.WorkerTarget{Address: address}
+		dexWorker, err := dex.NewWorker(registry, cache, dex.WorkerOptions{BindAddress: address, WorkerTarget: target,
+			FlowServiceAddress: flowService, AttributeIndexSyncTimeout: engineWait, Logger: logger})
+		if err != nil {
+			t.Fatalf("create the Worker: %v", err)
+		}
+		served := make(chan error, 1)
+		go func() { served <- dexWorker.Start() }()
+		t.Cleanup(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = dexWorker.Stop(ctx)
+		})
+		if err := awaitListener(address, served); err != nil {
+			if errors.Is(err, syscall.EADDRINUSE) && attempt < 9 {
+				continue
+			}
+			t.Fatalf("start the Worker: %v", err)
+		}
+		break
 	}
-	served := make(chan error, 1)
-	go func() { served <- dexWorker.Start() }()
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = dexWorker.Stop(ctx)
-	})
-	awaitListener(t, bindAddress, served)
 	client, err := dex.NewClient(registry, cache, dex.ClientOptions{FlowServiceAddress: flowService, WorkerTarget: &target, Logger: logger})
 	if err != nil {
 		t.Fatalf("create the Dex Client: %v", err)
@@ -92,22 +105,58 @@ func Start(t *testing.T, connections worker.Connections) *Env {
 	return &Env{API: apiClient, Dex: client}
 }
 
-// awaitListener waits until the Worker listens, and fails the test when it
-// stopped or did not listen in time.
-func awaitListener(t *testing.T, address string, served <-chan error) {
+// Keep addresses for this test process: Dex caches a connection per address,
+// so reusing a stopped Worker's port can inherit its reconnect backoff.
+var workerAddresses = struct {
+	sync.Mutex
+	used map[string]bool
+}{used: make(map[string]bool)}
+
+// freshWorkerAddress selects a loopback port for this test only. The SDK owns
+// its listener, so release the reservation before Start; retry a competing bind
+// with a fresh address rather than reusing any earlier test's endpoint.
+func freshWorkerAddress(t *testing.T) string {
 	t.Helper()
+	workerAddresses.Lock()
+	defer workerAddresses.Unlock()
+	for range 100 {
+		listener, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("select the Worker's loopback port: %v", err)
+		}
+		address := listener.Addr().String()
+		if err := listener.Close(); err != nil {
+			t.Fatalf("release the Worker's loopback port: %v", err)
+		}
+		if !workerAddresses.used[address] {
+			workerAddresses.used[address] = true
+			return address
+		}
+	}
+	t.Fatal("could not select a fresh Worker port after 100 attempts")
+	return ""
+}
+
+// awaitListener waits until the Worker listens, returns its startup error, or
+// times out. Check startup errors again after dialing to catch a competing bind.
+func awaitListener(address string, served <-chan error) error {
 	for deadline := time.Now().Add(engineWait); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
 		select {
 		case err := <-served:
-			t.Fatalf("the Worker did not start; does the test engine run (make test-app)? %v", err)
+			return fmt.Errorf("the Worker did not start; does the test engine run (make test-app)? %w", err)
 		default:
 		}
 		if connection, err := net.DialTimeout("tcp", address, time.Second); err == nil {
 			_ = connection.Close()
-			return
+			select {
+			case err := <-served:
+				return fmt.Errorf("the Worker stopped: %w", err)
+			default:
+				return nil
+			}
 		}
 	}
-	t.Fatalf("the Worker did not listen on %s within %s", address, engineWait)
+	return fmt.Errorf("the Worker did not listen on %s within %s", address, engineWait)
 }
 
 // Eventually polls condition every 100 milliseconds until it holds, and fails
