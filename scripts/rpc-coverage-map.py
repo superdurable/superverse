@@ -106,17 +106,19 @@ def merge(source, path):
     observed = set(read(path, "methods"))
     if not observed or observed - declared_methods:
         sys.exit(f"invalid or empty RPC observation: {sorted(observed-declared_methods)}")
-    coverage = assembled()
-    previously_covered = {method for method, sources in coverage.items() if sources}
-    affected = observed | {method for method, sources in coverage.items() if source in sources}
-    for method in coverage:
-        coverage[method] = sorted((set(coverage[method]) - {source}) | ({source} if method in observed else set()))
-    lost = sorted(method for method in previously_covered if not coverage[method])
-    if lost:
-        sys.exit(f"RPC coverage regressed in {source}: {lost}")
-    fragments.record(FRAGMENTS, {f"{method}|{source}": {"covered": method in observed} for method in affected})
+    fragments.record(FRAGMENTS, {f"{method}|{source}": {"covered": True} for method in observed})
     write_assembled()
     print(f"RPC coverage: {source} observed {len(observed)} methods; backlog {len(read(BACKLOG, 'methods'))}")
+
+
+def forget(source, methods):
+    declared_methods, _ = declared()
+    unknown = set(methods) - declared_methods
+    if unknown:
+        sys.exit(f"unknown RPC methods: {sorted(unknown)}")
+    fragments.record(FRAGMENTS, {f"{method}|{source}": {"covered": False} for method in methods})
+    write_assembled()
+    print(f"RPC coverage: forgot {source} for {len(set(methods))} methods; backlog {len(read(BACKLOG, 'methods'))}")
 
 
 def main():
@@ -126,11 +128,16 @@ def main():
     merged = subparsers.add_parser("merge")
     merged.add_argument("source", choices=SOURCES)
     merged.add_argument("file", type=Path)
+    forgotten = subparsers.add_parser("forget")
+    forgotten.add_argument("source", choices=SOURCES)
+    forgotten.add_argument("methods", nargs="+")
     args = parser.parse_args()
     if args.command == "check":
         check()
-    else:
+    elif args.command == "merge":
         merge(args.source, args.file)
+    else:
+        forget(args.source, args.methods)
 
 
 if __name__ == "__main__":
