@@ -141,7 +141,7 @@ catalog endpoint, and hosted `modelEndpoints.allowLocalLoopback` stays false.
 | `providers.mockListen` | Bind the existing mock listener at a known address | empty (random loopback port) | Only a `127.0.0.1:<port>` address in local lanes with `agent.mockModel`; set only in the two Kind profiles. No additional listener is created. |
 | `modelEndpoints.allowLocalLoopback` | Permit loopback HTTP/HTTPS in the shared endpoint validator | `false` | `Validate` refuses it outside Local Native/Kind. It never permits arbitrary private, link-local or metadata targets. |
 
-Hosted environments set the list through Terraform's `agent_providers_enabled`: test enables all five after the owner-approved live smoke of a custom endpoint; staging and prod keep it empty. The authenticated model
+Hosted environments set the list through Terraform's `agent_providers_enabled`: test enables all eight (the owner approved opening DeepSeek, MiniMax and Meta without a separate smoke on 2026-10-23); staging and prod keep it empty. The authenticated model
 catalog projects this configuration; clients do not infer availability from enum
 recognition. Local compatible verification requires the fixed non-secret mock key
 shown by Studio. Disabling mock routing uses the reviewed official provider
