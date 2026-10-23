@@ -330,10 +330,11 @@ The lanes add images and build cache to the shared engine with every build, depl
 
 The automatic run is best effort: when it cannot complete, it prints one line and leaves the test's result unchanged.
 It runs beside running lanes because it judges each image on its own: it removes only images that no container uses,
-no lane records and that are older than the image age, and it refuses while a Release build of either builder may still
-run, because a build uses base images that no container holds. A build still `RUNNING` or `UNKNOWN` after two hours
-belongs to a builder that stopped mid-build (one build command is bounded to 30 minutes and ProjectReleaseFlow waits at
-most 60), so it does not block the prune. In order, it removes:
+no lane records and that are older than the image age. While a Release build of either builder may still run it keeps
+every image, because a build uses base images that no container holds, and removes only the build cache, whose records
+an active build holds and BuildKit therefore keeps. A build still `RUNNING` or `UNKNOWN` after two hours belongs to a
+builder that stopped mid-build (one build command is bounded to 30 minutes and ProjectReleaseFlow waits at most 60), so
+it does not keep the images. In order, it removes:
 
 1. host images older than the image age that no container uses and no lane records: dangling images, and images whose
    every name is a lane's own (`superverse-v2/*`, the Kind Release tags `sv2-<environment>-<project>` and the Native

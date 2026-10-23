@@ -10,9 +10,9 @@
 
 Each image is judged on its own, so running Native instances and a Kind deployment never block the command: it removes
 only images no container uses, no lane records (the Kind deployment, its dependencies and each Native instance's coding
-image) and that are older than the age floor, and it refuses while a Release build may still run. Images go first,
-then the build cache by age: BuildKit keeps the cache records an image still references, so a size limit alone frees
-nothing. The Kind node is pruned only under the Kind action lock and is skipped while a Kind action or acceptance holds
+image) and that are older than the age floor, and it keeps every image while a Release build may still run. Images
+go first, then the build cache by age, which a running build does not block: BuildKit keeps the cache records an image
+or an active build still references, so a size limit alone frees nothing. The Kind node is pruned only under the Kind action lock and is skipped while a Kind action or acceptance holds
 it. Project containers, volumes and networks stay: their Project's deletion owns them.
 """
 import argparse
@@ -134,21 +134,33 @@ def gigabytes(size):
 
 
 def prune(args):
+    # A running build uses base images that no container holds, so images stay while one may run. BuildKit never prunes
+    # the cache records an active build holds, so the build cache goes regardless.
     builds = running_builds()
     if builds:
-        raise RuntimeError(f"{len(builds)} Release builds are not settled, such as {builds[0].parent}; prune after they end")
+        print(f"Images: kept, {len(builds)} Release builds are not settled, such as {builds[0].parent}")
     recorded = recorded_references()
-    images = host_candidates(timedelta(hours=args.image_age_hours), recorded)
-    print(f"Host images: {len(images)} unused lane images older than {args.image_age_hours} h, {gigabytes(sum(size for _, _, size in images))}")
+    images = [] if builds else host_candidates(timedelta(hours=args.image_age_hours), recorded)
+    if not builds:
+        print(f"Host images: {len(images)} unused lane images older than {args.image_age_hours} h, {gigabytes(sum(size for _, _, size in images))}")
     if args.dry_run:
-        node, node_images = node_candidates(timedelta(hours=args.image_age_hours), recorded)
-        report_node(args, node_images)
+        node_images = [] if builds else node_candidates(timedelta(hours=args.image_age_hours), recorded)[1]
+        if not builds:
+            report_node(args, node_images)
         for identity, names, _ in images + node_images:
             print("  would remove", identity[:19], " ".join(names[:2]))
+        print(f"  would remove the build cache unused for {args.cache_age_hours} h")
         return
     free = shutil.disk_usage("/").free
     removed = sum(remove(["docker", "image", "rm", "--force", identity]) for identity, _, _ in images)
     run(["docker", "builder", "prune", "--force", "--filter", f"until={args.cache_age_hours}h"], timeout=1800)
+    if not builds:
+        prune_node(args)
+    print(f"Removed {removed} of {len(images)} host images and the build cache unused for {args.cache_age_hours} h.")
+    print(f"Host free space: {gigabytes(free)} before, {gigabytes(shutil.disk_usage('/').free)} now (the engine may return space with a delay).")
+
+
+def prune_node(args):
     try:
         with kind_action_lock("prune"):
             # A deployment may have recorded new images since the first read.
@@ -158,8 +170,6 @@ def prune(args):
                 remove(["docker", "exec", node, "crictl", "rmi", identity])
     except RuntimeError as busy:
         print(f"Kind node: skipped, {busy}")
-    print(f"Removed {removed} of {len(images)} host images and the build cache unused for {args.cache_age_hours} h.")
-    print(f"Host free space: {gigabytes(free)} before, {gigabytes(shutil.disk_usage('/').free)} now (the engine may return space with a delay).")
 
 
 def remove(command):
