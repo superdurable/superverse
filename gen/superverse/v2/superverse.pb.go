@@ -16756,8 +16756,10 @@ func (x *GetEvolveProposalResponse) GetMarkdown() string {
 	return ""
 }
 
-// The browser creates a new message_id for every send. The Agent does not deduplicate by it,
-// so retrying a send that was in fact admitted queues a second message. A message to a Session
+// A nonempty message_id recognizes a repeated send while the original message is queued,
+// steered, pending as a legacy requirements reply, or in CurrentMessages. Such a retry succeeds
+// without admitting another message or replacing its content; archived-only and deleted messages
+// are outside this bounded recognition window. A message to a Session
 // that still waits at a requirements card from before cards stopped waiting
 // (AgentPendingUserInput.KIND_REQUIREMENTS) records that card as the next version and is its
 // reply, which is not queued.

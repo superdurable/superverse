@@ -140,7 +140,7 @@ func (flow *SessionAgentFlow) GetRPCs() []dex.RPCDef {
 		dex.DefineRPC(flow.ReadModelCredentialInfo, &dex.RPCOptions{Timeout: readRPCTimeout}),
 		dex.DefineRPC(flow.ReserveModelCredential, dexflow.ShortRPC(append([]dex.AttributeLock{statusLock}, credentialInfoLocks()...)...)),
 		dex.DefineRPC(flow.FinalizeModelCredential, dexflow.ShortRPC(append([]dex.AttributeLock{statusLock}, credentialInfoLocks()...)...)),
-		dex.DefineRPC(flow.SendMessage, loadDesigns(credentialAdmissionRPC(userCommandRPC(false, nil, inputLock, requirementsLock)), flowdesign.SlotPending)),
+		dex.DefineRPC(flow.SendMessage, loadDesigns(credentialAdmissionRPC(messageAdmissionRPC()), flowdesign.SlotPending)),
 		dex.DefineRPC(flow.SteerMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.DeleteQueuedMessage, userCommandRPC(true, queue)),
 		dex.DefineRPC(flow.AnswerQuestions, userCommandRPC(false, nil, inputLock)),
@@ -513,6 +513,7 @@ func (step AwaitUser) Execute(ctx dex.Context, _ dex.None) (*dex.StepDecision, e
 		return dex.GoTo(CheckSteered{}, agentloop.ContinueStartTurn), nil
 	}
 	if queued := comm.Must(queuedUserMessagesChannel.GetConditionResults(ctx)); len(queued) > 0 {
+		queued[0].Value.MessageID = queued[0].MessageID
 		sequence := beginUserTurn(ctx, queued[0].Value)
 		writeInputConsumption(ctx, queued[:1], nil, &sequence)
 		return dex.GoTo(CheckSteered{}, agentloop.ContinueStartTurn), nil

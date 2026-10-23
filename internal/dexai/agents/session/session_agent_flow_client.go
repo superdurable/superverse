@@ -125,11 +125,11 @@ func (client *SessionAgentFlowClient) StartAccepted(ctx context.Context, request
 }
 
 // The commands below lock Session Attributes, so each retries an explicit lock
-// conflict within its deadline. Commands are not deduplicated: one retried
-// after a lost response may apply twice.
+// conflict within its deadline. SendMessage recognizes a nonempty key in pending
+// input or CurrentMessages; other commands retain their own recovery rules.
 
-// SendPendingMessage preserves the caller's queue identity without claiming
-// exactly-once admission. A message with attachments sent while a local agent
+// SendPendingMessage recognizes the caller's key while queued, steered or in
+// CurrentMessages. A message with attachments sent while a local agent
 // executes the Session is ErrAttachmentsNeedPlatformAgent.
 func (client *SessionAgentFlowClient) SendPendingMessage(ctx context.Context, flowID agentloop.FlowID, pending conversation.PendingUserMessage) error {
 	admission, err := dexflow.InvokeLocked[messageAdmission](ctx, client.sdk, commandRPCTimeout, string(flowID), client.flow.SendMessage, pending)

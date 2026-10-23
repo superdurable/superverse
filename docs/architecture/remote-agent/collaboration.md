@@ -213,3 +213,26 @@ None.
 ## Resource Scalability
 
 None: a few bytes per entry and command; no new resource.
+
+## Message admission retries
+
+SendMessage recognizes a nonempty client message key already present in the Session's
+QueuedUserMessages, SteeredUserMessages, pending legacy requirements-card reply, or
+CurrentMessages. A repeat returns the existing admission without changing its content
+or admitting another message. Authorization and the active Session fence still apply.
+The key is retained in user-entry metadata on consumption, including steering.
+
+The recognition window ends when the message leaves those queues and the current
+history window (fewer than 20 entries). Archived-only, removed and trimmed messages are
+outside the window; empty legacy keys have no duplicate guarantee. There is no lifetime
+admission registry. SendMessage loads only these canonical queues and CurrentMessages,
+under SessionStatus and MessageWindowLock, alongside its existing input and requirements
+locks. The lookup and publication serialize with concurrent sends, queue moves and
+consumption, so two simultaneous sends of one key admit one message.
+
+Studio persists a local creation's exact first message and key before sending. On reload,
+it retries that stored payload with the same key after reconnection, preserving a different
+composer draft. A lost response or delayed earlier request uses the same admission rule.
+A failed attempt displays an error rather than continuously retrying; reloading resumes
+recovery. Manual conversation checking is required only before abandoning the stored key
+and sending a different message, not for a same-key retry.

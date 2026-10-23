@@ -990,8 +990,16 @@ success confirms actual command admission, with no post-admission GetSession rou
 state that follows. Studio keeps its Watch during a command and corrects accepted work
 through canonical snapshots. An uncertain transport response stays an explicit command
 warning across reads, with no automatic retry of ordinary user messages. A deliberate retry
-is a new send with a new `message_id`: the Agent does not deduplicate SendMessage by
-`message_id`, so retrying a send that was in fact admitted queues a second message.
+with a new `message_id` is a new message. A retry with the same nonempty `message_id`
+returns the existing admission while its message is queued, steered, pending as a legacy
+requirements-card reply, or retained in CurrentMessages (fewer than 20 entries). It does
+not replace the admitted content. Deleted, trimmed and archive-only messages are outside
+this bounded recognition window; this is not lifetime deduplication. The Session serializes
+lookup and admission with queue consumption under SessionStatus and MessageWindowLock.
+Studio automatically retries a local creation's persisted first message with its same key
+after reload and reconnection, including a lost response, while preserving another composer
+draft. Abandoning that key and sending a different message still requires checking the
+conversation when the earlier attempt's result is uncertain.
 SendMessage's `attachment_ids` name at most `attachments.maxPerMessage` (10) distinct attachments,
 and `text` may then be blank. After the Session's authorization each must be READY, the caller's
 own upload and of the Project's TeamSpace; the Project counts them against its lifetime quota once

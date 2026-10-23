@@ -446,9 +446,9 @@ lifecycle, Channels, Streams and deletion are unchanged; these are the differenc
   (each an `AttachedFile{ID, Kind, MediaType, FileName, SHA256, Bytes}`) under the Project's write
   lock (`dexflow.ShortRPC(dex.LockAttribute(ProjectRevision))`), which it does not advance, with the
   named instances loaded. `AdmissionID` is new for every `SendMessage` call
-  (`AttachmentFlowService.AdmitMessage`), because the Session does not deduplicate messages: a
-  retry of an accepted message under the same message ID may be refused while the first send
-  stays queued. An existing instance gains the admission's hold and is counted once (also for a
+  (`AttachmentFlowService.AdmitMessage`), independently of the Session's bounded recognition
+  of a repeated message key. Attachment validation and reservation happen before Session
+  admission, so a repeated call still has its own hold and refusal cleanup. An existing instance gains the admission's hold and is counted once (also for a
   duplicated `SendMessage`, and a replay of the same admission changes nothing); a status other
   than READY is refused FAILED_PRECONDITION
   (DELETING above all, so a Project being deleted binds nothing new); more than 1,000
@@ -504,7 +504,7 @@ before, and no Step loads more than it did.
 
 | Channel | Change |
 |---|---|
-| `QueuedUserMessages`, `SteeredUserMessages` | `PendingUserMessage.Value` (`conversation.UserMessage`, `conversation/messages.go:196-208`) gains `Attachments`: at most ten staged references with both variants' digests, sizes and token estimates, read by the API from each `AttachmentFlow`. Producers, consumers, ordering and duplicates are unchanged: `SendMessage` is not deduplicated (`session/session_agent_flow_client.go:117-124`), and a duplicate renders the same objects |
+| `QueuedUserMessages`, `SteeredUserMessages` | `PendingUserMessage.Value` (`conversation.UserMessage`, `conversation/messages.go:196-208`) gains `Attachments`: at most ten staged references with both variants' digests, sizes and token estimates, read by the API from each `AttachmentFlow`. Producers, consumers and ordering are unchanged. `SendMessage` recognizes a nonempty key in pending input or CurrentMessages and does not append a duplicate; deleted or archive-only keys are outside that window. A separately admitted message can render the same objects |
 | `AnsweredUserInputs` | Its `Message` is the same `UserMessage`; the legacy requirements-card branch of `sendMessage` passes the whole value on (`agentloop/user_input.go:465-469`) |
 
 No ChannelMap changes. Pending messages at termination are handled as today.

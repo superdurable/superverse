@@ -24,9 +24,9 @@ import type { useProjectSession } from "@/lib/session/SessionProvider";
 
 const CONNECT_TO_SEND = "Connect your local agent to send. Your draft stays editable.";
 const UNCERTAIN_DELIVERY =
-  "Your first message may already be with your local agent. Check the conversation before sending again; it will not be sent again automatically.";
+  "Your first message may already have arrived. Check the conversation before sending a different message.";
 
-/** The pending local creation and manual Send share one persisted, non-retrying admission boundary. */
+/** Local creation retries its persisted first message with the same Session admission key. */
 export function useLocalCreation(
   state: ReturnType<typeof useProjectSession>,
   text: string,
@@ -44,7 +44,8 @@ export function useLocalCreation(
   const remote = state.snapshot?.description.executor?.mode === "remote";
   const pending = intent !== null;
   const waitingForConnection = pending && !remote;
-  const uncertain = intent?.delivery === PROJECT_MESSAGE_DELIVERY.SENDING;
+  const retrying = intent?.delivery === PROJECT_MESSAGE_DELIVERY.SENDING;
+  const uncertain = retrying && !!error && text.trim() !== intent.prompt.trim();
   const finish = useCallback(
     (sentText: string) => {
       clearProjectIntent(state.projectId);
@@ -59,10 +60,12 @@ export function useLocalCreation(
       const owned = readProjectIntent(state.projectId);
       if (!owned) return state.send(message, attachmentIds);
       if (!remote) throw new Error(CONNECT_TO_SEND);
-      if (sending.current || owned.delivery === PROJECT_MESSAGE_DELIVERY.SENDING) throw new Error(UNCERTAIN_DELIVERY);
+      if (sending.current) throw new Error("Your first message is already being sent.");
+      if (owned.delivery === PROJECT_MESSAGE_DELIVERY.SENDING && message !== owned.prompt)
+        throw new Error(UNCERTAIN_DELIVERY);
       sending.current = true;
       setError("");
-      // Persist before crossing the RPC boundary: SendMessage does not deduplicate message IDs.
+      // Persist the exact retry payload before the RPC; Session recognizes the same admission key.
       try {
         const admitted = { ...owned, prompt: message, delivery: PROJECT_MESSAGE_DELIVERY.SENDING };
         storeProjectIntent(admitted);
@@ -82,10 +85,11 @@ export function useLocalCreation(
         if (definite) {
           const unsent = { ...owned, delivery: PROJECT_MESSAGE_DELIVERY.UNSENT };
           storeProjectIntent(unsent);
-          sending.current = false;
         }
         setError(commandFailureText(reason));
         throw reason;
+      } finally {
+        sending.current = false;
       }
     },
     [finish, remote, state],
@@ -101,20 +105,20 @@ export function useLocalCreation(
       state.snapshot?.description.status === AgentStatus.INITIALIZING
     )
       return;
-    if (uncertain) {
-      const queued = [...(state.snapshot?.queued ?? []), ...(state.snapshot?.steered ?? [])];
-      if (!sending.current && queued.some((message) => message.messageId === intent.messageIdempotencyKey))
-        finish(intent.prompt);
-      return;
-    }
+    if (sending.current || state.mutating || error) return;
     // An example or a cleared draft at connection has no automatic first message.
-    if (!intent.prompt || !text.trim()) {
+    if (!retrying && (!intent.prompt || !text.trim())) {
       clearProjectIntent(state.projectId);
       return;
     }
-    if (sending.current || state.mutating || error || !text.trim()) return;
-    void send(text.trim(), []).catch(() => undefined);
-  }, [error, finish, intent, online, remote, send, state, text, uncertain]);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void send(retrying ? intent.prompt : text.trim(), []).catch(() => undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [error, intent, online, remote, send, state, text, retrying]);
 
   return {
     projectId: state.projectId,
@@ -127,6 +131,10 @@ export function useLocalCreation(
       clearProjectIntent(state.projectId);
       setError("");
     },
-    sendDisabledReason: waitingForConnection ? CONNECT_TO_SEND : uncertain ? UNCERTAIN_DELIVERY : null,
+    sendDisabledReason: waitingForConnection
+      ? CONNECT_TO_SEND
+      : retrying
+        ? "Reload to retry your first message safely."
+        : null,
   };
 }

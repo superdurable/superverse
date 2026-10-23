@@ -119,6 +119,8 @@ type Entry struct {
 
 // EntryMeta is what the UI and metrics read of an entry; the model never sees it.
 type EntryMeta struct {
+	// MessageID recognizes retries while this user entry remains in CurrentMessages.
+	MessageID MessageID `json:"message_id,omitempty"`
 	// NotificationContinuesTurn records consumption during an already active turn.
 	NotificationContinuesTurn bool `json:"notification_continues_turn,omitempty"`
 	// ExecutorChanged marks a visible executor boundary, never a model input.
@@ -238,7 +240,7 @@ func UserMessageEntry(text string, answeredInputCallID *CallID) Entry {
 // message always has its envelope, also with blank text.
 func (message UserMessage) Entry() Entry {
 	text := message.Content
-	meta := EntryMeta{AnsweredInputCallID: message.AnsweredInputCallID, Actor: message.Actor, Via: message.Via}
+	meta := EntryMeta{MessageID: message.MessageID, AnsweredInputCallID: message.AnsweredInputCallID, Actor: message.Actor, Via: message.Via}
 	blocks := make([]json.RawMessage, 0, len(message.Attachments)+1)
 	var labels []AttachmentLabel
 	for _, attachment := range message.Attachments {

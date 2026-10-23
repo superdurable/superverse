@@ -19,10 +19,12 @@ import { RemoteClient, inputText, wireInteger } from "./remote-client";
 // The pairing code and Bridge bearer token remain in memory; recordings are disabled.
 test.use({ trace: "off", screenshot: "off", video: "off" });
 
-for (const { loseResponse, manual, label } of [
+for (const { loseResponse, manual, reload = false, stranded = false, label } of [
   { loseResponse: false, manual: false, label: "after remote activation" },
   { loseResponse: false, manual: true, label: "when sent manually after clearing the draft" },
   { loseResponse: true, manual: false, label: "despite a lost response" },
+  { loseResponse: false, manual: false, reload: true, label: "after two reloads during activation" },
+  { loseResponse: false, manual: false, stranded: true, label: "after reload before network dispatch" },
 ]) {
   test(`A locally chosen agent receives the creation message once ${label}`, async ({ page, context }) => {
     test.setTimeout(15 * 60_000);
@@ -35,10 +37,14 @@ for (const { loseResponse, manual, label } of [
     let createdProject = "";
     let modelUpdates = 0;
     let messageSends = 0;
+    const messageKeys = new Set<string>();
     let pairingRequests = 0;
     page.on("request", (request) => {
       if (rpcPosted("UpdateSessionModel")(request)) modelUpdates++;
-      if (rpcPosted("SendMessage")(request)) messageSends++;
+      if (rpcPosted("SendMessage")(request)) {
+        messageSends++;
+        messageKeys.add(string(object(request.postDataJSON(), "Sent message").messageId, "Message key"));
+      }
       if (rpcPosted("CreateRemoteAgentPairing")(request)) pairingRequests++;
     });
     try {
@@ -123,20 +129,42 @@ for (const { loseResponse, manual, label } of [
       const client = new RemoteClient(pairing.connectionId, pairing.endpoint);
       await client.pair(pairing);
       const firstSent = page.waitForRequest(rpcPosted("SendMessage"));
-      if (loseResponse) {
-        await page.route("**/api/rpc/SendMessage", async (route) => {
-          const admitted = await route.fetch();
-          if (!admitted.ok()) throw new Error(`SendMessage returned HTTP ${admitted.status()}`);
-          await route.abort("failed");
-          await admitted.dispose();
-        });
+      if (stranded) {
+        // The exact persisted state left by navigation after SENDING but before fetch.
+        await page.evaluate(
+          ({ projectId, prompt }) => {
+            const key = `superversev2.local-project-intent.v1:${projectId}`;
+            const intent = JSON.parse(sessionStorage.getItem(key)!);
+            sessionStorage.setItem(key, JSON.stringify({ ...intent, prompt, delivery: "sending" }));
+          },
+          { projectId: createdProject, prompt: firstMessage },
+        );
+        expect(messageSends).toBe(0);
+        await page.reload();
       }
-      const firstAnswered = loseResponse
-        ? page.waitForEvent("requestfailed", { predicate: rpcPosted("SendMessage") }).then(() => undefined)
-        : page.waitForResponse(rpcAnswered("SendMessage")).then((result) => {
-            if (!result.ok()) throw new Error("The first local message was refused");
-          });
-      const { fence, lastSequence } = await client.activateWithCursor("New local-agent Project");
+      if (loseResponse) {
+        await page.route(
+          "**/api/rpc/SendMessage",
+          async (route) => {
+            const admitted = await route.fetch();
+            if (!admitted.ok()) throw new Error(`SendMessage returned HTTP ${admitted.status()}`);
+            await route.abort("failed");
+            await admitted.dispose();
+          },
+          { times: 1 },
+        );
+      }
+      const firstAnswered = reload
+        ? Promise.resolve()
+        : loseResponse
+          ? page.waitForEvent("requestfailed", { predicate: rpcPosted("SendMessage") }).then(() => undefined)
+          : page.waitForResponse(rpcAnswered("SendMessage")).then((result) => {
+              if (!result.ok()) throw new Error("The first local message was refused");
+            });
+      const activation = client.activateWithCursor("New local-agent Project");
+      if (reload) await page.reload();
+      const { fence, lastSequence } = await activation;
+      if (reload) await page.reload();
       if (manual) {
         await expect(page.getByText("Local agent · not connected")).toHaveCount(0);
         expect(messageSends).toBe(0);
@@ -153,6 +181,23 @@ for (const { loseResponse, manual, label } of [
           timeout: 30_000,
         })
         .toBe("SESSION_EXECUTOR_MODE_REMOTE");
+      // A navigation may cancel the first HTTP attempt; request observation is not admission.
+      // Wait for the real canonical result before asserting the Bridge's delivery.
+      await expect
+        .poll(
+          async () => {
+            const snapshot = await readSession(page, createdProject);
+            return {
+              matches:
+                snapshot.agent?.history?.messages.filter((entry) => entry.message?.content === firstMessage).length ??
+                0,
+              queued: snapshot.agent?.queued.length,
+              steered: snapshot.agent?.steered.length,
+            };
+          },
+          { timeout: 30_000 },
+        )
+        .toEqual({ matches: 1, queued: 0, steered: 0 });
       const delivered = await client.post("sync", {
         epoch: fence.epoch,
         after: Math.max(0, lastSequence - 20),
@@ -175,21 +220,29 @@ for (const { loseResponse, manual, label } of [
         const recoveryDraft = `${firstMessage} — keep this follow-up draft`;
         await composer.fill(recoveryDraft);
         await page.reload();
-        await expect(page.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
         await expect(composer).toHaveValue(recoveryDraft);
+        await expect.poll(() => messageSends, { timeout: 30_000 }).toBe(2);
+        await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
         await expect(
           page.getByRole("button", { name: "I checked the conversation; enable manual sending" }),
-        ).toBeVisible();
-        await page.screenshot({ path: test.info().outputPath("local-project-uncertain-send.png") });
-        await page.getByRole("button", { name: "I checked the conversation; enable manual sending" }).click();
+        ).toHaveCount(0);
         await expect(composer).toHaveValue(recoveryDraft);
-        await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
       } else {
         await expect(composer).toHaveValue("");
         await page.reload();
         await expect(composer).toHaveValue("");
       }
-      expect(messageSends).toBe(1);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            (projectId) => sessionStorage.getItem(`superversev2.local-project-intent.v1:${projectId}`),
+            createdProject,
+          ),
+        )
+        .toBeNull();
+      expect(messageKeys.size).toBe(1);
+      expect(messageSends).toBeGreaterThanOrEqual(1);
+      expect(messageSends).toBeLessThanOrEqual(loseResponse || reload ? 2 : 1);
       expect(modelUpdates).toBe(0);
       await page.screenshot({ path: test.info().outputPath("local-project-connected.png") });
       const through = wireInteger(delivered.examinedThrough, "Remote delivery cursor");

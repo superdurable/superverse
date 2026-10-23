@@ -398,6 +398,39 @@ func userCommandRPC(isTransactional bool, loadChannels []dex.ChannelDef, locks .
 	return &dex.RPCOptions{Timeout: commandRPCTimeout, IsTransactional: isTransactional, LockAttributes: locks, LoadChannels: loadChannels}
 }
 
+// admittedMessage reads only canonical pending input and the bounded current window.
+// MessageWindowLock keeps consumption/archiving atomic with this lookup and publish;
+// SessionStatus serializes admissions and queue moves. Archived keys are not recognized.
+func admittedMessage(ctx dex.Context, id conversation.MessageID) bool {
+	if id == "" {
+		return false
+	}
+	for _, channel := range []dex.Channel[conversation.PendingUserMessage]{queuedUserMessagesChannel, steeredUserMessagesChannel} {
+		if _, found := findPendingUserMessage(comm.Must(channel.PendingMessages(ctx)), id); found {
+			return true
+		}
+	}
+	for _, answer := range comm.Must(answeredUserInputsChannel.PendingMessages(ctx)) {
+		if answer.Value.Message.MessageID == id {
+			return true
+		}
+	}
+	state := comm.Must(agentStateAttribute.Get(ctx))
+	for sequence := state.CurrentFirstSequence; sequence <= state.LastSequence; sequence++ {
+		if comm.Must(currentMessagesAttribute.Get(ctx, agentloop.SequenceKey(sequence))).Meta.MessageID == id {
+			return true
+		}
+	}
+	return false
+}
+
+// messageAdmissionRPC serializes recognition with queue consumption and history writes.
+func messageAdmissionRPC() *dex.RPCOptions {
+	options := userCommandRPC(true, []dex.ChannelDef{queuedUserMessagesChannel, steeredUserMessagesChannel, answeredUserInputsChannel}, inputLock, requirementsLock, dex.LockAttribute(messageWindowLockAttribute))
+	options.LoadAttributeMaps = messageMaps
+	return options
+}
+
 // loadDesigns adds the exact FlowDesigns instances of slots to options.
 func loadDesigns(options *dex.RPCOptions, slots ...flowdesign.Slot) *dex.RPCOptions {
 	for _, slot := range slots {

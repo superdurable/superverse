@@ -80,7 +80,9 @@ func beginSteeredTurn(ctx dex.Context, messages []conversation.PendingUserMessag
 	interruptPendingTools(ctx, comm.Must(agentStateAttribute.Get(ctx)).PendingToolIndex, agentloop.CancelledBySteering)
 	values := make([]conversation.UserMessage, 0, len(messages))
 	for _, message := range messages {
-		values = append(values, message.Value)
+		value := message.Value
+		value.MessageID = message.MessageID
+		values = append(values, value)
 	}
 	state, entries := agentloop.StartUserTurn(comm.Must(agentStateAttribute.Get(ctx)), values)
 	for index, message := range messages {
@@ -845,12 +847,16 @@ func currentParallelBatch(ctx dex.Context, batch agentloop.ToolBatchState) bool 
 // Agent shows it, and takes the message as the card's reply, which AwaitUser
 // consumes; remove that branch once no Session holds such a card.
 func sendMessage(ctx dex.Context, input conversation.PendingUserMessage) (*dex.RPCResult[messageAdmission], error) {
-	if !modelCredentialReady(ctx, comm.Must(sessionModelAttribute.Get(ctx)).Model) {
-		return &dex.RPCResult[messageAdmission]{Output: messageAdmission{CredentialMissing: true}}, nil
-	}
 	if !acceptsUserCommand(ctx) {
 		return &dex.RPCResult[messageAdmission]{}, nil
 	}
+	if admittedMessage(ctx, input.MessageID) {
+		return &dex.RPCResult[messageAdmission]{Output: messageAdmission{Accepted: true}}, nil
+	}
+	if !modelCredentialReady(ctx, comm.Must(sessionModelAttribute.Get(ctx)).Model) {
+		return &dex.RPCResult[messageAdmission]{Output: messageAdmission{CredentialMissing: true}}, nil
+	}
+	input.Value.MessageID = input.MessageID
 	switch attachments := len(input.Value.Attachments); {
 	case attachments > conversation.MaximumMessageAttachments, attachments == 0 && strings.TrimSpace(input.Value.Content) == "":
 		return &dex.RPCResult[messageAdmission]{}, nil

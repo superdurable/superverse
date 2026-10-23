@@ -205,10 +205,12 @@ type PendingUserMessage struct {
 
 // UserMessage is a queued or steered user request.
 type UserMessage struct {
-	Actor               *Actor  `json:"actor,omitempty"`
-	Via                 *string `json:"via,omitempty"`
-	Content             string  `json:"content"`
-	AnsweredInputCallID *CallID `json:"answered_input_call_id,omitempty"`
+	// MessageID preserves a SendMessage admission key through consumption.
+	MessageID           MessageID `json:"message_id,omitempty"`
+	Actor               *Actor    `json:"actor,omitempty"`
+	Via                 *string   `json:"via,omitempty"`
+	Content             string    `json:"content"`
+	AnsweredInputCallID *CallID   `json:"answered_input_call_id,omitempty"`
 	// Attachments are the files the message carries, at most
 	// MaximumMessageAttachments, by reference: their content stays in object
 	// storage and never enters Flow state.

@@ -592,3 +592,20 @@ existing behavior and previously revoked tokens are never restored. The real
 HTTP handoff scenario includes a Platform mock turn, same-ID resume, historical
 public reply, new-input boundary and stale-epoch refusal; idle admission covers
 minimum-build refusal, removal, explicit disconnect and another-connection takeover.
+
+### Message admission recognition window
+
+`SendMessage` recognizes a nonempty `PendingUserMessage.MessageID` in the pending
+QueuedUserMessages and SteeredUserMessages Channels, a pending legacy requirements-card
+reply in AnsweredUserInputs, or `EntryMeta.MessageID` in CurrentMessages. Consuming a
+queued or steered message copies its ID into the user entry; old entries without IDs
+remain readable. A duplicate returns accepted without publishing new input or replacing
+the original payload. Active Session and caller authorization still apply.
+
+Its transactional RPC loads those three Channels and the bounded CurrentMessages map,
+keyed by unpadded sequence such as `37`. It holds SessionStatus, MessageWindowLock,
+PendingUserInput and ConfirmedRequirements through lookup and publication. This serializes
+concurrent duplicate sends, queue moves, consumption and current-window archiving. It does
+not lock a model call or load ArchivedMessages. Recognition ends after deletion or after
+the message moves out of the current window (fewer than 20 entries); empty legacy IDs
+are not recognized. No new map, index or lifetime admission record is retained.

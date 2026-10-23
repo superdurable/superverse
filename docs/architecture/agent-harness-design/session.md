@@ -283,8 +283,10 @@ changes, preserving the frozen old segment. Tests prove the request shape, not m
   first of them replaces the request, the rest join it, so a compaction quotes each and shows the
   attachments of each again.
 - Notification entries delivered at a boundary precede the steering text in the log.
-- Commands are not deduplicated beyond message IDs: a retry after a lost response may apply twice,
-  so the caller reads the Snapshot to reconcile.
+- SendMessage recognizes a nonempty client key in pending input or CurrentMessages, and a
+  repeat returns the existing admission without replacing its content. The window ends when
+  the message is deleted, trimmed or retained only in ArchivedMessages. Other commands keep
+  their existing recovery rules; a different message key represents a new send.
 
 ### Questions
 
@@ -762,7 +764,7 @@ summary; the archive stops at `FirstRetainedSequence`.
 
 | Channel | Payload | Producer | Consumer and admission |
 |---|---|---|---|
-| `QueuedUserMessages` | `PendingUserMessage` | `SendMessage`, and `InitializeSessionAgent` once for the first message the Session started with | `AwaitUser`, FIFO. The client message ID is stable across the client's own retries; the Flow does not deduplicate a repeated send; the first message is admitted once because the start Step runs once |
+| `QueuedUserMessages` | `PendingUserMessage` | `SendMessage`, and `InitializeSessionAgent` once for the first message the Session started with | `AwaitUser`, FIFO. The nonempty client message ID recognizes a repeat while queued, steered, pending as a legacy card reply or in CurrentMessages; SessionStatus and MessageWindowLock serialize lookup, publication and consumption. Consumption preserves the key in EntryMeta.MessageID. Archive-only or deleted keys are outside the window; the first start message is admitted once by the start Step |
 | `SteeredUserMessages` | `PendingUserMessage` | `SteerMessage` | Safe boundaries, ahead of the ordinary queue; the ID is preserved |
 | `AnsweredUserInputs` | `AnsweredUserInput` | `AnswerQuestions`; `SendMessage` for an old waiting card | `AwaitUser`; admitted only for the exact pending CallID and every question ID, or as the one reply to an old card, in the commit that deletes it, so a pending input has at most one answer |
 | `SessionNotifications` | `conversation.SessionNotification` (at most 4 KiB; a subagent report at most 24 KiB; fields `{ID, Kind task, delivery or connector, Source, OccurredAt}` and the kind's content) | `ReportSessionNotification` (internal; subagents, delivery sources and connector contributions, through the Service only) and this Flow's `AwaitBackgroundCommand` | `CheckSteered` (at most 16 per boundary, before steering text) and `AwaitUser` (last, `AtLeastAtMost(1, 16)`, never during a question) |
