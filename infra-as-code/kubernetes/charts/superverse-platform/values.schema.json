@@ -2,6 +2,25 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "gateway": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "additionalListeners": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "hostname"],
+            "properties": {
+              "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+              "hostname": {"type": "string", "pattern": "^\\*\\.[a-z0-9.-]+$"}
+            }
+          }
+        }
+      }
+    },
     "sandboxProfiles": {
       "type": "object",
       "additionalProperties": false,

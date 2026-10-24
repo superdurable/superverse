@@ -80,6 +80,15 @@ spec:
           selector:
             matchLabels: {app.kubernetes.io/managed-by: {{ include "v2.product" $ }}}
             matchExpressions: [{key: superdurable.io/project-id, operator: Exists}]
+    {{- range .Values.gateway.additionalListeners }}
+    - name: {{ .name }}
+      protocol: HTTP
+      port: 80
+      hostname: {{ .hostname | quote }}
+      allowedRoutes:
+        kinds: [{group: gateway.networking.k8s.io, kind: HTTPRoute}]
+        namespaces: {from: Same}
+    {{- end }}
 {{- if not .Values.localKind }}
 ---
 # The Envoy Gateway controller is the cluster's only reader of every Secret (its chart's ClusterRole), so its

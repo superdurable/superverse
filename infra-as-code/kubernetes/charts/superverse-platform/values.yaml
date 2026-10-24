@@ -95,12 +95,17 @@ sandboxProfiles:
 nodePools:
   clusterName: ""
   nodeRoleName: ""
+  prefixDelegationEnabled: false
   gvisorRelease: ""
   gvisorSHA256: ""
   # vCPU ceilings per Karpenter pool (not spend). Terraform sets them per environment (node_pool_limits).
   # A coding Sandbox requests 100m / 256Mi; daemonsets, Pod slots and memory also bound density.
   # A pool CPU ceiling is a capacity ceiling, not a Session count or a spending limit.
   limits: {platform: 32, runsc: 160, live: 64}
+
+gateway:
+  # Hosted consumers may attach a listener in the existing Gateway namespace.
+  additionalListeners: []
 
 hostedProjects:
   dexImage: ""

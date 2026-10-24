@@ -55,6 +55,11 @@ blockDeviceMappings:
       volumeType: gp3
       encrypted: true
       deleteOnTermination: true
+{{- if .Values.nodePools.prefixDelegationEnabled }}
+kubelet:
+  # Matches the separately approved VPC CNI prefix-delegation rollout.
+  maxPods: 110
+{{- end }}
 {{- end -}}
 
 {{- if not .Values.localKind }}
