@@ -66,6 +66,7 @@ EXTERNAL = {
     "go.temporal.io/api": ("api", "Temporal WorkflowService API"),
     "golang.org/x/crypto": ("library", "Argon2id"),
     "golang.org/x/mod": ("library", "semantic versions"),
+    "golang.org/x/net": ("library", "HTTP/2 and h2c transport"),
     "golang.org/x/sync": ("library", "errgroup"),
     "google.golang.org/genproto/googleapis/rpc": ("library", "gRPC error details"),
     "google.golang.org/grpc": ("library", "gRPC"),
