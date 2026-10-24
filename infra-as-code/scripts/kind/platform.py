@@ -17,6 +17,7 @@ import secrets
 import socket
 import subprocess
 import time
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -43,6 +44,31 @@ from private_files import retained_secret, write_private
 
 CHART_VALUES = STATE / "helm-values.json"
 DEPENDENCY_CREDENTIALS = STATE / "dependencies.json"
+
+
+def require_login_loopback_hosts(document):
+    """The browser's two canonical Kind names must resolve only to loopback."""
+    origins = [document.get("studio", {}).get("publicOrigin", "")]
+    login = document.get("accounts", {}).get("loginHost", {})
+    if login.get("handoffEnabled") or login.get("exchangeEnabled"):
+        origins.append(login.get("publicOrigin", ""))
+    for origin in origins:
+        host = urlsplit(origin).hostname
+        try:
+            addresses = {answer[4][0] for answer in socket.getaddrinfo(host, None)}
+        except OSError:
+            addresses = set()
+        require(addresses and all(address.startswith("127.") or address == "::1" for address in addresses),
+                f"{host} must resolve to loopback; add it to the local hosts file before starting Kind")
+
+
+def login_auth_secrets():
+    """Retain distinct private local credentials across Kind redeploys and replicas."""
+    def key(name):
+        return retained_secret(STATE / ("login-" + name + "-key"),
+                               lambda: base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("="))
+    return {"issuer": {"current": key("issuer")}, "clients": {"studio": {"current": key("studio-client")}},
+            "browser": {"login": {"current": key("browser-login")}, "product": {"current": key("browser-product")}}}
 
 
 def up(_args):
@@ -127,6 +153,7 @@ def deploy(args):
                 "Build the current " + name + " component before deployment")
     document, config_record = server_config.load_profile(args.config)
     server_config.require_kind_profile(document)
+    require_login_loopback_hosts(document)
     mock = bool(document.get("agent", {}).get("mockModel"))
     repohost = git_host.repository_host(document)
     credentials = json.loads(DEPENDENCY_CREDENTIALS.read_text())
@@ -150,6 +177,11 @@ def deploy(args):
     client_secrets = project_env_value("SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS")
     if client_secrets:
         server["SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS"] = client_secrets
+    login = document.get("accounts", {}).get("loginHost", {})
+    if login.get("handoffEnabled") or login.get("exchangeEnabled"):
+        auth = login_auth_secrets()
+        server["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
+        server["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
     require_server_secrets(server, repohost)
     chart_values = local_chart_values(value)
     profile_name = rendered_profile_name(chart_values)
@@ -166,6 +198,10 @@ def deploy(args):
     account_key = base64.b64decode(server["SUPERVERSE_COOKIE_SIGNING_KEY"], validate=True)
     require(len(account_key) >= 32, "Account session signing requires the accepted server key")
     studio["BROWSER_SIGNING_KEY"] = browser_signing_key(account_key, studio.get("BROWSER_SIGNING_KEY"))
+    if login.get("handoffEnabled") or login.get("exchangeEnabled"):
+        studio["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
+        studio["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
+        studio["SUPERVERSE_LOGIN_BROWSER_KEYS"] = json.dumps(auth["browser"])
     apply({"apiVersion": "v1", "kind": "Secret", "metadata": object_meta("superverse-v2-server"), "stringData": server},
           {"apiVersion": "v1", "kind": "Secret", "metadata": object_meta("superverse-v2-studio"), "stringData": studio})
     prune_secret("superverse-v2-server", server)

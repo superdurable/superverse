@@ -49,7 +49,15 @@ const COPY = {
 } as const;
 
 /** Signs in or registers through /api/auth, which sets the login cookie, then opens Studio. */
-export function AccountForm({ mode }: { mode: Mode }) {
+export function AccountForm({
+  mode,
+  loginHost = false,
+  csrfToken,
+}: {
+  mode: Mode;
+  loginHost?: boolean;
+  csrfToken?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,10 +69,14 @@ export function AccountForm({ mode }: { mode: Mode }) {
     setBusy(true);
     setError("");
     const data = new FormData(event.currentTarget);
-    const credentials = { email: String(data.get("email") ?? ""), password: String(data.get("password") ?? "") };
+    const credentials = {
+      email: String(data.get("email") ?? ""),
+      password: String(data.get("password") ?? ""),
+      ...(loginHost ? { csrfToken } : {}),
+    };
     try {
       await (mode === "login" ? login : registerAccount)(credentials);
-      router.replace(studioRoutes.home);
+      if (!loginHost) router.replace(studioRoutes.home);
       router.refresh();
     } catch (reason) {
       setError(errorMessage(reason, copy.failure));

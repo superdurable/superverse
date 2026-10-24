@@ -10,6 +10,8 @@ import type { CallerContext__Output } from "@/lib/generated/protobuf/superverse/
 import type { AccountLogin__Output } from "@/lib/generated/protobuf/superverse/v2/AccountLogin";
 import { isRecord } from "@/lib/shared/json";
 import { httpError } from "./request-body";
+import { authConfig } from "./auth-config";
+import { publicOrigin } from "./request-origin";
 
 /**
  * The login cookie carries the Go-issued identity fields as a base64url JSON
@@ -17,7 +19,8 @@ import { httpError } from "./request-body";
  * call; this module only shapes and bounds the envelope.
  */
 export type Caller = CallerContext__Output;
-const SESSION_COOKIE = "sv2_session";
+type Surface = "studio" | "login";
+const LEGACY_SESSION_COOKIE = "sv2_session";
 const ENVELOPE_PREFIX = "sv2.";
 const MAX_ENVELOPE_LENGTH = 4096;
 
@@ -62,31 +65,45 @@ export function callerFromEnvelope(envelope: string | undefined): Caller | null 
 }
 
 /** The one session cookie value; a missing, repeated or malformed cookie reads as ''. */
-function parseSessionCookie(cookieHeader: string): string {
+function cookieName(surface: Surface): string {
+  const config = authConfig();
+  if (!config.handoffEnabled && !config.exchangeEnabled) return LEGACY_SESSION_COOKIE;
+  const secure = (surface === "login" ? config.loginOrigin : config.productOrigin).startsWith("https:");
+  return `${secure ? "__Host-" : ""}sv2_${surface === "login" ? "login" : "session"}`;
+}
+
+function parseSessionCookie(cookieHeader: string, surface: Surface): string {
+  const name = cookieName(surface);
   const values = cookieHeader
     .split(";")
     .map((value) => value.trim())
-    .filter((value) => value.startsWith(`${SESSION_COOKIE}=`));
+    .filter((value) => value.startsWith(`${name}=`));
   if (values.length !== 1) return "";
-  const token = values[0].slice(SESSION_COOKIE.length + 1);
+  const token = values[0].slice(name.length + 1);
   return /^[A-Za-z0-9._~-]{16,4096}$/.test(token) ? token : "";
 }
 
 /** The caller a Cookie header signs in, or null when it carries no valid login. */
-export function callerFromCookieHeader(cookieHeader: string | null): Caller | null {
-  return callerFromEnvelope(parseSessionCookie(cookieHeader ?? ""));
+export function callerFromCookieHeader(cookieHeader: string | null, surface: Surface = "studio"): Caller | null {
+  return callerFromEnvelope(parseSessionCookie(cookieHeader ?? "", surface));
 }
 
-export function callerFromRequest(request: Request): Caller {
-  const caller = callerFromCookieHeader(request.headers.get("cookie"));
+export function callerFromRequest(request: Request, surface?: Surface): Caller {
+  const selected = surface ?? (publicOrigin(request) === authConfig().loginOrigin ? "login" : "studio");
+  const caller = callerFromCookieHeader(request.headers.get("cookie"), selected);
   if (!caller) throw httpError(401, "Sign in to continue");
   return caller;
 }
 
-export function sessionCookie(envelope: string, secure: boolean, expires: string | null): string {
-  return `${SESSION_COOKIE}=${envelope}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}${expires ? `; Expires=${new Date(expires).toUTCString()}` : ""}`;
+export function sessionCookie(
+  envelope: string,
+  secure: boolean,
+  expires: string | null,
+  surface: Surface = "studio",
+): string {
+  return `${cookieName(surface)}=${envelope}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}${expires ? `; Expires=${new Date(expires).toUTCString()}` : ""}`;
 }
 
-export function clearedSessionCookie(secure: boolean): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`;
+export function clearedSessionCookie(secure: boolean, surface: Surface = "studio"): string {
+  return `${cookieName(surface)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`;
 }

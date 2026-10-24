@@ -1,7 +1,24 @@
 {{/* Every chart input check; templates/validate.yaml runs it once on every render. */}}
 {{- define "v2.validate" -}}
-{{- range $key := list "BROWSER_SIGNING_KEY" "SUPERVERSE_COOKIE_SIGNING_KEY" -}}
+{{- range $key := list "BROWSER_SIGNING_KEY" "SUPERVERSE_COOKIE_SIGNING_KEY" "SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING" "SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS" "SUPERVERSE_LOGIN_BROWSER_KEYS" "SUPERVERSE_STUDIO_AUTH_CONFIG" -}}
 {{- if hasKey $.Values.studio.config $key }}{{ fail "Signing keys belong in the component's private Secret" }}{{ end -}}
+{{- end -}}
+{{- $login := dig "accounts" "loginHost" (dict) .Values.server.config -}}
+{{- $loginEnabled := or ($login.handoffEnabled | default false) ($login.exchangeEnabled | default false) -}}
+{{- if $loginEnabled -}}
+{{- if not .Values.studio.enabled }}{{ fail "shared login requires Studio" }}{{ end -}}
+{{- $productOrigin := dig "studio" "publicOrigin" "" .Values.server.config -}}
+{{- $loginOrigin := $login.publicOrigin | default "" -}}
+{{- if eq $productOrigin $loginOrigin }}{{ fail "shared login and Studio must use distinct origins" }}{{ end -}}
+{{- if ne ($login.clients.studio.origin | default "") $productOrigin }}{{ fail "shared login Studio client origin must match Studio" }}{{ end -}}
+{{- if ne ($login.clients.studio.redirectURI | default "") (printf "%s/api/auth/callback" $productOrigin) }}{{ fail "shared login Studio callback must be exact" }}{{ end -}}
+{{- if not .Values.localKind -}}
+{{- $host := .Values.loginHost.hostname -}}
+{{- if or (gt (len $host) 253) (not (regexMatch "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$" $host)) }}{{ fail "hosted login requires an exact DNS hostname" }}{{ end -}}
+{{- if eq $host (include "v2.studioHostname" .) }}{{ fail "login hostname must differ from Studio" }}{{ end -}}
+{{- if ne $loginOrigin (printf "https://%s" $host) }}{{ fail "hosted login origin must match loginHost.hostname" }}{{ end -}}
+{{- required "hosted login TLS certificate is required" .Values.loginHost.certificateArn | trunc 0 -}}
+{{- end -}}
 {{- end -}}
 {{- range $key, $_ := .Values.server.config -}}
 {{- if regexMatch "^[A-Z][A-Z0-9_]*$" $key }}{{ fail "server.config is the server configuration document: an environment variable name is not a setting, and secrets belong in the private Secret" }}{{ end -}}

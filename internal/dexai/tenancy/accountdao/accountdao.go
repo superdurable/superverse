@@ -40,8 +40,8 @@ type Account struct {
 // LoginSession is one login_sessions row; the token is stored only as its
 // SHA-256.
 type LoginSession struct {
-	SessionID, AccountID, TokenHash string
-	IssuedAt, ExpiresAt             time.Time
+	SessionID, AccountID, TokenHash, Audience string
+	IssuedAt, ExpiresAt                       time.Time
 }
 
 // AccountDAO reads and writes the accounts and login_sessions tables.
@@ -113,11 +113,12 @@ func (d *AccountDAO) CreateLoginSession(ctx context.Context, s LoginSession, cre
 		if _, err = tx.ExecContext(ctx, `DELETE FROM login_sessions WHERE account_id = $1 AND expires_at <= now()`, s.AccountID); err != nil {
 			return fmt.Errorf("delete expired logins: %w", err)
 		}
-		result, err := tx.ExecContext(ctx, `INSERT INTO login_sessions (session_id, account_id, token_hash, auth_epoch, issued_at, expires_at)
-			VALUES ($1, $2, $3, $4, $5, $6)
+		result, err := tx.ExecContext(ctx, `INSERT INTO login_sessions (session_id, account_id, token_hash, auth_epoch, issued_at, expires_at, audience)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (session_id) DO UPDATE SET session_id = EXCLUDED.session_id
-			WHERE login_sessions.account_id = EXCLUDED.account_id AND login_sessions.token_hash = EXCLUDED.token_hash`,
-			s.SessionID, s.AccountID, s.TokenHash, a.AuthEpoch, s.IssuedAt, s.ExpiresAt)
+			WHERE login_sessions.account_id = EXCLUDED.account_id AND login_sessions.token_hash = EXCLUDED.token_hash
+				AND login_sessions.audience = EXCLUDED.audience`,
+			s.SessionID, s.AccountID, s.TokenHash, a.AuthEpoch, s.IssuedAt, s.ExpiresAt, s.Audience)
 		if err != nil {
 			return fmt.Errorf("insert the login: %w", err)
 		}
@@ -135,12 +136,13 @@ func (d *AccountDAO) CreateLoginSession(ctx context.Context, s LoginSession, cre
 
 // AuthenticatedAccount returns the account of an unexpired login whose token
 // hash and authentication epoch match an ACTIVE account.
-func (d *AccountDAO) AuthenticatedAccount(ctx context.Context, sessionID, tokenHash string) (Account, error) {
+func (d *AccountDAO) AuthenticatedAccount(ctx context.Context, sessionID, tokenHash, audience string) (Account, error) {
 	a, err := scanAccount(d.db.QueryRowContext(ctx, `SELECT a.account_id, a.canonical_email, a.status, a.password_record,
 		a.credential_revision, a.auth_epoch, a.registration_fingerprint, a.created_at, a.updated_at
 		FROM login_sessions s JOIN accounts a ON a.account_id = s.account_id
-		WHERE s.session_id = $1 AND s.token_hash = $2 AND s.expires_at > now() AND s.auth_epoch = a.auth_epoch AND a.status = $3`,
-		sessionID, tokenHash, StatusActive))
+		WHERE s.session_id = $1 AND s.token_hash = $2 AND s.audience = $3
+			AND s.expires_at > now() AND s.auth_epoch = a.auth_epoch AND a.status = $4`,
+		sessionID, tokenHash, audience, StatusActive))
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return Account{}, fmt.Errorf("authenticate the login: %w", err)
 	}

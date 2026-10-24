@@ -10,16 +10,100 @@ package bootstrap
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	serverconfig "github.com/superdurable/superversev2/cmd/superverse-server/config"
 	"github.com/superdurable/superversev2/internal/comm/platform/postgres"
+	"github.com/superdurable/superversev2/internal/dexai/tenancy/accounts"
 	"github.com/superdurable/superversev2/internal/dexai/tenancy/connections"
 )
+
+type loginSecretRing struct {
+	Current            string `json:"current"`
+	Previous           string `json:"previous"`
+	PreviousValidUntil string `json:"previous_valid_until"`
+}
+
+func loginHostSecrets(settings serverconfig.LoginHostConfig) (*accounts.LoginHost, error) {
+	if !settings.HandoffEnabled && !settings.ExchangeEnabled {
+		return nil, nil
+	}
+	var issuer loginSecretRing
+	if err := json.Unmarshal([]byte(os.Getenv("SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING")), &issuer); err != nil {
+		return nil, errors.New("invalid login issuer secret ring")
+	}
+	issuerKeys, err := decodeLoginSecretRing(issuer)
+	if err != nil {
+		return nil, err
+	}
+	var configured map[string]loginSecretRing
+	if err := json.Unmarshal([]byte(os.Getenv("SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS")), &configured); err != nil {
+		return nil, errors.New("invalid login client secret rings")
+	}
+	products := make([]accounts.LoginProduct, 0, len(settings.Clients))
+	for id, client := range settings.Clients {
+		if !client.Enabled {
+			continue
+		}
+		ring, exists := configured[id]
+		if !exists {
+			return nil, errors.New("an enabled login client has no secret ring")
+		}
+		keys, err := decodeLoginSecretRing(ring)
+		if err != nil {
+			return nil, err
+		}
+		var audience accounts.ProductAudience
+		switch id {
+		case "studio":
+			audience = accounts.ProductAudienceStudio
+		case "engine":
+			audience = accounts.ProductAudienceEngine
+		default:
+			return nil, errors.New("an enabled login client has an unknown audience")
+		}
+		products = append(products, accounts.LoginProduct{ID: id, Origin: client.Origin,
+			RedirectURI: client.RedirectURI, Audience: audience, Secrets: keys})
+		delete(configured, id)
+	}
+	if len(configured) != 0 {
+		return nil, errors.New("a login client secret has no enabled client")
+	}
+	return accounts.NewLoginHost(issuerKeys, products, settings.HandoffEnabled, settings.ExchangeEnabled,
+		settings.IssuePerMinute, settings.IssueBurst, settings.ExchangePerMinute, settings.ExchangeBurst), nil
+}
+
+func decodeLoginSecretRing(value loginSecretRing) (accounts.SecretRing, error) {
+	decode := func(raw string) ([]byte, error) {
+		bytes, err := base64.RawURLEncoding.DecodeString(raw)
+		if err != nil || len(bytes) != 32 || base64.RawURLEncoding.EncodeToString(bytes) != raw {
+			return nil, errors.New("invalid login secret ring key")
+		}
+		return bytes, nil
+	}
+	current, err := decode(value.Current)
+	if err != nil {
+		return accounts.SecretRing{}, err
+	}
+	if value.Previous == "" && value.PreviousValidUntil == "" {
+		return accounts.SecretRing{Current: current}, nil
+	}
+	previous, err := decode(value.Previous)
+	if err != nil {
+		return accounts.SecretRing{}, err
+	}
+	until, err := time.Parse(time.RFC3339, value.PreviousValidUntil)
+	if err != nil || !until.After(time.Now()) || until.After(time.Now().Add(24*time.Hour)) {
+		return accounts.SecretRing{}, errors.New("invalid login secret overlap expiry")
+	}
+	return accounts.SecretRing{Current: current, Previous: previous, PreviousValidUntil: until}, nil
+}
 
 // The secrets of the server are the only settings it reads from its
 // environment; every other setting is in cmd/superverse-server/config. The

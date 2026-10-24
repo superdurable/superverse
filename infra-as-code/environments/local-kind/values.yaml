@@ -16,7 +16,7 @@ studio:
   # Two Studio Pods keep the lane on the multi-replica path that hosted environments may run.
   replicas: 2
   config:
-    SUPERVERSE_STUDIO_PUBLIC_ORIGIN: "http://localhost:23000"
+    SUPERVERSE_STUDIO_PUBLIC_ORIGIN: "http://studio.kind.localhost:23000"
 dex:
   temporalAddress: temporal:7233
 localDependencies:

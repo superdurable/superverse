@@ -24,6 +24,8 @@ passwords come from the lane (`dexflowtest.LanePostgres`): Local Kind's
 forward on 127.0.0.1:28432 and its `postgres-credentials.json`, or the
 effective Native instance's run layer and its own credentials file. A lane
 without PostgreSQL fails the test.
+`ScratchServerDatabaseForTest` opens a migrated scratch database with the
+restricted server role, so integration tests exercise migration grants.
 
 `MigratedScratchDatabaseForTest` is a scratch database with every embedded
 migration applied; the migrations grant to the lane's roles, which the lane

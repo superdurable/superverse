@@ -166,8 +166,9 @@ function isThemeBootstrapScript(member, node, syntax) {
   const attributes = node.attributes.properties;
   return (
     member === "app/layout.tsx" &&
-    attributes.length === 1 &&
-    attributes[0].getText(syntax) === "dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }}"
+    attributes.length === 2 &&
+    attributes[0].getText(syntax) === "nonce={nonce}" &&
+    attributes[1].getText(syntax) === "dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }}"
   );
 }
 

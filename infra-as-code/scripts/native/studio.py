@@ -12,10 +12,11 @@
 current source and serves its standalone output from a private copy in the run directory; only it admits acceptance.
 """
 import shutil
+import json
 
 import build_inputs
 from commands import run
-from native.lane import browser_signing_key
+from native.lane import browser_signing_key, login_auth_secrets
 from operator_errors import require
 from paths import ROOT
 
@@ -29,7 +30,7 @@ def source_fingerprint():
     return build_inputs.fingerprint(build_inputs.component_inputs("studio"))
 
 
-def prepare_studio(record, directory, mode, host_environment, topology):
+def prepare_studio(record, directory, mode, host_environment, topology, document):
     """Record Studio's source identity and build it in `build` mode, with the browser source maps that let an E2E run
     record the Studio files each spec executes; return its (argv, cwd, environment)."""
     require(mode in MODES, "Native Studio mode must be dev or build")
@@ -39,6 +40,17 @@ def prepare_studio(record, directory, mode, host_environment, topology):
     record["studio"] = {"mode": mode, "sourceFingerprint": source_fingerprint(), "address": topology.studio_origin}
     environment = dict(host_environment, BROWSER_SIGNING_KEY=browser_signing_key(topology.instance), SUPERVERSE_STUDIO_PUBLIC_ORIGIN=topology.studio_origin,
                        NEXT_TELEMETRY_DISABLED="1", SUPERVERSE_GRPC_ADDRESS=f"{HOST}:{topology.ports['grpc']}")
+    login = document.get("accounts", {}).get("loginHost", {})
+    environment["SUPERVERSE_STUDIO_AUTH_CONFIG"] = json.dumps({
+        "productOrigin": topology.studio_origin, "loginOrigin": login.get("publicOrigin", ""),
+        "handoffEnabled": bool(login.get("handoffEnabled")), "exchangeEnabled": bool(login.get("exchangeEnabled")),
+        "exchangeURL": f"http://{HOST}:{port}", "studioClientID": "studio",
+    })
+    if login.get("handoffEnabled") or login.get("exchangeEnabled"):
+        auth = login_auth_secrets(topology.instance)
+        environment["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
+        environment["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
+        environment["SUPERVERSE_LOGIN_BROWSER_KEYS"] = json.dumps(auth["browser"])
     if mode == "dev":
         return [next_binary, "dev", "--hostname", HOST, "--port", str(port)], STUDIO_SOURCE, environment
     run(["npm", "--prefix", STUDIO_SOURCE, "run", "build"], env=dict(host_environment, NODE_ENV="production", NEXT_TELEMETRY_DISABLED="1",

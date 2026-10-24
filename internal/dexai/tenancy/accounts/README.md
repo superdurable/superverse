@@ -1,7 +1,7 @@
 # Accounts and login authority
 
 <!-- BEGIN GENERATED PACKAGE SUMMARY (scripts/check-package-readmes.py; edit only Purpose) -->
-Purpose: Registers, logs in, logs out and authenticates accounts, which the database owns, with Argon2id password records and HMAC-signed login tokens.
+Purpose: Registers and authenticates accounts, signs audience-bound sessions, and issues one-use shared-login grants through the SQL account authority.
 
 Callers: `internal/dexai/agents`, `internal/dexai/agents/remoteagent`, `internal/dexai/api`, `internal/dexai/api/attachments`, `internal/dexai/api/boundary`, `internal/dexai/api/tenancy` and `internal/dexai/bootstrap` import this package.
 
@@ -33,6 +33,7 @@ their only record; `internal/dexai/tenancy/accountdao` runs every query.
 | `account_identity.go` | Canonical email and the `account-<canonicalEmail>` name a token signs |
 | `password.go` | Argon2id password record |
 | `login_token.go` | HMAC-signed login token and its hash |
+| `authorization_code.go` | Registered login clients, bounded per-replica admission, S256 grants and product-session exchange |
 
 ## Dex Flow Changes
 
@@ -58,13 +59,24 @@ canonical email to a token whose signature, expiry and `account-` name check
 first, then reads the exact login joined with its account. Every request
 authenticates this way; there is no cache.
 
+**Shared login.** A trusted login BFF creates `login`-audience sessions;
+normal product authentication accepts only `studio` sessions. A login session
+may issue a 60-second authorization code for an exact registered product
+origin and callback. The client server exchanges it once with its own secret
+and S256 verifier; SQL creates the new `studio` session atomically with code
+consumption. A process-local issue bucket (60/minute, burst 5), exchange bucket
+(120/minute, burst 10) and shared 32-operation semaphore bound new work per
+replica. The SQL grant and session are authoritative across replicas.
+
 **Administrator.** Every ACTIVE account whose canonical email is in `accounts.platformAdminEmails` is a platform
 administrator (`IsAdministrator`, and `accountdao.AccountDAO.IsPlatformAdmin`
 for Project access). Each manages every Project without owning it.
 
 ## Database Schema Changes
 
-`accounts` and `login_sessions` of migration `0001_accounts`
+`accounts` and `login_sessions` of migration `0001_accounts`, plus the additive
+audience column and `login_authorization_codes` of migration
+`0010_login_authorization_codes`
 (`internal/comm/platform/postgres/migrations`), owned by this package through
 `accountdao`.
 

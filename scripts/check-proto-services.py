@@ -59,6 +59,9 @@ ROUTES = {
 # string *_json fields instead; bytes fields and maps are refused as well.
 BROWSER_REQUEST_FORBIDDEN_TYPES = {"google.protobuf.Struct", "google.protobuf.Value", "google.protobuf.ListValue", "google.protobuf.Timestamp"}
 UNAUTHENTICATED_REQUESTS = {"RegisterAccountRequest", "LoginRequest"}
+# The exchange declares caller for schema consistency, but the account handler
+# rejects a supplied caller and authenticates the product service credential.
+CALLER_FORBIDDEN_AT_RUNTIME = {"ExchangeLoginAuthorizationCode": "ExchangeLoginAuthorizationCodeRequest"}
 # A browser never selects an upstream, a transport or an authority.
 FORBIDDEN_FIELDS = {
     "worker_address", "worker_url", "dex_address", "storage_url", "permissions", "http_method", "http_path",
@@ -187,6 +190,9 @@ def check_services(protocol):
                 protocol.reachable(method["outputType"].removeprefix(PACKAGE), reached)
                 if reached & {"FlowApiContext", "FlowApiDocument"}:
                     failures.append(f"{name}: only the Flow API services use FlowApiContext and FlowApiDocument")
+    for method, request in CALLER_FORBIDDEN_AT_RUNTIME.items():
+        if declared.get(method) != "AccountService" or request not in protocol.messages:
+            failures.append(f"{method}: the account bootstrap exception must name an AccountService request")
     return failures
 
 
@@ -317,7 +323,7 @@ def service_table(protocol):
         "",
         f"{len(protocol.services)} services, {rpc_count(protocol)} RPCs. A field is a string unless a type is given. "
         "Every request",
-        "except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.",
+        "except RegisterAccount and Login also declares `CallerContext caller 100`, which the table omits.",
         "",
         "| Service | RPCs | Reached through |",
         "| --- | --- | --- |",

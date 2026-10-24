@@ -86,6 +86,10 @@ const (
 	DefaultRunsDexConnections              = 128
 	DefaultLiveRetirementDrain             = 10 * time.Minute
 	DefaultBuildLogReadsPerSecond          = 2.0
+	DefaultLoginIssuePerMinute             = 60
+	DefaultLoginIssueBurst                 = 5
+	DefaultLoginExchangePerMinute          = 120
+	DefaultLoginExchangeBurst              = 10
 	MaxPlatformAdminEmails                 = 20
 	DefaultPlatformAdminEmail              = "admin@superverse.test"
 	DefaultAttachmentsPerMessage           = 10
@@ -183,7 +187,28 @@ type Config struct {
 
 // AccountsConfig selects the ordinary account with platform-wide authority.
 type AccountsConfig struct {
-	PlatformAdminEmails []string `yaml:"platformAdminEmails"`
+	PlatformAdminEmails []string        `yaml:"platformAdminEmails"`
+	LoginHost           LoginHostConfig `yaml:"loginHost"`
+}
+
+// LoginHostConfig is the non-secret, exact first-party handoff registry.
+// Its secrets come only from the server's private environment.
+type LoginHostConfig struct {
+	HandoffEnabled    bool                         `yaml:"handoffEnabled"`
+	ExchangeEnabled   bool                         `yaml:"exchangeEnabled"`
+	PublicOrigin      string                       `yaml:"publicOrigin"`
+	Clients           map[string]LoginClientConfig `yaml:"clients"`
+	IssuePerMinute    int                          `yaml:"issuePerMinute"`
+	IssueBurst        int                          `yaml:"issueBurst"`
+	ExchangePerMinute int                          `yaml:"exchangePerMinute"`
+	ExchangeBurst     int                          `yaml:"exchangeBurst"`
+}
+
+// LoginClientConfig binds one service credential identity to an exact origin.
+type LoginClientConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	Origin      string `yaml:"origin"`
+	RedirectURI string `yaml:"redirectURI"`
 }
 
 // RemoteAgentConfig is the dedicated Bridge listener and its approved bounds.
@@ -601,7 +626,9 @@ func Default() Config {
 		Environment:    deploymentnames.EnvironmentTest.String(),
 		Runtime:        DefaultRuntime,
 		RepositoryHost: repohost.ProviderGitHub.String(),
-		Accounts:       AccountsConfig{PlatformAdminEmails: []string{DefaultPlatformAdminEmail}},
+		Accounts: AccountsConfig{PlatformAdminEmails: []string{DefaultPlatformAdminEmail},
+			LoginHost: LoginHostConfig{IssuePerMinute: DefaultLoginIssuePerMinute, IssueBurst: DefaultLoginIssueBurst,
+				ExchangePerMinute: DefaultLoginExchangePerMinute, ExchangeBurst: DefaultLoginExchangeBurst}},
 		Server: ServerConfig{
 			GRPCAddress: DefaultGRPCAddress, HealthAddress: DefaultHealthAddress, BlobCacheDir: DefaultBlobCacheDir,
 			ProjectIDLength: DefaultProjectIDLength,

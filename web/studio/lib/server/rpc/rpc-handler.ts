@@ -11,7 +11,7 @@ import { callerFromRequest } from "@/lib/server/caller-envelope";
 import { eventStream } from "@/lib/server/event-stream";
 import { errorResponse, rpcErrorInfo, rpcMethods, type RpcBackend, type RpcMethod } from "@/lib/server/grpc-client";
 import { httpError, readJSONObject } from "@/lib/server/request-body";
-import { assertSameOrigin } from "@/lib/server/request-origin";
+import { assertSameOrigin, requireSurface } from "@/lib/server/request-origin";
 import {
   connectionRefusalInfo,
   deploymentRefusalInfo,
@@ -161,6 +161,7 @@ export async function handleRpcRequest(request: Request, method: string, backend
   let rpc: BrowserRpc | undefined;
   let dispatched = false;
   try {
+    requireSurface(request, "studio");
     rpc = METHOD_NAME.test(method) ? loadedBrowserProtocol().rpcs.get(method) : undefined;
     if (!rpc) throw httpError(404, "Unknown business RPC");
     if (request.method !== (rpc.watch ? "GET" : "POST")) throw httpError(405, "Method not allowed");

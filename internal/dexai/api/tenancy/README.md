@@ -5,7 +5,7 @@ Purpose: Serves AccountService, TeamSpaceService and TeamSpaceMemberService: acc
 
 Callers: `internal/dexai/api` and `internal/dexai/bootstrap` import this package.
 
-Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/postgres`, `internal/dexai/api/boundary`, `internal/dexai/projects`, `internal/dexai/projects/infra`, `internal/dexai/studio/confighost/connectormanifest`, `internal/dexai/tenancy/accounts`, `internal/dexai/tenancy/connectiondao`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/memberdao`, `internal/dexai/tenancy/slackrelay`, `internal/dexai/tenancy/teamspacedao` and `internal/dexai/tenancy/teamspaces`.
+Dependencies: it imports `gen/superverse/v2`, `internal/comm`, `internal/comm/dexflow`, `internal/comm/flowid`, `internal/comm/platform/postgres`, `internal/dexai/api/boundary`, `internal/dexai/projects`, `internal/dexai/projects/infra`, `internal/dexai/studio/confighost/connectormanifest`, `internal/dexai/tenancy/accountdao`, `internal/dexai/tenancy/accounts`, `internal/dexai/tenancy/connectiondao`, `internal/dexai/tenancy/connections`, `internal/dexai/tenancy/memberdao`, `internal/dexai/tenancy/slackrelay`, `internal/dexai/tenancy/teamspacedao` and `internal/dexai/tenancy/teamspaces`.
 
 ```mermaid
 flowchart LR
@@ -21,13 +21,14 @@ flowchart LR
   self --> d6["internal/dexai/projects"]
   self --> d7["internal/dexai/projects/infra"]
   self --> d8["internal/dexai/studio/confighost/connectormanifest"]
-  self --> d9["internal/dexai/tenancy/accounts"]
-  self --> d10["internal/dexai/tenancy/connectiondao"]
-  self --> d11["internal/dexai/tenancy/connections"]
-  self --> d12["internal/dexai/tenancy/memberdao"]
-  self --> d13["internal/dexai/tenancy/slackrelay"]
-  self --> d14["internal/dexai/tenancy/teamspacedao"]
-  self --> d15["internal/dexai/tenancy/teamspaces"]
+  self --> d9["internal/dexai/tenancy/accountdao"]
+  self --> d10["internal/dexai/tenancy/accounts"]
+  self --> d11["internal/dexai/tenancy/connectiondao"]
+  self --> d12["internal/dexai/tenancy/connections"]
+  self --> d13["internal/dexai/tenancy/memberdao"]
+  self --> d14["internal/dexai/tenancy/slackrelay"]
+  self --> d15["internal/dexai/tenancy/teamspacedao"]
+  self --> d16["internal/dexai/tenancy/teamspaces"]
 ```
 <!-- END GENERATED PACKAGE SUMMARY -->
 

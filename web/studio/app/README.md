@@ -5,7 +5,7 @@ Purpose: The Next.js routes: signed-in and sign-in pages, the BFF route handlers
 
 Importers: no production directory imports this directory.
 
-Imports: it imports `components/project`, `components/session/remoteagent`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `lib/account`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/server`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `lib/shared`, `lib/teamspace`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments` and `mock/surface` and calls the `AccountService` API.
+Imports: it imports `components/project`, `components/session/remoteagent`, `components/shell`, `components/teamspace`, `components/teamspace/connections`, `lib/account`, `lib/api`, `lib/browser`, `lib/generated/protobuf`, `lib/project`, `lib/server`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/login-host`, `lib/server/rpc`, `lib/shared`, `lib/teamspace`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments` and `mock/surface` and calls the `AccountService` API.
 
 ```mermaid
 flowchart LR
@@ -16,20 +16,22 @@ flowchart LR
   self --> d3["components/teamspace"]
   self --> d4["components/teamspace/connections"]
   self --> d5["lib/account"]
-  self --> d6["lib/browser"]
-  self --> d7["lib/generated/protobuf"]
-  self --> d8["lib/project"]
-  self --> d9["lib/server"]
-  self --> d10["lib/server/connector-oauth"]
-  self --> d11["lib/server/flow"]
-  self --> d12["lib/server/rpc"]
-  self --> d13["lib/shared"]
-  self --> d14["lib/teamspace"]
-  self --> d15["mock"]
-  self --> d16["mock/backend"]
-  self --> d17["mock/store"]
-  self --> d18["mock/store/attachments"]
-  self --> d19["mock/surface"]
+  self --> d6["lib/api"]
+  self --> d7["lib/browser"]
+  self --> d8["lib/generated/protobuf"]
+  self --> d9["lib/project"]
+  self --> d10["lib/server"]
+  self --> d11["lib/server/connector-oauth"]
+  self --> d12["lib/server/flow"]
+  self --> d13["lib/server/login-host"]
+  self --> d14["lib/server/rpc"]
+  self --> d15["lib/shared"]
+  self --> d16["lib/teamspace"]
+  self --> d17["mock"]
+  self --> d18["mock/backend"]
+  self --> d19["mock/store"]
+  self --> d20["mock/store/attachments"]
+  self --> d21["mock/surface"]
   self --> e0(["AccountService API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->

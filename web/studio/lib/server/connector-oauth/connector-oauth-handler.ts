@@ -10,7 +10,7 @@ import { callerFromRequest } from "@/lib/server/caller-envelope";
 import { errorResponse, rpcErrorInfo, type RpcBackend } from "@/lib/server/grpc-client";
 import { rejectTrustedBrowserHeaders } from "@/lib/server/flow/flow-api-security";
 import { httpError, readJSONObject } from "@/lib/server/request-body";
-import { assertSameOrigin, publicOrigin } from "@/lib/server/request-origin";
+import { assertSameOrigin, publicOrigin, requireSurface } from "@/lib/server/request-origin";
 import { decodeOwnRouteRequest } from "@/lib/server/rpc/rpc-handler";
 import { connectionRefusalInfo } from "@/lib/shared/problem/refusals";
 import { timestampToISO } from "@/lib/shared/protobuf";
@@ -33,6 +33,7 @@ const NO_STORE = { "cache-control": "no-store", "referrer-policy": "no-referrer"
  */
 export async function startConnectorOAuth(request: Request, backend: RpcBackend): Promise<Response> {
   try {
+    requireSurface(request, "studio");
     if (request.method !== "POST")
       return new Response(null, { status: 405, headers: { allow: "POST", "cache-control": "no-store" } });
     assertSameOrigin(request);
@@ -80,6 +81,7 @@ function returnTo(route: ConnectorOAuthRoute, outcome: Record<string, string>): 
 export async function completeConnectorOAuth(request: Request, backend: RpcBackend): Promise<Response> {
   let route: ConnectorOAuthRoute | undefined;
   try {
+    requireSurface(request, "studio");
     if (request.method !== "GET")
       return new Response(null, { status: 405, headers: { allow: "GET", "cache-control": "no-store" } });
     rejectTrustedBrowserHeaders(request);

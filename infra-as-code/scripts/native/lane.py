@@ -16,6 +16,7 @@ import base64
 import json
 import re
 import secrets
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -153,7 +154,17 @@ class Topology:
         document = config_files.read_layer(CONFIG)
         self.document = document
         self.ports = instance_ports(document, instance.index)
-        self.studio_origin = "http://localhost:" + str(self.ports["studio"])
+        label = "" if instance.name == DEFAULT_INSTANCE else instance.name + "."
+        self.studio_origin = f"http://studio.{label}native.localhost:{self.ports['studio']}"
+        self.login_origin = f"http://login.{label}native.localhost:{self.ports['studio']}"
+        for origin in (self.studio_origin, self.login_origin):
+            host = urlsplit(origin).hostname
+            try:
+                addresses = {answer[4][0] for answer in socket.getaddrinfo(host, None)}
+            except OSError:
+                addresses = set()
+            require(addresses and all(address.startswith("127.") or address == "::1" for address in addresses),
+                    f"{host} must resolve to loopback; add it to the local hosts file before starting Native")
         require(len(set(self.ports.values())) == len(self.ports), "The ports of the Native lane overlap")
         shared = sorted(set(self.ports.values()) & set(kind_host_ports().values()))
         require(not shared, f"The Native lane serves ports of the Kind lane {shared}; each lane needs ports of its own to run beside the other")
@@ -170,6 +181,9 @@ class Topology:
         git_target = f"host.docker.internal:{self.ports['git']}"
         return {
             "studio": {"publicOrigin": self.studio_origin},
+            "accounts": {"loginHost": {"publicOrigin": self.login_origin,
+                                       "clients": {"studio": {"enabled": True, "origin": self.studio_origin,
+                                                              "redirectURI": self.studio_origin + "/api/auth/callback"}}}},
             "remoteAgent": {"listen": f"127.0.0.1:{self.ports['remote_agent']}"},
             "server": {"grpcAddress": f"127.0.0.1:{self.ports['grpc']}", "healthAddress": f"127.0.0.1:{self.ports['health']}"},
             "dex": {"serverAddress": f"127.0.0.1:{self.ports['dex']}"},
@@ -224,6 +238,15 @@ def browser_signing_key(instance):
     require(re.fullmatch(r"[A-Za-z0-9_-]{43}", key) and base64.urlsafe_b64decode(key + "=") != base64.b64decode(cookie_signing_key(instance)),
             "Native Studio requires its own browser signing key")
     return key
+
+
+def login_auth_secrets(instance):
+    """Private, independent, retained login issuer/client and AES-GCM browser keys for one Native instance."""
+    def new_key(): return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("=")
+    return json.loads(retained_secret(instance.root / "login-auth-secrets.json", lambda: json.dumps({
+        "issuer": {"current": new_key()}, "clients": {"studio": {"current": new_key()}},
+        "browser": {"product": {"current": new_key()}, "login": {"current": new_key()}},
+    })))
 
 
 def build_token(instance):

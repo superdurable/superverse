@@ -1,37 +1,38 @@
 # BFF server
 
 <!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
-Purpose: The server-only BFF core: the gRPC client and its `RpcBackend` seam, the Server-Sent Events relay, `/api/auth`, the caller cookie, same-origin checks and bounded request bodies.
+Purpose: Provides BFF gRPC transport, account cookies, exact host and origin selection, event streaming, and bounded request decoding.
 
-Importers: `app`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/rpc`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/setup`, `mock/store/tenancy` and `mock/store/validation` import this directory.
+Importers: ``, `app`, `lib/server/connector-oauth`, `lib/server/flow`, `lib/server/login-host`, `lib/server/rpc`, `mock`, `mock/backend`, `mock/store`, `mock/store/attachments`, `mock/store/delivery`, `mock/store/setup`, `mock/store/tenancy` and `mock/store/validation` import this directory.
 
-Imports: it imports `lib/generated/protobuf` and `lib/shared` and calls the `AccountService` API.
+Imports: it imports `lib/generated/protobuf` and `lib/shared`.
 
 ```mermaid
 flowchart LR
   self["lib/server"]
-  c0["app"] --> self
-  c1["lib/server/connector-oauth"] --> self
-  c2["lib/server/flow"] --> self
-  c3["lib/server/rpc"] --> self
-  c4["mock"] --> self
-  c5["mock/backend"] --> self
-  c6["mock/store"] --> self
-  c7["mock/store/attachments"] --> self
-  c8["mock/store/delivery"] --> self
-  c9["mock/store/setup"] --> self
-  c10["mock/store/tenancy"] --> self
-  c11["mock/store/validation"] --> self
+  c0[""] --> self
+  c1["app"] --> self
+  c2["lib/server/connector-oauth"] --> self
+  c3["lib/server/flow"] --> self
+  c4["lib/server/login-host"] --> self
+  c5["lib/server/rpc"] --> self
+  c6["mock"] --> self
+  c7["mock/backend"] --> self
+  c8["mock/store"] --> self
+  c9["mock/store/attachments"] --> self
+  c10["mock/store/delivery"] --> self
+  c11["mock/store/setup"] --> self
+  c12["mock/store/tenancy"] --> self
+  c13["mock/store/validation"] --> self
   self --> d0["lib/generated/protobuf"]
   self --> d1["lib/shared"]
-  self --> e0(["AccountService API"])
 ```
 <!-- END GENERATED DIRECTORY SUMMARY -->
 
-`grpc-client.ts` loads the eleven business services once and holds the
+`grpc-client.ts` loads the business services once and holds the
 `RpcBackend` seam, `grpcBackend` (`callRpc` and its Watch counterpart) and the
 gRPC-to-HTTP error mapping. `event-stream.ts` is the one Server-Sent Events
-relay; `auth-handler.ts` serves `/api/auth`. The root never imports `rpc/` or
+relay; `login-host/auth-handler.ts` serves `/api/auth`. The root never imports `rpc/` or
 `flow/`, and nothing a `'use client'` module reaches may import this
 directory (`npm run check:modules`).
 

@@ -8,6 +8,7 @@
 
 // The mock AccountService: in-memory accounts and logins, reached only through /api/auth.
 import { mockAccount, mockLogout, mockSignIn } from "@/mock/store/accounts";
+import { httpError } from "@/lib/server/request-body";
 import type { MockService } from "./mock-backend";
 
 export const accountService: MockService<"AccountService"> = {
@@ -18,4 +19,10 @@ export const accountService: MockService<"AccountService"> = {
     return {};
   },
   GetCurrentAccount: ({ caller }) => ({ account: mockAccount(caller) }),
+  CreateLoginAuthorizationCode: () => {
+    throw httpError(503, "Login handoff is unavailable in Studio mock mode");
+  },
+  ExchangeLoginAuthorizationCode: () => {
+    throw httpError(503, "Login handoff is unavailable in Studio mock mode");
+  },
 };

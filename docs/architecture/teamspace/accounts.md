@@ -16,14 +16,27 @@ CREATE TABLE accounts (
 CREATE TABLE login_sessions (
   session_id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts (account_id),
   token_hash TEXT NOT NULL, auth_epoch BIGINT NOT NULL,
-  issued_at TIMESTAMPTZ NOT NULL, expires_at TIMESTAMPTZ NOT NULL);
+  issued_at TIMESTAMPTZ NOT NULL, expires_at TIMESTAMPTZ NOT NULL,
+  audience TEXT NOT NULL DEFAULT 'studio' CHECK (audience IN ('login', 'studio', 'engine')));
 CREATE INDEX login_sessions_account ON login_sessions (account_id);
 CREATE INDEX login_sessions_expiry ON login_sessions (expires_at);
+CREATE TABLE login_authorization_codes (
+  code_hash BYTEA PRIMARY KEY CHECK (octet_length(code_hash) = 32),
+  account_id TEXT NOT NULL REFERENCES accounts (account_id),
+  issuer_session_id TEXT NOT NULL REFERENCES login_sessions (session_id) ON DELETE CASCADE,
+  product_origin TEXT NOT NULL, redirect_uri TEXT NOT NULL,
+  code_challenge BYTEA NOT NULL CHECK (octet_length(code_challenge) = 32),
+  expires_at TIMESTAMPTZ NOT NULL);
+CREATE INDEX login_authorization_codes_issuer_expiry
+  ON login_authorization_codes (issuer_session_id, expires_at);
 ```
 
 - `password_record` is the Argon2id record; a login token is stored only as its
   SHA-256. Token and cookie formats do not change.
 - The tables are written only by the account code, through `internal/dexai/tenancy/accountdao`.
+- The shared login host stores only a code hash and S256 challenge digest. It admits at
+  most five outstanding codes per login session; every code expires after 60 seconds,
+  and exchange atomically creates a separate product session and deletes the code.
 
 ## Behavior
 
@@ -34,6 +47,9 @@ CREATE INDEX login_sessions_expiry ON login_sessions (expires_at);
   It returns `Caller{AccountID, CanonicalEmail, PlatformAdmin}`; the platform admin is the
   ACTIVE accounts with canonical emails in `accounts.platformAdminEmails`.
 - **Logout** deletes the session; raising `auth_epoch` ends every session of the account.
+- **Audience** is selected by the trusted server surface. Login sessions cannot
+  authorize product RPCs; Studio sessions cannot issue login codes. Each host's
+  logout revokes only its own session.
 - **Expired sessions** are never accepted. Login deletes the account's expired sessions;
   there is no background cleanup.
 - The process-local authentication cache and its interceptor are removed: a query per

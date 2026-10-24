@@ -22,8 +22,10 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
-    external-dns.alpha.kubernetes.io/hostname: {{ include "v2.studioHostname" . | quote }}
+    {{- $login := dig "accounts" "loginHost" (dict) .Values.server.config }}
+    {{- $loginEnabled := or ($login.handoffEnabled | default false) ($login.exchangeEnabled | default false) }}
+    alb.ingress.kubernetes.io/certificate-arn: {{ ternary (printf "%s,%s" .Values.ingress.certificateArn .Values.loginHost.certificateArn) .Values.ingress.certificateArn $loginEnabled | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ ternary (printf "%s,%s" (include "v2.studioHostname" .) .Values.loginHost.hostname) (include "v2.studioHostname" .) $loginEnabled | quote }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
@@ -33,6 +35,14 @@ spec:
           - path: /
             pathType: Prefix
             backend: {service: {name: {{ include "v2.product" $ }}-studio, port: {number: 3000}}}
+    {{- if $loginEnabled }}
+    - host: {{ .Values.loginHost.hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: {{ include "v2.product" $ }}-studio, port: {number: 3000}}}
+    {{- end }}
 ---
 # Bridge requests and Slack Events deliveries reach their separate server listeners
 # on the same load balancer, without passing through Studio. Slack keeps its signed

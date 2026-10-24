@@ -71,7 +71,8 @@ Project’s Anthropic key through the Agent picker; no Session uses a platform e
 
 | Boundary | Address |
 | --- | --- |
-| Studio (host process) | `http://localhost:21000` |
+| Studio (host process) | `http://studio.native.localhost:21000` |
+| Shared login (same host Studio process, only with `native-login.yaml`) | `http://login.native.localhost:21000` |
 | Business gRPC, health | `127.0.0.1:26080`, `127.0.0.1:26082`; platform Worker streams are outbound to Dex |
 | Local Git host | `127.0.0.1:26085`; a Sandbox clones from `http://host.docker.internal:26085` |
 | Remote agent Bridge origin | `127.0.0.1:26089`, shifted by the named-instance offset; see [connection operation](remote-agent.md) |
@@ -89,7 +90,7 @@ former one, minus 2000, except the registry, whose address every Release image r
 setting names; the Compose project publishes them from there. The launcher refuses a port that the Kind lane serves
 and one from 32768 up, where the engine draws the ephemeral loopback ports of the project containers, which the
 server looks up for each use. A connector OAuth app registered with Native's former callback
-(`http://localhost:23000/api/connector-oauth/callback`) needs `http://localhost:21000/api/connector-oauth/callback`;
+(`http://localhost:23000/api/connector-oauth/callback`) needs `http://studio.native.localhost:21000/api/connector-oauth/callback`;
 that address is now Kind's. A Project created before the lane had ports of its own keeps the clone origin it was set
 up with, `host.docker.internal:28085`, which is now Kind's local Git host, so its Sandbox cannot clone: delete it and
 create it again. Accounts and every other Flow keep working, because the Worker kept its port.
@@ -139,7 +140,17 @@ When selecting a named instance, set `SUPERVERSE_TEST_NATIVE_STATE_DIR` to its m
 `.local/superverse-v2/native-<name>` directory whenever the test opens Project credentials or Docker objects. The
 lane guard rejects a state directory that does not match `SUPERVERSE_TEST_NATIVE_INSTANCE` before it connects.
 
-A Playwright spec run directly takes `SUPERVERSE_E2E_BASE_URL=http://localhost:21000`.
+A Playwright spec run directly takes `SUPERVERSE_E2E_BASE_URL=http://studio.native.localhost:21000`.
+The launcher checks that both canonical Studio and login names resolve only to
+loopback; add them to the local hosts file if the OS does not resolve `.localhost`
+subdomains. A named instance inserts its label into both names, for example
+`studio.view.native.localhost` and `login.view.native.localhost`, and uses its
+retained port offset. Cookie scope follows the hostnames, not the ports.
+
+To exercise shared login explicitly, start with
+`--config cmd/superverse-server/config/native-login.yaml`. Its account, product,
+browser-cookie and issuer secrets are distinct private retained lane values.
+Without this profile, password sign-in stays on Studio; the feature is disabled.
 
 ### Test settings
 

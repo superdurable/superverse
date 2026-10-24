@@ -7,10 +7,12 @@ export interface AccountLogin {
   'account'?: (_superverse_v2_AccountSnapshot | null);
   'sessionToken'?: (string);
   'expiresAt'?: (_google_protobuf_Timestamp | null);
+  'sessionId'?: (string);
 }
 
 export interface AccountLogin__Output {
   'account': (_superverse_v2_AccountSnapshot__Output | null);
   'sessionToken': (string);
   'expiresAt': (_google_protobuf_Timestamp__Output | null);
+  'sessionId': (string);
 }

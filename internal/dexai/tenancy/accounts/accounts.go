@@ -37,6 +37,11 @@ var (
 // loginLifetime bounds every issued login.
 const loginLifetime = 7 * 24 * time.Hour
 
+const (
+	audienceStudio = "studio"
+	audienceLogin  = "login"
+)
+
 // AccountSummary is an ACTIVE account without credential material; only
 // registration, login and authentication return one.
 type AccountSummary struct {
@@ -55,18 +60,29 @@ type Login struct {
 	Account   AccountSummary
 	Token     string
 	ExpiresAt time.Time
+	SessionID string
 }
 
 // Accounts registers, logs in, logs out and authenticates accounts, which the
 // database owns (docs/architecture/teamspace/accounts.md).
 type Accounts struct {
-	DAO    *accountdao.AccountDAO
-	Signer *TokenSigner
+	DAO       *accountdao.AccountDAO
+	Signer    *TokenSigner
+	LoginHost *LoginHost
 }
 
 // Register creates the account of email, or logs in the account that the same
 // request already registered with the same password.
 func (a *Accounts) Register(ctx context.Context, email, password, requestID string) (Login, error) {
+	return a.register(ctx, email, password, requestID, audienceStudio)
+}
+
+// RegisterOnLoginHost issues a login-audience session for a trusted login BFF.
+func (a *Accounts) RegisterOnLoginHost(ctx context.Context, email, password, requestID string) (Login, error) {
+	return a.register(ctx, email, password, requestID, audienceLogin)
+}
+
+func (a *Accounts) register(ctx context.Context, email, password, requestID, audience string) (Login, error) {
 	canonical, err := canonicalEmail(email)
 	if err != nil {
 		return Login{}, err
@@ -87,11 +103,20 @@ func (a *Accounts) Register(ctx context.Context, email, password, requestID stri
 	if !inserted && (account.RegistrationFingerprint != fingerprint || verifyStoredPassword(password, account) != nil) {
 		return Login{}, ErrAccountExists
 	}
-	return a.createLogin(ctx, account)
+	return a.createLogin(ctx, account, audience)
 }
 
 // Login verifies the password of an active account and issues a login.
 func (a *Accounts) Login(ctx context.Context, email, password string) (Login, error) {
+	return a.login(ctx, email, password, audienceStudio)
+}
+
+// LoginOnLoginHost issues a login-audience session for a trusted login BFF.
+func (a *Accounts) LoginOnLoginHost(ctx context.Context, email, password string) (Login, error) {
+	return a.login(ctx, email, password, audienceLogin)
+}
+
+func (a *Accounts) login(ctx context.Context, email, password, audience string) (Login, error) {
 	canonical, err := canonicalEmail(email)
 	if err != nil {
 		return Login{}, ErrInvalidCredential
@@ -106,19 +131,20 @@ func (a *Accounts) Login(ctx context.Context, email, password string) (Login, er
 	if err = verifyStoredPassword(password, account); err != nil {
 		return Login{}, err
 	}
-	return a.createLogin(ctx, account)
+	return a.createLogin(ctx, account, audience)
 }
 
 // createLogin issues a login after its caller verified the password. The
 // database admits it only for an ACTIVE account whose credential revision is
 // still the verified one.
-func (a *Accounts) createLogin(ctx context.Context, account accountdao.Account) (Login, error) {
+func (a *Accounts) createLogin(ctx context.Context, account accountdao.Account, audience string) (Login, error) {
 	sessionID := "login-" + flowid.RandomID(24)
 	now := time.Now().UTC()
 	expiry := now.Add(loginLifetime)
 	token := a.Signer.issue(accountKey(account.CanonicalEmail), sessionID, expiry)
 	admitted, err := a.DAO.CreateLoginSession(ctx, accountdao.LoginSession{
-		SessionID: sessionID, AccountID: account.AccountID, TokenHash: tokenHash(token), IssuedAt: now, ExpiresAt: expiry,
+		SessionID: sessionID, AccountID: account.AccountID, TokenHash: tokenHash(token), Audience: audience,
+		IssuedAt: now, ExpiresAt: expiry,
 	}, account.CredentialRevision)
 	if errors.Is(err, accountdao.ErrNotFound) {
 		return Login{}, ErrInvalidCredential
@@ -126,7 +152,7 @@ func (a *Accounts) createLogin(ctx context.Context, account accountdao.Account) 
 	if err != nil {
 		return Login{}, err
 	}
-	return Login{Account: a.summary(admitted), Token: token, ExpiresAt: expiry}, nil
+	return Login{Account: a.summary(admitted), Token: token, ExpiresAt: expiry, SessionID: sessionID}, nil
 }
 
 // Logout revokes the login of token.
@@ -149,6 +175,15 @@ func (a *Accounts) Authenticate(ctx context.Context, accountID, email, token str
 // AuthenticateLogin additionally returns the verified issuing login identity
 // for credentials that must expire with this exact login, never a browser ID.
 func (a *Accounts) AuthenticateLogin(ctx context.Context, accountID, email, token string) (AccountSummary, string, error) {
+	return a.authenticateLogin(ctx, accountID, email, token, audienceStudio)
+}
+
+// AuthenticateLoginHost admits only an issuer session created on the login host.
+func (a *Accounts) AuthenticateLoginHost(ctx context.Context, accountID, email, token string) (AccountSummary, string, error) {
+	return a.authenticateLogin(ctx, accountID, email, token, audienceLogin)
+}
+
+func (a *Accounts) authenticateLogin(ctx context.Context, accountID, email, token, audience string) (AccountSummary, string, error) {
 	canonical, err := canonicalEmail(email)
 	if err != nil || canonical != email || accountID == "" {
 		return AccountSummary{}, "", ErrInvalidCredential
@@ -157,7 +192,7 @@ func (a *Accounts) AuthenticateLogin(ctx context.Context, accountID, email, toke
 	if err != nil || claims.Account != accountKey(canonical) {
 		return AccountSummary{}, "", ErrInvalidCredential
 	}
-	account, err := a.DAO.AuthenticatedAccount(ctx, claims.SessionID, tokenHash(token))
+	account, err := a.DAO.AuthenticatedAccount(ctx, claims.SessionID, tokenHash(token), audience)
 	if errors.Is(err, accountdao.ErrNotFound) || err == nil && account.AccountID != accountID {
 		return AccountSummary{}, "", ErrInvalidCredential
 	}

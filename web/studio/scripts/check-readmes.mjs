@@ -189,7 +189,7 @@ function summary(directory, owner, purpose) {
     "",
     "```mermaid",
     "flowchart LR",
-    `  self["${directory}"]`,
+    `  self["${directory || "Studio root"}"]`,
     ...importers.map((item, index) => `  c${index}["${label(item)}"] --> self`),
     ...imports.map((item, index) => `  self --> d${index}["${label(item)}"]`),
     ...apis.map((name, index) => `  self --> e${index}(["${name.replaceAll("`", "")}"])`),
@@ -240,7 +240,10 @@ function readmeProblems(name, text, expected) {
 }
 
 function moduleTable(purposes) {
-  const rows = purposes.map(([directory, purpose]) => `| [\`${directory}\`](${directory}/README.md) | ${purpose} |`);
+  const rows = purposes.map(
+    ([directory, purpose]) =>
+      `| [\`${directory || "Studio root"}\`](${directory ? `${directory}/README.md` : "README.md"}) | ${purpose} |`,
+  );
   return [TABLE_BEGIN, "", "| Directory | Purpose |", "| --- | --- |", ...rows, "", TABLE_END].join("\n");
 }
 
@@ -260,7 +263,7 @@ function linkProblems() {
 // Every directory with source files has a README; --write creates a missing one.
 const purposes = [];
 for (const [directory, owner] of [...moduleEdges()].sort(([a], [b]) => a.localeCompare(b))) {
-  const name = `${directory}/README.md`;
+  const name = directory ? `${directory}/README.md` : "README.md";
   const path = join(studio, name);
   const existing = existsSync(path) ? readFileSync(path, "utf8") : null;
   const expected = summary(directory, owner, purposeOf(existing ?? "") || "TODO");

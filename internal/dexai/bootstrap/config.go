@@ -75,8 +75,9 @@ type serverConfig struct {
 
 	// signer issues login tokens; cursors signs the API's resume cursors and
 	// page tokens with the same key.
-	signer  *accounts.TokenSigner
-	cursors *watch.CursorCodec
+	signer    *accounts.TokenSigner
+	cursors   *watch.CursorCodec
+	loginHost *accounts.LoginHost
 	// formKey is the root key of the connection forms' nonces, the same in
 	// every replica so that each opens the others'.
 	formKey             []byte
@@ -199,6 +200,9 @@ func loadConfig(ctx context.Context, logger *slog.Logger, settings serverconfig.
 		return c, err
 	}
 	if c.signer, err = accounts.NewTokenSigner(key); err != nil {
+		return c, err
+	}
+	if c.loginHost, err = loginHostSecrets(settings.Accounts.LoginHost); err != nil {
 		return c, err
 	}
 	c.cursors = watch.NewCursorCodec(key)

@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,6 +60,17 @@ func ScratchDatabaseForTest(t testing.TB) *sql.DB {
 		}
 	})
 	return db
+}
+
+// ScratchServerDatabaseForTest connects to a migrated scratch database with
+// the same restricted role as the running platform server.
+func ScratchServerDatabaseForTest(t testing.TB, owner *sql.DB) *sql.DB {
+	t.Helper()
+	var name string
+	if err := owner.QueryRowContext(t.Context(), "SELECT current_database()").Scan(&name); err != nil || !strings.HasPrefix(name, "scratch_") {
+		t.Fatalf("identify scratch database for server role: %v", err)
+	}
+	return open(t, name, postgres.ServerRole)
 }
 
 func open(t testing.TB, database, role string) *sql.DB {

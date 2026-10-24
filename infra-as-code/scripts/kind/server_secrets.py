@@ -21,7 +21,8 @@ from operator_errors import require
 # The secrets the server env file supplies. Deploy generates the cookie signing key and the MinIO credentials itself; the file may replace them.
 SERVER_SECRET_KEYS = frozenset({"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "GITHUB_APP_PRIVATE_KEY", "GITHUB_APP_PRIVATE_KEY_BASE64",
                                 "GITHUB_APP_PRIVATE_KEY_PATH", "SUPERVERSE_COOKIE_SIGNING_KEY", "SUPERVERSE_LOCAL_BUILD_TOKEN",
-                                "SUPERVERSE_LOCAL_BUILD_TOKEN_FILE"})
+                                "SUPERVERSE_LOCAL_BUILD_TOKEN_FILE", "SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING",
+                                "SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"})
 # Deployed server Secrets also carry generated/retained local Git and database credentials, the Slack Signing Secret
 # and platform OAuth client secrets. A manual Slack test reads the latter two from .env; otherwise its signing secret is retained.
 DEPLOYED_SECRET_KEYS = SERVER_SECRET_KEYS | {"SUPERVERSE_LOCAL_GIT_SIGNING_KEY", "SUPERVERSE_POSTGRES_PASSWORD",

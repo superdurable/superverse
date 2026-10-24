@@ -69,10 +69,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccountService_RegisterAccount_FullMethodName   = "/superverse.v2.AccountService/RegisterAccount"
-	AccountService_Login_FullMethodName             = "/superverse.v2.AccountService/Login"
-	AccountService_Logout_FullMethodName            = "/superverse.v2.AccountService/Logout"
-	AccountService_GetCurrentAccount_FullMethodName = "/superverse.v2.AccountService/GetCurrentAccount"
+	AccountService_RegisterAccount_FullMethodName                = "/superverse.v2.AccountService/RegisterAccount"
+	AccountService_Login_FullMethodName                          = "/superverse.v2.AccountService/Login"
+	AccountService_Logout_FullMethodName                         = "/superverse.v2.AccountService/Logout"
+	AccountService_GetCurrentAccount_FullMethodName              = "/superverse.v2.AccountService/GetCurrentAccount"
+	AccountService_CreateLoginAuthorizationCode_FullMethodName   = "/superverse.v2.AccountService/CreateLoginAuthorizationCode"
+	AccountService_ExchangeLoginAuthorizationCode_FullMethodName = "/superverse.v2.AccountService/ExchangeLoginAuthorizationCode"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -85,6 +87,8 @@ type AccountServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 	GetCurrentAccount(ctx context.Context, in *GetCurrentAccountRequest, opts ...grpc.CallOption) (*GetCurrentAccountResponse, error)
+	CreateLoginAuthorizationCode(ctx context.Context, in *CreateLoginAuthorizationCodeRequest, opts ...grpc.CallOption) (*CreateLoginAuthorizationCodeResponse, error)
+	ExchangeLoginAuthorizationCode(ctx context.Context, in *ExchangeLoginAuthorizationCodeRequest, opts ...grpc.CallOption) (*ExchangeLoginAuthorizationCodeResponse, error)
 }
 
 type accountServiceClient struct {
@@ -135,6 +139,26 @@ func (c *accountServiceClient) GetCurrentAccount(ctx context.Context, in *GetCur
 	return out, nil
 }
 
+func (c *accountServiceClient) CreateLoginAuthorizationCode(ctx context.Context, in *CreateLoginAuthorizationCodeRequest, opts ...grpc.CallOption) (*CreateLoginAuthorizationCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateLoginAuthorizationCodeResponse)
+	err := c.cc.Invoke(ctx, AccountService_CreateLoginAuthorizationCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ExchangeLoginAuthorizationCode(ctx context.Context, in *ExchangeLoginAuthorizationCodeRequest, opts ...grpc.CallOption) (*ExchangeLoginAuthorizationCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExchangeLoginAuthorizationCodeResponse)
+	err := c.cc.Invoke(ctx, AccountService_ExchangeLoginAuthorizationCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
@@ -145,6 +169,8 @@ type AccountServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 	GetCurrentAccount(context.Context, *GetCurrentAccountRequest) (*GetCurrentAccountResponse, error)
+	CreateLoginAuthorizationCode(context.Context, *CreateLoginAuthorizationCodeRequest) (*CreateLoginAuthorizationCodeResponse, error)
+	ExchangeLoginAuthorizationCode(context.Context, *ExchangeLoginAuthorizationCodeRequest) (*ExchangeLoginAuthorizationCodeResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -166,6 +192,12 @@ func (UnimplementedAccountServiceServer) Logout(context.Context, *LogoutRequest)
 }
 func (UnimplementedAccountServiceServer) GetCurrentAccount(context.Context, *GetCurrentAccountRequest) (*GetCurrentAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) CreateLoginAuthorizationCode(context.Context, *CreateLoginAuthorizationCodeRequest) (*CreateLoginAuthorizationCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateLoginAuthorizationCode not implemented")
+}
+func (UnimplementedAccountServiceServer) ExchangeLoginAuthorizationCode(context.Context, *ExchangeLoginAuthorizationCodeRequest) (*ExchangeLoginAuthorizationCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExchangeLoginAuthorizationCode not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -260,6 +292,42 @@ func _AccountService_GetCurrentAccount_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_CreateLoginAuthorizationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLoginAuthorizationCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).CreateLoginAuthorizationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_CreateLoginAuthorizationCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).CreateLoginAuthorizationCode(ctx, req.(*CreateLoginAuthorizationCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ExchangeLoginAuthorizationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExchangeLoginAuthorizationCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ExchangeLoginAuthorizationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ExchangeLoginAuthorizationCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ExchangeLoginAuthorizationCode(ctx, req.(*ExchangeLoginAuthorizationCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -282,6 +350,14 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentAccount",
 			Handler:    _AccountService_GetCurrentAccount_Handler,
+		},
+		{
+			MethodName: "CreateLoginAuthorizationCode",
+			Handler:    _AccountService_CreateLoginAuthorizationCode_Handler,
+		},
+		{
+			MethodName: "ExchangeLoginAuthorizationCode",
+			Handler:    _AccountService_ExchangeLoginAuthorizationCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

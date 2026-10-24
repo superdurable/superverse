@@ -156,7 +156,7 @@ def environment_values(environment):
                       "gvisorRelease": "release/20260907.0", "gvisorSHA256": "2b162adb35860f598ab2f89b9d752bff2c7ee6175c05d9cc532174a336cfb38c"},
     }
     # The server configuration the Kind deploy renders from its profile, or Terraform from its variables.
-    values["server"]["config"] = {"studio": {"publicOrigin": "http://localhost:23000" if local else "https://" + studio_hostname(environment)}}
+    values["server"]["config"] = {"studio": {"publicOrigin": "http://studio.kind.localhost:23000" if local else "https://" + studio_hostname(environment)}}
     if local:
         # The local lanes use the local Git host of the base profile; hosted environments always use GitHub.
         profile = yaml.safe_load(LOCAL_KIND_PROFILE.read_text())
@@ -344,7 +344,7 @@ class Render:
                 self.fail_if(service["spec"].get("type", "ClusterIP") != "ClusterIP" or
                              [port for port in service["spec"]["ports"] if port["port"] == 8802] != [{"name": "web", "port": 8802, "targetPort": "web-proxy" if self.debug else "web"}],
                              "Dex Web Service target or private Service type changed")
-        origin = "https://" + self.studio_hostname if self.hosted else "http://localhost:23000"
+        origin = "https://" + self.studio_hostname if self.hosted else "http://studio.kind.localhost:23000"
         studio_origins = [item.get("value") for item in self.get("Deployment", self.product + "-studio")["spec"]["template"]["spec"]["containers"][0]["env"]
                           if item["name"] == "SUPERVERSE_STUDIO_PUBLIC_ORIGIN"]
         self.fail_if(studio_origins != [origin] or self.server_configuration().get("studio", {}).get("publicOrigin") != origin,

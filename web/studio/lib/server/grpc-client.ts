@@ -50,8 +50,12 @@ export interface RpcBackend {
   ): AsyncIterable<RpcOutput<M>>;
 }
 
-/** The only RPCs without a caller; only /api/auth calls them. */
-export const UNAUTHENTICATED_METHODS: ReadonlySet<Method> = new Set<Method>(["RegisterAccount", "Login"]);
+/** Account bootstrap RPCs without a user caller; exchange still requires a service credential. */
+export const UNAUTHENTICATED_METHODS: ReadonlySet<Method> = new Set<Method>([
+  "RegisterAccount",
+  "Login",
+  "ExchangeLoginAuthorizationCode",
+]);
 
 // The browser JSON contract: lowerCamel names, 64-bit integers as decimal strings, enum value
 // names, defaults filled in and each oneof named by its own key.
@@ -163,6 +167,32 @@ export async function callRpc<M extends Method>(
   caller: Caller | null,
   signal?: AbortSignal,
 ): Promise<RpcOutput<M>> {
+  return callRpcWithMetadata(method, input, caller, new Metadata(), 35_000, signal);
+}
+
+/** Only the account BFF supplies the service credential; browser RPC routes cannot call it. */
+export async function callAccountRpc<M extends Method>(
+  method: M,
+  input: RpcInput<M>,
+  caller: Caller | null,
+  clientID: string,
+  secret: string,
+  signal?: AbortSignal,
+): Promise<RpcOutput<M>> {
+  const metadata = new Metadata();
+  metadata.set("x-superverse-auth-client", clientID);
+  metadata.set("x-superverse-auth-secret", secret);
+  return callRpcWithMetadata(method, input, caller, metadata, 10_000, signal);
+}
+
+function callRpcWithMetadata<M extends Method>(
+  method: M,
+  input: RpcInput<M>,
+  caller: Caller | null,
+  metadata: Metadata,
+  deadlineMs: number,
+  signal?: AbortSignal,
+): Promise<RpcOutput<M>> {
   if (signal?.aborted) throw httpError(499, "Request canceled");
   const { definition } = rpcMethod(method);
   const payload = requestPayload(method, input, caller);
@@ -173,8 +203,8 @@ export async function callRpc<M extends Method>(
       definition.requestSerialize,
       definition.responseDeserialize,
       payload,
-      new Metadata(),
-      { deadline: Date.now() + 35_000 },
+      metadata,
+      { deadline: Date.now() + deadlineMs },
       (error, response) => {
         signal?.removeEventListener("abort", cancel);
         if (error) {

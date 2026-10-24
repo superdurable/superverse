@@ -15,9 +15,10 @@ from acceptance.browser import acceptance_admission, acceptance_signals, browser
 import build_inputs
 from commands import run
 import git_host
-from kind.cluster import CLUSTER, FORWARDS, GIT, NAMESPACE, kind_nodes, kubectl, state, verify_owner
+from kind.cluster import CLUSTER, GIT, NAMESPACE, kind_nodes, kubectl, state, verify_owner
 from kind.deployment_identity import kind_deployment_identity
 from kind.locks import KIND_ACCEPTANCE_DIRECTORY
+from kind.platform import studio_origin
 from kind.server_config import model_target, require_unchanged
 from operator_errors import require
 from paths import ROOT, STATE
@@ -71,7 +72,7 @@ def e2e(_args):
         require(not served, f"The Kind server has served {len(served)} business RPCs since its Pod started, which the cases' RPC "
                 "coverage would include; delete the server Pod, run sv2 kind deploy again and restart sv2 kind ports")
         results = run_browser_cases(KIND_ACCEPTANCE_DIRECTORY, fence, browser_node, check_environment_identity, lane="Kind",
-                                    studio=f"http://localhost:{FORWARDS['studio'].local_port}", git=GIT, local_git_url=git_host.HOST_URL,
+                                    studio=studio_origin(), git=GIT, local_git_url=git_host.HOST_URL,
                                     repository_host=git_host.repository_host(value["deploymentInputs"]["config"]["input"]),
                                     mock_llm=bool(value["deploymentInputs"]["config"]["input"].get("connections", {}).get("mockLLM")))
         current = state()

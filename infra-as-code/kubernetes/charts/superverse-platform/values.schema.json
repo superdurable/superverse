@@ -105,6 +105,18 @@
         }
       }
     },
+    "loginHost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
+        },
+        "certificateArn": {"type": "string"}
+      }
+    },
     "dex": {
       "type": "object",
       "properties": {

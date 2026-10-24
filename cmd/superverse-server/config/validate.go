@@ -68,6 +68,7 @@ func (c Config) Validate() error {
 	if len(c.Accounts.PlatformAdminEmails) == 0 || len(c.Accounts.PlatformAdminEmails) > MaxPlatformAdminEmails {
 		fail("accounts.platformAdminEmails must contain between 1 and %d addresses", MaxPlatformAdminEmails)
 	}
+	problems = append(problems, c.validateLoginHost()...)
 	seenAdmins := make(map[string]bool, len(c.Accounts.PlatformAdminEmails))
 	for _, email := range c.Accounts.PlatformAdminEmails {
 		parsed, err := mail.ParseAddress(email)
@@ -676,4 +677,69 @@ func validOrigin(origin string) bool {
 	parsed, err := url.Parse(origin)
 	return err == nil && parsed.Host != "" && parsed.User == nil && parsed.Path == "" && parsed.RawQuery == "" && parsed.Fragment == "" &&
 		(parsed.Scheme == "http" || parsed.Scheme == "https")
+}
+
+func (c Config) validateLoginHost() []error {
+	h := c.Accounts.LoginHost
+	var problems []error
+	fail := func(message string) { problems = append(problems, errors.New(message)) }
+	for _, budget := range []struct {
+		value, maximum int
+		name           string
+	}{
+		{h.IssuePerMinute, DefaultLoginIssuePerMinute, "issuePerMinute"},
+		{h.IssueBurst, DefaultLoginIssueBurst, "issueBurst"},
+		{h.ExchangePerMinute, DefaultLoginExchangePerMinute, "exchangePerMinute"},
+		{h.ExchangeBurst, DefaultLoginExchangeBurst, "exchangeBurst"},
+	} {
+		if budget.value < 1 || budget.value > budget.maximum {
+			fail(fmt.Sprintf("accounts.loginHost.%s must be from 1 to %d", budget.name, budget.maximum))
+		}
+	}
+	if h.HandoffEnabled && !h.ExchangeEnabled {
+		fail("accounts.loginHost.exchangeEnabled is required while handoffEnabled")
+	}
+	if !h.HandoffEnabled && !h.ExchangeEnabled {
+		return problems
+	}
+	if !loginOrigin(h.PublicOrigin, c.LocalKind) || h.PublicOrigin == c.Studio.PublicOrigin {
+		fail("accounts.loginHost.publicOrigin must be a distinct exact login origin")
+	}
+	if len(h.Clients) == 0 || len(h.Clients) > 2 {
+		fail("accounts.loginHost.clients must register one or two fixed products")
+	}
+	studio, exists := h.Clients["studio"]
+	if !exists || !studio.Enabled || studio.Origin != c.Studio.PublicOrigin ||
+		studio.RedirectURI != studio.Origin+"/api/auth/callback" || !loginOrigin(studio.Origin, c.LocalKind) {
+		fail("accounts.loginHost.clients.studio must match studio.publicOrigin and its fixed callback")
+	}
+	for id, client := range h.Clients {
+		if id != "studio" && id != "engine" {
+			fail("accounts.loginHost.clients contains an unknown product")
+		}
+		if id == "engine" && client.Enabled {
+			fail("accounts.loginHost.clients.engine is unavailable until Engine has a callback")
+		}
+		if client.Enabled && (!loginOrigin(client.Origin, c.LocalKind) || client.RedirectURI != client.Origin+"/api/auth/callback" || client.Origin == h.PublicOrigin) {
+			fail("accounts.loginHost.clients contains an invalid origin or callback")
+		}
+	}
+	return problems
+}
+
+func loginOrigin(origin string, local bool) bool {
+	if !validOrigin(origin) || strings.ContainsAny(origin, "\\%\r\n\t") {
+		return false
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || parsed.String() != origin || parsed.Hostname() == "" || parsed.Hostname() != strings.ToLower(parsed.Hostname()) ||
+		strings.IndexFunc(parsed.Hostname(), func(r rune) bool {
+			return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-')
+		}) >= 0 {
+		return false
+	}
+	if local {
+		return parsed.Scheme == "http" && (parsed.Hostname() == "localhost" || strings.HasSuffix(parsed.Hostname(), ".localhost"))
+	}
+	return parsed.Scheme == "https" && parsed.Port() == ""
 }

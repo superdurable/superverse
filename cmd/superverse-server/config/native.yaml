@@ -28,7 +28,7 @@ runtime: docker
 repohost: localgit
 
 studio:
-  publicOrigin: http://localhost:21000
+  publicOrigin: http://studio.native.localhost:21000
 
 agent:
   providers:

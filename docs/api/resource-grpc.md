@@ -27,12 +27,12 @@ is logged the same way and ends that Watch with the same Internal status.
 
 <!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->
 
-19 services, 115 RPCs. A field is a string unless a type is given. Every request
-except RegisterAccount and Login also carries `CallerContext caller 100`, which the table omits.
+19 services, 117 RPCs. A field is a string unless a type is given. Every request
+except RegisterAccount and Login also declares `CallerContext caller 100`, which the table omits.
 
 | Service | RPCs | Reached through |
 | --- | --- | --- |
-| AccountService | 4 | `/api/auth` |
+| AccountService | 6 | `/api/auth` |
 | TeamSpaceService | 6 | `/api/rpc/<Method>` |
 | TeamSpaceMemberService | 4 | `/api/rpc/<Method>` |
 | TeamSpaceConnectionService | 10 | `/api/rpc/<Method>` |
@@ -60,6 +60,8 @@ except RegisterAccount and Login also carries `CallerContext caller 100`, which 
 | Login | `email 1, password 2` | `AccountLogin login 1` |
 | Logout | `{}` | `{}` |
 | GetCurrentAccount | `{}` | `AccountSnapshot account 1` |
+| CreateLoginAuthorizationCode | `product_origin 1, redirect_uri 2, code_challenge 3` | `LoginAuthorizationCode authorization_code 1` |
+| ExchangeLoginAuthorizationCode | `code 1, code_verifier 2, redirect_uri 3` | `AccountLogin login 1` |
 
 **TeamSpaceService**
 
@@ -281,8 +283,10 @@ mechanically.
    Project has one Session, so the Session, its Agent commands and its Preview are
    addressed by `project_id` alone.
 3. **M3. Caller.** Every request except RegisterAccountRequest and LoginRequest has
-   `CallerContext caller = 100` at the top level. Only the BFF sets it. No other field is
-   numbered 100 or higher.
+   `CallerContext caller = 100` at the top level. Only the BFF sets it. On
+   ExchangeLoginAuthorizationCodeRequest the field must be absent at runtime: the
+   account service authenticates the product credential and derives the account
+   from the one-use grant. No other field is numbered 100 or higher.
 4. **M4. Idempotency and fences.** `request_id` appears on every deduplicated start or
    command. The fences are `uint64 expected_revision` (the addressed resource's revision),
    `uint64 generation` with `workspace_request_id` (the Sandbox instance) and
@@ -553,11 +557,25 @@ new `crypto.randomUUID()` SendMessage `message_id` for every send, RemoveLive's
 
 ### `/api/auth`
 
-`/api/auth` is the only caller of AccountService and the only writer of the HttpOnly
-`sv2_session` cookie. Registration maps its Idempotency-Key to `request_id` and, like
-login, turns the returned `AccountLogin` into the cookie envelope. Logout and
-GetCurrentAccount carry the caller from that cookie. The Workspace server layout reads
-GetCurrentAccount once per document (see [Workspace account display](#workspace-account-display)).
+`/api/auth` is the browser's only AccountService route and the only writer of session
+cookies. Registration maps its Idempotency-Key to `request_id` and, like login, turns
+the returned `AccountLogin` into the cookie envelope. The login host uses a distinct
+host-only cookie and `login` session audience; Studio uses its own host-only cookie
+and `studio` audience. Logout and GetCurrentAccount check the selected host audience.
+The Workspace server layout reads GetCurrentAccount once per document (see
+[Workspace account display](#workspace-account-display)).
+
+When shared login is enabled, Studio starts a browser-bound S256 handoff, the login
+host issues a 60-second one-use authorization code, and the Studio server exchanges
+it for a fresh product session. The login page sends a same-origin POST with exact
+Origin and a synchronizer token; a sealed, HttpOnly, host-only, 60-second delivery
+cookie carries the code to the login host's fixed GET continuation, which clears
+that cookie and redirects to the registered callback. Only the login BFF may call CreateLoginAuthorizationCode
+with a login-audience caller. ExchangeLoginAuthorizationCode accepts a product service
+credential through private gRPC metadata and requires `caller` absent. The HTTP
+exchange adapter accepts only bounded server-side POSTs and returns the typed
+`AccountLogin` to the product server, including the new session's `session_id` and
+the canonical `account.email`. Neither RPC is exposed through `/api/rpc`.
 
 ### `/dex/...`
 
@@ -572,7 +590,7 @@ canonical email and signed session token). The BFF takes these fields only from 
 HttpOnly cookie envelope issued from the Go login response; the decoder rejects a
 browser-supplied `caller`. Go verifies the token's HMAC and expiry and that it names
 `account-<canonicalEmail>` for this email, then reads the exact login row joined with its
-account: unexpired, the same token hash and authentication epoch, an ACTIVE account with
+account: unexpired, the same token hash, audience and authentication epoch, an ACTIVE account with
 the caller's opaque AccountID. Session expiry stays fixed at seven days, and Logout
 deletes only the exact login. Accounts and logins are rows of the PostgreSQL `accounts`
 and `login_sessions` tables ([accounts](../architecture/teamspace/accounts.md)); the
@@ -588,16 +606,17 @@ Project Watch shares this access check, including its final DELETED snapshot; or
 reads and child operations reject DELETED. An unavailable authority read stays an error
 instead of being disguised as an ordinary permission rejection.
 
-Business gRPC has no BFF service token or service-authentication interceptor.
-Authenticated calls carry only the typed caller; user identity is never inferred from
-metadata. Registration and login are the public account entry points on the private
+Business resource gRPC has no general BFF service token or service-authentication interceptor.
+Authenticated resource calls carry only the typed caller; user identity is never inferred from
+metadata. Shared-login AccountService RPCs use their own narrow login-host issuer and product-client
+credentials in private metadata, alongside SQL audience checks. Registration and login are the public account entry points on the private
 business listener. Registration is idempotent in the database: replaying the same request
 with the same password logs in, and any other registration of the email, or a replay with
 another password, is `ALREADY_EXISTS`. Concurrent registrations of one email meet a unique
 index and one wins. Accounts of the earlier AccountFlow release are not migrated; users
 register again (runbook).
 
-The request path is browser `sv2_session` cookie, then the Studio BFF, then business gRPC.
+The product request path is browser `sv2_session` cookie, then the Studio BFF, then business gRPC.
 The Go server independently validates the signed session HMAC, fixed expiry, canonical
 email, opaque AccountID and the non-revoked login row with its token hash, then authorizes
 the requested resource. Platform network policy permits business gRPC port 8080 only from
@@ -610,8 +629,9 @@ no BFF scope cache either. Every Flow API operation authenticates the same way b
 reading its resource. See the [Account service](../../internal/dexai/tenancy/accounts/README.md).
 
 Registration and login return the account summary plus the new login, never the password
-record. `AccountLogin {account, session_token, expires_at}` answers both RegisterAccount
-and Login, and `AccountSnapshot` has no status because the API only serves ACTIVE
+record. `AccountLogin {account, session_token, expires_at, session_id}` answers RegisterAccount,
+Login and ExchangeLoginAuthorizationCode; `session_id` names the exact newly admitted
+audience-bound SQL row. `AccountSnapshot` has no status because the API only serves ACTIVE
 accounts. There is no password length policy, including empty passwords; Argon2id
 record validation and the total HTTP and gRPC message limits stay enforced.
 

@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 import { httpError } from "./request-body";
+import { authConfig, originHost } from "./auth-config";
 
 /**
  * Studio's public origin. Next standalone may build request.url from its
@@ -14,6 +15,13 @@ import { httpError } from "./request-body";
  * Host is the browser's actual HTTP authority. X-Forwarded-Host is never trusted.
  */
 export function publicOrigin(request: Request, configured = process.env.SUPERVERSE_STUDIO_PUBLIC_ORIGIN): string {
+  const auth = authConfig();
+  if (auth.handoffEnabled || auth.exchangeEnabled) {
+    const host = request.headers.get("host");
+    if (host === originHost(auth.productOrigin)) return auth.productOrigin;
+    if (host === originHost(auth.loginOrigin)) return auth.loginOrigin;
+    throw httpError(421, "Unrecognized request authority");
+  }
   if (configured) {
     const expected = new URL(configured);
     if (!["http:", "https:"].includes(expected.protocol) || expected.origin !== configured)
@@ -36,6 +44,15 @@ export function publicOrigin(request: Request, configured = process.env.SUPERVER
   )
     throw httpError(400, "Invalid request authority");
   return external.origin;
+}
+
+/** The handler repeats the proxy's host selection before any business effect. */
+export function requireSurface(request: Request, surface: "studio" | "login"): string {
+  const auth = authConfig();
+  const origin = publicOrigin(request);
+  if (origin !== (surface === "studio" ? auth.productOrigin : auth.loginOrigin))
+    throw httpError(403, "This endpoint is unavailable on this host");
+  return origin;
 }
 
 /** Mutations must come from a Studio page on the public origin. */

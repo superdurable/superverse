@@ -105,3 +105,9 @@ state, not a Dex projection. Only `remoteagentdao` owns its SQL; current
 executor state belongs to Session. Its account FK, hash/state constraints,
 fixed Project bound and transaction lock are described in
 [remote agent connections](../../../../docs/api/remote-agent.md).
+
+The additive `0010_login_authorization_codes` migration adds the account-owned
+one-use handoff table and the `login_sessions.audience` column. Existing sessions
+backfill to `studio`; only accountdao writes the new table. It has one code-hash
+primary key and one issuer/expiry index, with cascade deletion when the issuer
+session is revoked. The migration changes no Dex read-model table.

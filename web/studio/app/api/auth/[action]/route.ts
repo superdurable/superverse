@@ -6,7 +6,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
-import { handleAuthRequest } from "@/lib/server/auth-handler";
+import { handleAuthRequest } from "@/lib/server/login-host/auth-handler";
 import { grpcBackend } from "@/lib/server/grpc-client";
 import { mockBackend } from "@/mock/backend/mock-backend";
 import { isStudioMockEnabled } from "@/mock/enabled";

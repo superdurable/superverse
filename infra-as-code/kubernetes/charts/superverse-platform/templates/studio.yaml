@@ -46,6 +46,11 @@ spec:
             - {name: PORT, value: "3000"}
             - {name: SUPERVERSE_GRPC_ADDRESS, value: "{{ include "v2.product" $ }}-server:8080"}
             - {name: NODE_ENV, value: production}
+            {{- $login := dig "accounts" "loginHost" (dict) .Values.server.config }}
+            {{- if or ($login.handoffEnabled | default false) ($login.exchangeEnabled | default false) }}
+            - name: SUPERVERSE_STUDIO_AUTH_CONFIG
+              value: {{ toJson (dict "productOrigin" (dig "studio" "publicOrigin" "" .Values.server.config) "loginOrigin" ($login.publicOrigin | default "") "handoffEnabled" ($login.handoffEnabled | default false) "exchangeEnabled" ($login.exchangeEnabled | default false) "exchangeURL" (printf "http://%s-studio:3000" (include "v2.product" .)) "studioClientID" "studio") | quote }}
+            {{- end }}
             {{- range $key, $value := .Values.studio.config }}
             - name: {{ $key }}
               value: {{ $value | quote }}

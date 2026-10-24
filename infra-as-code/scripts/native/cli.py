@@ -39,7 +39,8 @@ from local_platform import POSTGRES_OWNER, POSTGRES_SERVER
 from native import coding, services
 from native.discard import delete
 from native.callback import callback_readiness
-from native.lane import (CONFIG, Topology, build_token, cookie_signing_key, engine_postgres_credentials, engine_session_signing_key, native_instance, platform_credentials, postgres_credentials, run_layer,
+from native.lane import (CONFIG, Topology, build_token, cookie_signing_key, engine_postgres_credentials, engine_session_signing_key, login_auth_secrets,
+                         native_instance, platform_credentials, postgres_credentials, run_layer,
                          slack_signing_secret)
 from native.owner import idle, native_admission, owner_lock, owner_state, release, retain, retained
 from native.studio import MODES as STUDIO_MODES, prepare_studio, require_studio_unchanged
@@ -199,8 +200,6 @@ def prepare(instance, record, topology, studio_mode, profile):
     than the lane's default, such as sandbox.hold; the run binds its digest as it binds native.yaml's.
     """
     directory = run_directory(instance, record)
-    studio = prepare_studio(record, directory, studio_mode, host_environment(*HOST_BASICS), topology)
-    save_run(instance, record)
     record["coding"], record["profile"] = coding.prepare(instance)
     record["profileSHA256"] = coding.profile_digest(instance, record["profile"])
     record["sourceFingerprint"] = build_inputs.native_behavior_fingerprint()
@@ -235,13 +234,15 @@ def prepare(instance, record, topology, studio_mode, profile):
     document = config_files.read_layer(CONFIG)
     for path in operator:
         document = config_files.merge(document, config_files.read_layer(path))
+    document = config_files.merge(document, config_files.read_layer(layer))
     record["configuration"] = {"profile": CONFIG.stem, "sha256": record["nativeConfigSHA256"], "document": document,
                                "layers": [{"profile": path.stem, "path": str(path), "sha256": config_files.file_digest(path)} for path in operator]}
+    studio = prepare_studio(record, directory, studio_mode, host_environment(*HOST_BASICS), topology, document)
     save_run(instance, record)
     return {"studio": studio, "layers": layers}
 
 
-def server_environment(instance, layers):
+def server_environment(instance, layers, document):
     """The host server's secrets, generated and retained by the lane, and its configuration files."""
     credentials = platform_credentials(instance)
     environment = dict(host_environment(*HOST_BASICS), SUPERVERSE_CONFIG_FILE=",".join(map(str, layers)), AWS_ACCESS_KEY_ID=credentials["access"],
@@ -256,6 +257,11 @@ def server_environment(instance, layers):
     client_secrets = os.environ.get("SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS") or project_env_value("SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS")
     if client_secrets:
         environment["SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS"] = client_secrets
+    login = document.get("accounts", {}).get("loginHost", {})
+    if login.get("handoffEnabled") or login.get("exchangeEnabled"):
+        auth = login_auth_secrets(instance)
+        environment["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
+        environment["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
     return environment
 
 
@@ -270,7 +276,7 @@ def engine_environment(instance, record, *, owner=False):
 def serve(instance, record, topology, prepared, processes):
     """Start the platform services and every owned child, prove readiness and supervise until stopped."""
     ports = topology.ports
-    environment = server_environment(instance, prepared["layers"])
+    environment = server_environment(instance, prepared["layers"], record["configuration"]["document"])
 
     def migrate():
         # The server never migrates: the binary applies the pending migrations as the schema owner, as Kind's init container does.

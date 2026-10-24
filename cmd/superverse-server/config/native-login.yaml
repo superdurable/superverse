@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Super Durable, Inc.
+#
+# Licensed under the Sustainable Use License 1.0.
+# You may not use this file except in compliance with the License.
+# See the LICENSE file in the repository root.
+#
+# SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
+
+# Explicit opt-in for the local shared-login browser and gRPC acceptance.
+studio:
+  publicOrigin: http://studio.native.localhost:21000
+accounts:
+  loginHost:
+    handoffEnabled: true
+    exchangeEnabled: true
+    publicOrigin: http://login.native.localhost:21000
+    clients:
+      studio:
+        enabled: true
+        origin: http://studio.native.localhost:21000
+        redirectURI: http://studio.native.localhost:21000/api/auth/callback

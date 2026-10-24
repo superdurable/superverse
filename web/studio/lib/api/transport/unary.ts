@@ -26,6 +26,19 @@ export async function postJson<T>(
   return response.json();
 }
 
+/** A same-origin form grant with no response body or automatic redirect. */
+export async function postFormNoContent(path: string, fields: Record<string, string>): Promise<void> {
+  const response = await fetch(path, {
+    method: "POST",
+    credentials: "same-origin",
+    cache: "no-store",
+    redirect: "error",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(fields),
+  });
+  if (response.status !== 204) throw await responseError(response);
+}
+
 /** One business RPC through /api/rpc/<Method>. Method names are unique across services, so the name routes it. */
 export function unary<M extends UnaryMethod>(
   method: M,

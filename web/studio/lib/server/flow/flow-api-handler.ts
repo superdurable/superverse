@@ -11,6 +11,7 @@ import type { FlowApiDocument__Output } from "@/lib/generated/protobuf/supervers
 import { callerFromRequest } from "@/lib/server/caller-envelope";
 import { errorResponse, rpcErrorInfo } from "@/lib/server/grpc-client";
 import { httpError, parseUint64, readBoundedBody } from "@/lib/server/request-body";
+import { requireSurface } from "@/lib/server/request-origin";
 import { connectionRefusalInfo } from "@/lib/shared/problem/refusals";
 import { dispatchFlowApiRequest } from "./flow-api-operations";
 import { FlowApiJson } from "./flow-api-json";
@@ -74,6 +75,7 @@ function documentResponse(
 /** /dex/projects/{project}/...: Runs and Configuration for one exact target. */
 export async function handleFlowApiRequest(request: Request, selection: FlowApiSelection): Promise<Response> {
   try {
+    requireSurface(request, "studio");
     const { projectId, preview = false, releaseId = "", nextPublish = false, purpose, path = [] } = selection;
     admitFlowApiRequest(request, path);
     const caller = callerFromRequest(request);

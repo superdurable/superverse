@@ -1,5 +1,15 @@
 {
   "methods": {
+    "/superverse.v2.AccountService/CreateLoginAuthorizationCode": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
+    "/superverse.v2.AccountService/ExchangeLoginAuthorizationCode": [
+      "api-integration",
+      "kind-e2e",
+      "native-e2e"
+    ],
     "/superverse.v2.AccountService/GetCurrentAccount": [
       "api-integration",
       "kind-e2e",

@@ -207,6 +207,8 @@ service AccountService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc GetCurrentAccount(GetCurrentAccountRequest) returns (GetCurrentAccountResponse);
+  rpc CreateLoginAuthorizationCode(CreateLoginAuthorizationCodeRequest) returns (CreateLoginAuthorizationCodeResponse);
+  rpc ExchangeLoginAuthorizationCode(ExchangeLoginAuthorizationCodeRequest) returns (ExchangeLoginAuthorizationCodeResponse);
 }
 
 // Unauthenticated: registration has no caller yet.
@@ -244,6 +246,34 @@ message GetCurrentAccountResponse {
   AccountSnapshot account = 1;
 }
 
+message CreateLoginAuthorizationCodeRequest {
+  string product_origin = 1;
+  string redirect_uri = 2;
+  string code_challenge = 3;
+  CallerContext caller = 100;
+}
+
+message CreateLoginAuthorizationCodeResponse {
+  LoginAuthorizationCode authorization_code = 1;
+}
+
+// Exchange has no user caller yet; its declared caller must be absent at admission.
+message ExchangeLoginAuthorizationCodeRequest {
+  string code = 1;
+  string code_verifier = 2;
+  string redirect_uri = 3;
+  CallerContext caller = 100;
+}
+
+message ExchangeLoginAuthorizationCodeResponse {
+  AccountLogin login = 1;
+}
+
+message LoginAuthorizationCode {
+  string code = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
 message AccountSnapshot {
   string account_id = 1;
   string email = 2;
@@ -255,6 +285,8 @@ message AccountLogin {
   AccountSnapshot account = 1;
   string session_token = 2;
   google.protobuf.Timestamp expires_at = 3;
+  // The exact login_sessions row admitted for this new audience-bound session.
+  string session_id = 4;
 }
 
 // ---------------------------------------------------------------------------------------------

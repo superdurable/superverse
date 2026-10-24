@@ -34,6 +34,10 @@ studio:
   resources:
     requests: {cpu: 10m, memory: 96Mi}
     limits: {cpu: "1", memory: 1Gi}
+# Shared login is opt-in. These are DNS/TLS identities, never credentials.
+loginHost:
+  hostname: ""
+  certificateArn: ""
 dex:
   image: {repository: docker.io/superdurable/dex-server, tag: "v1.15.0", digest: "sha256:7423a4325258a460e96e5094c9185e796b55647514d714b47b0cf51d65789495", pullPolicy: IfNotPresent}
   # More than one replica requires sharedStreamStore: the memory Stream store is per process,

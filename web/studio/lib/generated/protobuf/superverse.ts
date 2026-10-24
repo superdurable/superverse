@@ -95,6 +95,8 @@ import type { ConnectorServiceClient as _superverse_v2_ConnectorServiceClient, C
 import type { ConnectorTriggerBinding as _superverse_v2_ConnectorTriggerBinding, ConnectorTriggerBinding__Output as _superverse_v2_ConnectorTriggerBinding__Output } from './superverse/v2/ConnectorTriggerBinding';
 import type { CreateAttachmentUploadRequest as _superverse_v2_CreateAttachmentUploadRequest, CreateAttachmentUploadRequest__Output as _superverse_v2_CreateAttachmentUploadRequest__Output } from './superverse/v2/CreateAttachmentUploadRequest';
 import type { CreateAttachmentUploadResponse as _superverse_v2_CreateAttachmentUploadResponse, CreateAttachmentUploadResponse__Output as _superverse_v2_CreateAttachmentUploadResponse__Output } from './superverse/v2/CreateAttachmentUploadResponse';
+import type { CreateLoginAuthorizationCodeRequest as _superverse_v2_CreateLoginAuthorizationCodeRequest, CreateLoginAuthorizationCodeRequest__Output as _superverse_v2_CreateLoginAuthorizationCodeRequest__Output } from './superverse/v2/CreateLoginAuthorizationCodeRequest';
+import type { CreateLoginAuthorizationCodeResponse as _superverse_v2_CreateLoginAuthorizationCodeResponse, CreateLoginAuthorizationCodeResponse__Output as _superverse_v2_CreateLoginAuthorizationCodeResponse__Output } from './superverse/v2/CreateLoginAuthorizationCodeResponse';
 import type { CreateProjectRequest as _superverse_v2_CreateProjectRequest, CreateProjectRequest__Output as _superverse_v2_CreateProjectRequest__Output } from './superverse/v2/CreateProjectRequest';
 import type { CreateProjectResponse as _superverse_v2_CreateProjectResponse, CreateProjectResponse__Output as _superverse_v2_CreateProjectResponse__Output } from './superverse/v2/CreateProjectResponse';
 import type { CreateRemoteAgentPairingRequest as _superverse_v2_CreateRemoteAgentPairingRequest, CreateRemoteAgentPairingRequest__Output as _superverse_v2_CreateRemoteAgentPairingRequest__Output } from './superverse/v2/CreateRemoteAgentPairingRequest';
@@ -136,6 +138,8 @@ import type { EvolveReview as _superverse_v2_EvolveReview, EvolveReview__Output 
 import type { EvolveSchedule as _superverse_v2_EvolveSchedule, EvolveSchedule__Output as _superverse_v2_EvolveSchedule__Output } from './superverse/v2/EvolveSchedule';
 import type { EvolveServiceClient as _superverse_v2_EvolveServiceClient, EvolveServiceDefinition as _superverse_v2_EvolveServiceDefinition } from './superverse/v2/EvolveService';
 import type { ExampleReference as _superverse_v2_ExampleReference, ExampleReference__Output as _superverse_v2_ExampleReference__Output } from './superverse/v2/ExampleReference';
+import type { ExchangeLoginAuthorizationCodeRequest as _superverse_v2_ExchangeLoginAuthorizationCodeRequest, ExchangeLoginAuthorizationCodeRequest__Output as _superverse_v2_ExchangeLoginAuthorizationCodeRequest__Output } from './superverse/v2/ExchangeLoginAuthorizationCodeRequest';
+import type { ExchangeLoginAuthorizationCodeResponse as _superverse_v2_ExchangeLoginAuthorizationCodeResponse, ExchangeLoginAuthorizationCodeResponse__Output as _superverse_v2_ExchangeLoginAuthorizationCodeResponse__Output } from './superverse/v2/ExchangeLoginAuthorizationCodeResponse';
 import type { Failure as _superverse_v2_Failure, Failure__Output as _superverse_v2_Failure__Output } from './superverse/v2/Failure';
 import type { FlowApiContext as _superverse_v2_FlowApiContext, FlowApiContext__Output as _superverse_v2_FlowApiContext__Output } from './superverse/v2/FlowApiContext';
 import type { FlowApiDocument as _superverse_v2_FlowApiDocument, FlowApiDocument__Output as _superverse_v2_FlowApiDocument__Output } from './superverse/v2/FlowApiDocument';
@@ -237,6 +241,7 @@ import type { ListTeamSpacesRequest as _superverse_v2_ListTeamSpacesRequest, Lis
 import type { ListTeamSpacesResponse as _superverse_v2_ListTeamSpacesResponse, ListTeamSpacesResponse__Output as _superverse_v2_ListTeamSpacesResponse__Output } from './superverse/v2/ListTeamSpacesResponse';
 import type { LoadFlowBlobsRequest as _superverse_v2_LoadFlowBlobsRequest, LoadFlowBlobsRequest__Output as _superverse_v2_LoadFlowBlobsRequest__Output } from './superverse/v2/LoadFlowBlobsRequest';
 import type { LoadFlowBlobsResponse as _superverse_v2_LoadFlowBlobsResponse, LoadFlowBlobsResponse__Output as _superverse_v2_LoadFlowBlobsResponse__Output } from './superverse/v2/LoadFlowBlobsResponse';
+import type { LoginAuthorizationCode as _superverse_v2_LoginAuthorizationCode, LoginAuthorizationCode__Output as _superverse_v2_LoginAuthorizationCode__Output } from './superverse/v2/LoginAuthorizationCode';
 import type { LoginRequest as _superverse_v2_LoginRequest, LoginRequest__Output as _superverse_v2_LoginRequest__Output } from './superverse/v2/LoginRequest';
 import type { LoginResponse as _superverse_v2_LoginResponse, LoginResponse__Output as _superverse_v2_LoginResponse__Output } from './superverse/v2/LoginResponse';
 import type { LogoutRequest as _superverse_v2_LogoutRequest, LogoutRequest__Output as _superverse_v2_LogoutRequest__Output } from './superverse/v2/LogoutRequest';
@@ -500,6 +505,8 @@ export interface ProtoGrpcType {
       ConnectorTriggerBinding: MessageTypeDefinition<_superverse_v2_ConnectorTriggerBinding, _superverse_v2_ConnectorTriggerBinding__Output>
       CreateAttachmentUploadRequest: MessageTypeDefinition<_superverse_v2_CreateAttachmentUploadRequest, _superverse_v2_CreateAttachmentUploadRequest__Output>
       CreateAttachmentUploadResponse: MessageTypeDefinition<_superverse_v2_CreateAttachmentUploadResponse, _superverse_v2_CreateAttachmentUploadResponse__Output>
+      CreateLoginAuthorizationCodeRequest: MessageTypeDefinition<_superverse_v2_CreateLoginAuthorizationCodeRequest, _superverse_v2_CreateLoginAuthorizationCodeRequest__Output>
+      CreateLoginAuthorizationCodeResponse: MessageTypeDefinition<_superverse_v2_CreateLoginAuthorizationCodeResponse, _superverse_v2_CreateLoginAuthorizationCodeResponse__Output>
       CreateProjectRequest: MessageTypeDefinition<_superverse_v2_CreateProjectRequest, _superverse_v2_CreateProjectRequest__Output>
       CreateProjectResponse: MessageTypeDefinition<_superverse_v2_CreateProjectResponse, _superverse_v2_CreateProjectResponse__Output>
       CreateRemoteAgentPairingRequest: MessageTypeDefinition<_superverse_v2_CreateRemoteAgentPairingRequest, _superverse_v2_CreateRemoteAgentPairingRequest__Output>
@@ -555,6 +562,8 @@ export interface ProtoGrpcType {
       EvolveSchedule: MessageTypeDefinition<_superverse_v2_EvolveSchedule, _superverse_v2_EvolveSchedule__Output>
       EvolveService: SubtypeConstructor<typeof grpc.Client, _superverse_v2_EvolveServiceClient> & { service: _superverse_v2_EvolveServiceDefinition }
       ExampleReference: MessageTypeDefinition<_superverse_v2_ExampleReference, _superverse_v2_ExampleReference__Output>
+      ExchangeLoginAuthorizationCodeRequest: MessageTypeDefinition<_superverse_v2_ExchangeLoginAuthorizationCodeRequest, _superverse_v2_ExchangeLoginAuthorizationCodeRequest__Output>
+      ExchangeLoginAuthorizationCodeResponse: MessageTypeDefinition<_superverse_v2_ExchangeLoginAuthorizationCodeResponse, _superverse_v2_ExchangeLoginAuthorizationCodeResponse__Output>
       Failure: MessageTypeDefinition<_superverse_v2_Failure, _superverse_v2_Failure__Output>
       FailureOwner: EnumTypeDefinition
       FailureRemedy: EnumTypeDefinition
@@ -658,6 +667,7 @@ export interface ProtoGrpcType {
       ListTeamSpacesResponse: MessageTypeDefinition<_superverse_v2_ListTeamSpacesResponse, _superverse_v2_ListTeamSpacesResponse__Output>
       LoadFlowBlobsRequest: MessageTypeDefinition<_superverse_v2_LoadFlowBlobsRequest, _superverse_v2_LoadFlowBlobsRequest__Output>
       LoadFlowBlobsResponse: MessageTypeDefinition<_superverse_v2_LoadFlowBlobsResponse, _superverse_v2_LoadFlowBlobsResponse__Output>
+      LoginAuthorizationCode: MessageTypeDefinition<_superverse_v2_LoginAuthorizationCode, _superverse_v2_LoginAuthorizationCode__Output>
       LoginRequest: MessageTypeDefinition<_superverse_v2_LoginRequest, _superverse_v2_LoginRequest__Output>
       LoginResponse: MessageTypeDefinition<_superverse_v2_LoginResponse, _superverse_v2_LoginResponse__Output>
       LogoutRequest: MessageTypeDefinition<_superverse_v2_LogoutRequest, _superverse_v2_LogoutRequest__Output>

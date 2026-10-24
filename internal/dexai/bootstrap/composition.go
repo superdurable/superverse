@@ -106,7 +106,7 @@ func compose(ctx context.Context, config serverConfig, logger *slog.Logger, owne
 	}
 	owned.add(db.Close)
 	memberDAO := memberdao.New(db)
-	accountService := &accounts.Accounts{DAO: accountdao.New(db, config.platformAdminEmails), Signer: config.signer}
+	accountService := &accounts.Accounts{DAO: accountdao.New(db, config.platformAdminEmails), Signer: config.signer, LoginHost: config.loginHost}
 	// One provider client with the address policy makes every provider call
 	// of the TeamSpace connections.
 	providerClient := connections.NewProviderHTTPClient(config.privateProviderHTTP)

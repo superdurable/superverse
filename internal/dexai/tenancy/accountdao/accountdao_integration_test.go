@@ -63,7 +63,7 @@ func TestAccountDAOIntegration(t *testing.T) {
 		t.Fatalf("an ordinary account is the platform admin=%t: %v", admin, adminErr)
 	}
 
-	login := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "hash-" + id, IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
+	login := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "hash-" + id, Audience: "studio", IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
 	if _, err = dao.CreateLoginSession(ctx, login, 2); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("a login verified against a stale credential revision was admitted: %v", err)
 	}
@@ -78,22 +78,22 @@ func TestAccountDAOIntegration(t *testing.T) {
 	if _, err = dao.CreateLoginSession(ctx, stolen, 1); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("a login with another token hash replaced the session: %v", err)
 	}
-	if account, authErr := dao.AuthenticatedAccount(ctx, login.SessionID, login.TokenHash); authErr != nil || account.AccountID != candidate.AccountID {
+	if account, authErr := dao.AuthenticatedAccount(ctx, login.SessionID, login.TokenHash, "studio"); authErr != nil || account.AccountID != candidate.AccountID {
 		t.Fatalf("authenticate the login: %v", authErr)
 	}
-	if _, err = dao.AuthenticatedAccount(ctx, login.SessionID, stolen.TokenHash); !errors.Is(err, ErrNotFound) {
+	if _, err = dao.AuthenticatedAccount(ctx, login.SessionID, stolen.TokenHash, "studio"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("a wrong token hash authenticated: %v", err)
 	}
 
 	// An expired login neither authenticates nor survives the account's next login.
-	expired := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "expired-" + id, IssuedAt: now.Add(-2 * time.Hour), ExpiresAt: now.Add(-time.Hour)}
+	expired := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "expired-" + id, Audience: "studio", IssuedAt: now.Add(-2 * time.Hour), ExpiresAt: now.Add(-time.Hour)}
 	if _, err = dao.CreateLoginSession(ctx, expired, 1); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = dao.AuthenticatedAccount(ctx, expired.SessionID, expired.TokenHash); !errors.Is(err, ErrNotFound) {
+	if _, err = dao.AuthenticatedAccount(ctx, expired.SessionID, expired.TokenHash, "studio"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("an expired login authenticated: %v", err)
 	}
-	next := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "next-" + id, IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
+	next := LoginSession{SessionID: "login-" + flowid.RandomID(24), AccountID: candidate.AccountID, TokenHash: "next-" + id, Audience: "studio", IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
 	if _, err = dao.CreateLoginSession(ctx, next, 1); err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestAccountDAOIntegration(t *testing.T) {
 	if _, err = db.ExecContext(ctx, `UPDATE accounts SET auth_epoch = auth_epoch + 1 WHERE account_id = $1`, candidate.AccountID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = dao.AuthenticatedAccount(ctx, next.SessionID, next.TokenHash); !errors.Is(err, ErrNotFound) {
+	if _, err = dao.AuthenticatedAccount(ctx, next.SessionID, next.TokenHash, "studio"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("a login of an earlier epoch authenticated: %v", err)
 	}
 

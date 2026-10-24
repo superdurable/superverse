@@ -76,6 +76,14 @@ mode 0600 under the main checkout's ignored `.local/superverse-v2`; never upload
 ./infra-as-code/sv2 kind e2e
 ```
 
+For the opt-in shared login journey, add
+`--config cmd/superverse-server/config/local-kind-login.yaml` to `kind deploy`.
+The launcher retains separate private login issuer, Studio client and browser
+cookie keys, and uses `studio.kind.localhost:23000` and
+`login.kind.localhost:23000` through the existing Studio port-forward. Keep the
+mock model and mock LLM endpoint for `kind e2e`; this profile creates no hosted
+DNS or TLS resources.
+
 `up` creates the cluster with a mount of the local Git host's repository directory, the main checkout's
 `.local/superverse-v2/git`, into the node, and creates that directory writable by the server Pod's non-root user. A
 cluster created before the local Git host has no such mount, and the Local Kind chart mounts the directory into the

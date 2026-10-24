@@ -8,6 +8,7 @@
 
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import { STORAGE_KEYS } from "@/lib/browser/storage";
 import "./globals.css";
 
@@ -22,11 +23,12 @@ const THEME_BOOTSTRAP = `(function(){try{var p=localStorage.getItem(${JSON.strin
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
       <body className="h-full overflow-hidden">
         <div className="h-full min-h-0">{children}</div>

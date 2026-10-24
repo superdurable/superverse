@@ -1,5 +1,19 @@
 # Superverse V2 Studio
 
+<!-- BEGIN GENERATED DIRECTORY SUMMARY (scripts/check-readmes.mjs; edit only Purpose) -->
+Purpose: Runs the Studio Next application and routes exact login and product hosts to their permitted pages and server endpoints.
+
+Importers: no production directory imports this directory.
+
+Imports: it imports `lib/server`.
+
+```mermaid
+flowchart LR
+  self["Studio root"]
+  self --> d0["lib/server"]
+```
+<!-- END GENERATED DIRECTORY SUMMARY -->
+
 Studio is the single Next.js browser application for Projects, coding Sessions,
 Preview, Releases and Live deployments. Its BFF calls the merged Go server's
 business gRPC services defined in `api/superverse/v2/superverse.proto`
@@ -112,6 +126,7 @@ the current contract.
 
 | Directory | Purpose |
 | --- | --- |
+| [`Studio root`](README.md) | Runs the Studio Next application and routes exact login and product hosts to their permitted pages and server endpoints. |
 | [`app`](app/README.md) | The Next.js routes: signed-in and sign-in pages, the BFF route handlers and the `/dex` Flow API routes, and the only files that choose mock or production code. |
 | [`components/agent`](components/agent/README.md) | The shared Agent UI's single entry `index.ts`; Studio reaches the conversation and interaction presentation only through this entry. |
 | [`components/agent/attachments`](components/agent/attachments/README.md) | The files a sent or queued message attached, as chips with image thumbnails, reached only through the links the page injects, so the shared Agent UI stays transport-free. |
@@ -193,9 +208,10 @@ the current contract.
 | [`lib/project/publishing`](lib/project/publishing/README.md) | A publish's five stages from its phase timings, the publish in progress with its Watches, the build log read, and the Publish popover's version check. |
 | [`lib/project/setup`](lib/project/setup/README.md) | Setup's shared state: each environment's status, the Preview draft, Live's next-publish layer with its items, and the gap links. |
 | [`lib/project/stage`](lib/project/stage/README.md) | How far a Project has come, from its first conversation to built and Live, and the Builder tabs it has shown in this browser. |
-| [`lib/server`](lib/server/README.md) | The server-only BFF core: the gRPC client and its `RpcBackend` seam, the Server-Sent Events relay, `/api/auth`, the caller cookie, same-origin checks and bounded request bodies. |
+| [`lib/server`](lib/server/README.md) | Provides BFF gRPC transport, account cookies, exact host and origin selection, event streaming, and bounded request decoding. |
 | [`lib/server/connector-oauth`](lib/server/connector-oauth/README.md) | Starts a Teamspace connection's OAuth authorization and completes its provider callback, binding the two with a signed route cookie. |
 | [`lib/server/flow`](lib/server/flow/README.md) | Serves the `/dex` Flow API routes and the Session source catalog: maps each URL to a named Flow API RPC and checks CSRF. |
+| [`lib/server/login-host`](lib/server/login-host/README.md) | Handles shared login forms, browser handoffs, code exchange, host-only transient cookies, and server credentials for first-party products. |
 | [`lib/server/rpc`](lib/server/rpc/README.md) | Serves `/api/rpc/<Method>` for the six browser services through a fail-closed allowlist and a strict descriptor-driven request decoder. |
 | [`lib/session`](lib/session/README.md) | The page-owned Session: `SessionProvider`, its owner hook with the single Watch and the Agent commands, the reducer, the Agent protobuf projection, message merging and the mock scenarios. |
 | [`lib/session/attachments`](lib/session/attachments/README.md) | The composer's attachments: the accepted formats and limits, image normalization and hashing, the upload through a presigned PUT, the chip state machine, its tray hook and the history download links. |

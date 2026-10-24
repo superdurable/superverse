@@ -37,11 +37,20 @@ export function takeFirstTeamSpace(page: Page): FirstTeamSpace | undefined {
 
 export async function register(page: Page, account = identity()) {
   await page.goto("/register");
+  const sharedLogin = new URL(page.url()).hostname.startsWith("login.");
+  if (sharedLogin) {
+    await page.getByRole("link", { name: "Create an account" }).click();
+    await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+  }
   await page.getByLabel("Email", { exact: true }).fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   // A new account belongs to no Teamspace yet, so Studio creates its first one, named from the email, and opens it.
   const created = page.waitForResponse(rpcAnswered("CreateTeamSpace"), { timeout: 60_000 });
   await page.getByRole("button", { name: "Create account", exact: true }).click();
+  if (sharedLogin) {
+    await page.getByRole("button", { name: "Continue to Dex AI Platform" }).click();
+  }
   const response = await created;
   firstTeamSpaces.set(page, {
     status: response.status(),
@@ -54,9 +63,15 @@ export async function register(page: Page, account = identity()) {
 /** Signs in through the login form; a failure never shows the credentials. */
 export async function signIn(page: Page, { email, password }: { email: string; password: string }) {
   await page.goto("/login");
-  await safeFill(page.getByLabel("Email", { exact: true }), email);
-  await safeFill(page.getByLabel("Password", { exact: true }), password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  const sharedLogin = new URL(page.url()).hostname.startsWith("login.");
+  const continueButton = page.getByRole("button", { name: "Continue to Dex AI Platform" });
+  if (!(await continueButton.isVisible())) {
+    await safeFill(page.getByLabel("Email", { exact: true }), email);
+    await safeFill(page.getByLabel("Password", { exact: true }), password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    if (sharedLogin) await expect(continueButton).toBeVisible();
+  }
+  if (await continueButton.isVisible()) await continueButton.click();
   // Studio opens at / and moves on to the account's Teamspace when it has one.
   await expect(page).toHaveURL(/\/(t\/[^/]+)?$/);
 }
