@@ -32,6 +32,8 @@ var (
 	ConnectionForm = Purpose{"superverse/connection-form/v1"}
 	// ConnectorUISession binds a Project connector form to its actor, scope and source.
 	ConnectorUISession = Purpose{"superverse/connector-ui-session/v1"}
+	// ProductSession binds one authenticated account session to one product audience.
+	ProductSession = Purpose{"superverse/product-session/v1"}
 )
 
 // errInvalid is a token that is malformed, signed for another purpose or

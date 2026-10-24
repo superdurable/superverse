@@ -82,6 +82,10 @@ MEMORY_SAFE_PLATFORMS = (("linux", "arm64"), ("linux", "amd64"), ("darwin", "arm
 # The levels are the longest import chain below each package, so a new edge that needs a higher
 # level shows up in review. A business test helper (sandboxdtest) is levelled like its parent's code.
 LEVELS = {
+    "internal/dexengine/organizations": 1,
+    "internal/dexengine/orgdao": 2,
+    "internal/dexengine/api": 3,
+    "internal/dexengine/bootstrap": 4,
     "internal/dexai/agents/platformissue": 1,
     "internal/dexai/agents/remoteagentdao": 1,
     "internal/dexai/agents/toolfailure": 1,
@@ -169,12 +173,22 @@ LEVELS = {
     "internal/dexai/bootstrap": 12,
 }
 
+# ENGINEROUTER adds these packages on its own branch; reserve their levels
+# without requiring absent packages to exist in this checkout.
+PLANNED_ENGINE_LEVELS = {
+    "internal/dexengine/serverid": 1,
+    "internal/dexengine/router": 2,
+}
+
 
 def under(path, *roots):
     return any(path == root or path.startswith(root + "/") for root in roots)
 
 
 def violations(package, imported):
+    if ((under(package, "internal/dexai") and under(imported, "internal/dexengine")) or
+            (under(package, "internal/dexengine") and under(imported, "internal/dexai"))):
+        yield f"{package} imports {imported}; DexAI and Dex Engine never import one another"
     if imported == CONFIG and package not in CONFIG_IMPORTERS:
         yield f"{package} imports the server configuration; only {', '.join(CONFIG_IMPORTERS)} may"
     if imported.startswith("cmd/"):
@@ -315,6 +329,7 @@ def main():
             if any(under(name.removeprefix(MODULE), api) for name in everything):
                 clients[(api, package)] = (entry["Dir"], entry.get("GoFiles", []) + entry.get("TestGoFiles", []) + entry.get("XTestGoFiles", []))
     business = sorted(package for package in imports if package.startswith("internal/") and not under(package, *SHARED_ROOTS))
+    LEVELS.update({package: PLANNED_ENGINE_LEVELS[package] for package in business if package in PLANNED_ENGINE_LEVELS})
     failures = [f"business package {package} has no level; add it to LEVELS in {os.path.basename(__file__)}"
                 for package in business if package not in LEVELS]
     failures += [f"LEVELS names {package}, which is not a business package" for package in sorted(set(LEVELS) - set(business))]

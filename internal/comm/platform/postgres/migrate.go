@@ -40,7 +40,13 @@ type migration struct {
 // each in its own transaction, under an advisory lock, and returns the
 // versions it applied. A recorded migration whose file changed is an error.
 func Migrate(ctx context.Context, db *sql.DB) ([]string, error) {
-	pending, err := embeddedMigrations()
+	return MigrateFS(ctx, db, migrations)
+}
+
+// MigrateFS applies a product's embedded migrations with the same checksum and
+// advisory-lock discipline. Each product uses its own database.
+func MigrateFS(ctx context.Context, db *sql.DB, files fs.FS) ([]string, error) {
+	pending, err := embeddedMigrations(files)
 	if err != nil {
 		return nil, err
 	}
@@ -80,15 +86,15 @@ func Migrate(ctx context.Context, db *sql.DB) ([]string, error) {
 	return applied, nil
 }
 
-func embeddedMigrations() ([]migration, error) {
-	names, err := fs.Glob(migrations, "migrations/*.sql")
+func embeddedMigrations(files fs.FS) ([]migration, error) {
+	names, err := fs.Glob(files, "migrations/*.sql")
 	if err != nil {
 		return nil, fmt.Errorf("list the migrations: %w", err)
 	}
 	slices.Sort(names)
 	result := make([]migration, 0, len(names))
 	for _, name := range names {
-		content, err := migrations.ReadFile(name)
+		content, err := fs.ReadFile(files, name)
 		if err != nil {
 			return nil, fmt.Errorf("read migration %s: %w", name, err)
 		}

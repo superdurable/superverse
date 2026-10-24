@@ -25,6 +25,7 @@ from pathlib import Path
 
 repository = Path(__file__).resolve().parents[1]
 PROTO = "superverse/v2/superverse.proto"
+ENGINE_PROTO = "dexengine/v1/dexengine.proto"
 PACKAGE = ".superverse.v2."
 DOCUMENT = repository / "docs/api/resource-grpc.md"
 TABLE_BEGIN = "<!-- BEGIN GENERATED SERVICE TABLE (make generate-proto) -->"
@@ -343,9 +344,9 @@ def table_span(document):
 def main():
     image = build_image()
     files = [file["name"] for file in image["file"]]
-    if files != [PROTO]:
-        sys.exit(f"the business module must hold exactly {PROTO}, found {files}")
-    protocol = Protocol(image["file"][0])
+    if sorted(files) != sorted([PROTO, ENGINE_PROTO]):
+        sys.exit(f"the module must hold {PROTO} and {ENGINE_PROTO}, found {files}")
+    protocol = Protocol(next(file for file in image["file"] if file["name"] == PROTO))
     failures = check_services(protocol) + check_fields(protocol) + check_browser_requests(protocol) + check_frozen(protocol) + check_names(protocol)
     document = DOCUMENT.read_text()
     start, end = table_span(document)

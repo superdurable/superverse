@@ -21,10 +21,11 @@ import urllib.request
 
 import build_inputs
 from commands import run, wait_until
-from local_platform import POSTGRES_DATABASE, POSTGRES_SUPERUSER, create_buckets, dex_config, keycloak_secret_environment, postgres_roles_sql
+from local_platform import POSTGRES_DATABASE, POSTGRES_SUPERUSER, READ_MODEL_STORES, create_buckets, dex_config, keycloak_secret_environment, postgres_roles_sql
 from native.callback import dex_answers, dexcli
-from native.lane import keycloak_credentials, platform_credentials, postgres_credentials
+from native.lane import engine_postgres_credentials, keycloak_credentials, platform_credentials, postgres_credentials
 from operator_errors import require
+from paths import ROOT
 from pins import LOCK, local_dependency_image, local_image, names_for
 
 COMPOSE_FILE = Path(__file__).with_name("compose.yaml")
@@ -60,7 +61,8 @@ def compose_environment(topology):
     environment.update(SV2_NATIVE_INSTANCE=topology.instance.name, SV2_TEMPORAL_IMAGE=pinned["temporal"], SV2_TEMPORAL_NAMESPACE=names_for("test")["temporal_namespace"],
                        SV2_MINIO_IMAGE=pinned["minio"], SV2_MINIO_ACCESS=credentials["access"], SV2_MINIO_SECRET=credentials["secret"],
                        SV2_POSTGRES_IMAGE=pinned["postgres"], SV2_POSTGRES_PASSWORD=postgres[POSTGRES_SUPERUSER],
-                       SV2_DEX_IMAGE=pinned["dex"], SV2_DEX_CONFIG=json.dumps(dex_config(credentials, postgres)),
+                       SV2_DEX_IMAGE=pinned["dex"], SV2_DEX_CONFIG=json.dumps(dex_config(credentials, postgres,
+                           native_read_model_stores(topology.instance) if engine_enabled() else None)),
                        SV2_KEYCLOAK_IMAGE=pinned["keycloak"], SV2_KEYCLOAK_ORIGIN=topology.keycloak_origin, SV2_STUDIO_ORIGIN=topology.studio_origin,
                        SV2_GATEWAY_IMAGE=pinned["gateway"], SV2_REGISTRY_IMAGE=pinned["registry"])
     environment.update(keycloak_secret_environment(keycloak_credentials(topology.instance)))
@@ -68,6 +70,41 @@ def compose_environment(topology):
                        ("KEYCLOAK", "keycloak"), ("ROUTES", "routes"), ("GATEWAY", "gateway"), ("GATEWAY_API", "gateway_api"), ("REGISTRY", "registry")):
         environment["SV2_" + name + "_PORT"] = str(ports[port])
     return environment
+
+
+def native_read_model_stores(instance):
+    """Add the Engine store only in Native, whose Engine migration precedes Dex."""
+    password = engine_postgres_credentials(instance)["dexengine_dex"]
+    stores = dict(READ_MODEL_STORES)
+    stores["dexengine"] = {
+        "tableName": "public.organizations", "rowKey": "org-{organization_id}",
+        "attributeMaps": {"Members": {"tableName": "public.organization_members", "instanceKeyColumn": "account_id"}},
+        "dsn": f"postgres://dexengine_dex:{password}@postgres:5432/dexengine?sslmode=disable",
+    }
+    return stores
+
+
+def engine_enabled():
+    return (ROOT / "cmd/dexengine-server/main.go").exists()
+
+
+def engine_roles_sql(credentials):
+    """Create the isolated Engine roles and database without logging passwords."""
+    roles = ("dexengine_owner", "dexengine_server", "dexengine_dex")
+    statements = ["DO $$ BEGIN"]
+    for role in roles:
+        statements.append(f"IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{role}') THEN CREATE ROLE {role} LOGIN; END IF;")
+    statements.append("END $$;")
+    for role in roles:
+        password = credentials[role]
+        require(password.replace("-", "").replace("_", "").isalnum(), "Engine PostgreSQL passwords must be URL-safe")
+        statements.append(f"ALTER ROLE {role} LOGIN PASSWORD '{password}';")
+    statements.extend([
+        "SELECT 'CREATE DATABASE dexengine OWNER dexengine_owner' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'dexengine') \\gexec",
+        "ALTER DATABASE dexengine OWNER TO dexengine_owner;",
+        "GRANT CONNECT ON DATABASE dexengine TO dexengine_server, dexengine_dex;",
+    ])
+    return "\n".join(statements) + "\n"
 
 
 def compose(topology, *arguments, input=None, timeout=600):
@@ -94,6 +131,9 @@ def up(topology, cancelled, migrate):
     wait_until(lambda: postgres_ready(topology), seconds=90, interval=1, cancelled=cancelled)
     compose(topology, "exec", "-T", "postgres", "psql", "-v", "ON_ERROR_STOP=1", "-U", POSTGRES_SUPERUSER, "-d", POSTGRES_DATABASE,
             input=postgres_roles_sql(postgres_credentials(topology.instance)), timeout=60)
+    if engine_enabled():
+        compose(topology, "exec", "-T", "postgres", "psql", "-v", "ON_ERROR_STOP=1", "-U", POSTGRES_SUPERUSER, "-d", POSTGRES_DATABASE,
+                input=engine_roles_sql(engine_postgres_credentials(topology.instance)), timeout=60)
     migrate()
     # A published port accepts connections before its container listens, so each service must answer its own protocol.
     wait_until(lambda: answers(f"http://127.0.0.1:{ports['temporal_ui']}/"), seconds=180, cancelled=cancelled)

@@ -63,6 +63,7 @@ def instance_ports(document, index):
     return {
         "studio": url_port(document["studio"]["publicOrigin"]), "grpc": port(document["server"]["grpcAddress"]),
         "health": port(document["server"]["healthAddress"]),
+        "engine_grpc": 26090 + offset, "engine_health": 26091 + offset,
         "git": port(document["localgit"]["listen"]), "routes": port(document["native"]["routesListen"]),
         "dex": port(document["dex"]["serverAddress"]), "dex_web": DEX_WEB_PORT + offset,
         "minio": url_port(document["storage"]["s3Endpoint"]), "temporal": TEMPORAL_PORT + offset,
@@ -194,12 +195,23 @@ def postgres_credentials(instance):
     return local_platform.postgres_credentials(instance.root)
 
 
+def engine_postgres_credentials(instance):
+    """Retain separate Engine database role passwords in this Native instance."""
+    roles = ("dexengine_owner", "dexengine_server", "dexengine_dex")
+    return json.loads(retained_secret(instance.root / "dexengine-postgres-credentials.json",
+                                      lambda: json.dumps({role: secrets.token_urlsafe(32) for role in roles})))
+
+
 def keycloak_credentials(instance):
     return local_platform.keycloak_credentials(instance.root)
 
 
 def cookie_signing_key(instance):
     return retained_secret(instance.root / "cookie-signing-key", lambda: base64.b64encode(secrets.token_bytes(32)).decode())
+
+
+def engine_session_signing_key(instance):
+    return retained_secret(instance.root / "dexengine-session-signing-key", lambda: base64.b64encode(secrets.token_bytes(32)).decode())
 
 
 def slack_signing_secret(instance):

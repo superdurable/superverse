@@ -149,7 +149,10 @@ def app_manifest_tool_inputs():
 
 
 def native_server_inputs():
-    return go_inputs("./cmd/superverse-server", target_os=platform.system().lower())
+    inputs = go_inputs("./cmd/superverse-server", target_os=platform.system().lower())
+    if (ROOT / "cmd/dexengine-server/main.go").exists():
+        inputs |= go_inputs("./cmd/dexengine-server", target_os=platform.system().lower())
+    return inputs
 
 
 def script_modules(*packages):
@@ -181,7 +184,10 @@ def kind_behavior_fingerprint():
 
 def native_behavior_fingerprint():
     """The host-OS server, the Native launcher with its Compose file and the Native profile."""
-    return fingerprint(common_behavior_inputs() | native_server_inputs() | script_modules("native") | {"cmd/superverse-server/config/native.yaml"})
+    profiles = {"cmd/superverse-server/config/native.yaml"}
+    if (ROOT / "cmd/dexengine-server/config/native.yaml").exists():
+        profiles.add("cmd/dexengine-server/config/native.yaml")
+    return fingerprint(common_behavior_inputs() | native_server_inputs() | script_modules("native") | profiles)
 
 
 def freeze(component, destination):

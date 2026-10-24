@@ -10,8 +10,9 @@
 """Keep the generated summary block of every internal/ package README current.
 
 The block follows the README title. Its Purpose sentence is hand-written; the Callers and
-Dependencies sentences and the mermaid graph derive from production imports. The package table
-of the architecture specification lists every Purpose. --write regenerates every block and the
+Dependencies sentences and the mermaid graph derive from production imports. Public summaries
+exclude private Engine callers, and the public architecture table lists public Purposes only.
+--write regenerates every block and the
 table, keeps each Purpose and creates a README for a new package."""
 import argparse
 from collections import defaultdict
@@ -148,6 +149,10 @@ def callers_sentence(callers):
     return f"{join([code(item) for item in callers])} {'imports' if single else 'import'} this package."
 
 
+def private_engine(path):
+    return path == "internal/dexengine" or path.startswith("internal/dexengine/")
+
+
 def dependencies_sentence(dependencies, apis):
     clauses = []
     if dependencies:
@@ -223,7 +228,9 @@ class Summary:
 
     def __init__(self, package, apis):
         self.path, self.apis = package.path, sorted(apis, key=str.casefold)
-        self.callers = fit([(path, None) for path in sorted(package.callers)], callers_sentence)
+        callers = package.callers if private_engine(package.path) else [
+            path for path in package.callers if not private_engine(path)]
+        self.callers = fit([(path, None) for path in sorted(callers)], callers_sentence)
         self.dependencies = fit([(path, None) for path in package.local],
                                 lambda items: dependencies_sentence(items, self.apis))
         self.sentences = {"Callers": callers_sentence(self.callers),
@@ -343,7 +350,8 @@ def main():
             text = regenerate(text, expected)
             readme.write_text(text)
         problems += readme_problems(name, text, expected)
-        purposes.append((package.path, purpose_of(text)))
+        if not private_engine(package.path):
+            purposes.append((package.path, purpose_of(text)))
     specification = (repository / SPECIFICATION).read_text()
     table = package_table(purposes)
     if args.write:

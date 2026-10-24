@@ -39,7 +39,7 @@ from local_platform import POSTGRES_OWNER, POSTGRES_SERVER
 from native import coding, services
 from native.discard import delete
 from native.callback import callback_readiness
-from native.lane import (CONFIG, Topology, build_token, cookie_signing_key, native_instance, platform_credentials, postgres_credentials, run_layer,
+from native.lane import (CONFIG, Topology, build_token, cookie_signing_key, engine_postgres_credentials, engine_session_signing_key, native_instance, platform_credentials, postgres_credentials, run_layer,
                          slack_signing_secret)
 from native.owner import idle, native_admission, owner_lock, owner_state, release, retain, retained
 from native.studio import MODES as STUDIO_MODES, prepare_studio, require_studio_unchanged
@@ -93,7 +93,9 @@ def inputs_unchanged(instance, record):
             config_files.file_digest(CONFIG) == record["nativeConfigSHA256"] and
             all(config_files.file_digest(layer["path"]) == layer["sha256"] for layer in record["configuration"].get("layers", [])) and
             build_inputs.fingerprint(build_inputs.native_server_inputs()) == record["nativeSourceFingerprint"] and
-            hashlib.sha256(Path(record["binary"]).read_bytes()).hexdigest() == record["binaryDigest"])
+            hashlib.sha256(Path(record["binary"]).read_bytes()).hexdigest() == record["binaryDigest"] and
+            (not services.engine_enabled() or (hashlib.sha256(Path(record["engineBinary"]).read_bytes()).hexdigest() == record["engineBinaryDigest"] and
+             hashlib.sha256(Path(record["engineConfig"]).read_bytes()).hexdigest() == record["engineConfigDigest"])))
 
 
 def ensure_ports_free(topology):
@@ -117,6 +119,12 @@ def docker_socket():
 def ready(port, run_id):
     with urllib.request.urlopen(f"http://127.0.0.1:{port}/readyz", timeout=3) as response:
         require(response.status == 200 and response.headers.get(RUN_HEADER) == run_id, "Readiness response does not identify this Native run")
+        response.read(4096)
+
+
+def engine_ready(port):
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=3) as response:
+        require(response.status == 200, "Engine readiness failed")
         response.read(4096)
 
 
@@ -204,6 +212,19 @@ def prepare(instance, record, topology, studio_mode, profile):
         env=dict(os.environ, GOWORK="off", GOFLAGS="", CGO_ENABLED="0", GOOS=platform.system().lower(), GOARCH=build_inputs.architecture()), private=True, timeout=300)
     require(build_inputs.fingerprint(build_inputs.native_server_inputs()) == record["nativeSourceFingerprint"], "Native source changed while compiling")
     record.update(binary=str(binary), binaryDigest=hashlib.sha256(binary.read_bytes()).hexdigest(), platform=platform.system().lower() + "/" + build_inputs.architecture())
+    if services.engine_enabled():
+        engine_binary = directory / "dexengine-server"
+        run(["go", "build", "-trimpath", "-o", engine_binary, "./cmd/dexengine-server"],
+            env=dict(os.environ, GOWORK="off", GOFLAGS="", CGO_ENABLED="0", GOOS=platform.system().lower(), GOARCH=build_inputs.architecture()), private=True, timeout=300)
+        require(build_inputs.fingerprint(build_inputs.native_server_inputs()) == record["nativeSourceFingerprint"], "Native source changed while compiling")
+        engine_layer = directory / "dexengine-run.yaml"
+        write_private(engine_layer, json.dumps({
+            "server": {"grpcAddress": f"127.0.0.1:{topology.ports['engine_grpc']}", "healthAddress": f"127.0.0.1:{topology.ports['engine_health']}"},
+            "dex": {"serverAddress": f"127.0.0.1:{topology.ports['dex']}", "blobCacheDir": str(directory / "dexengine-blob-cache")},
+            "postgres": {"host": "127.0.0.1", "port": topology.ports["postgres"]},
+        }))
+        record.update(engineBinary=str(engine_binary), engineBinaryDigest=hashlib.sha256(engine_binary.read_bytes()).hexdigest(),
+                      engineConfig=str(engine_layer), engineConfigDigest=hashlib.sha256(engine_layer.read_bytes()).hexdigest())
     # The last layer is what only this run knows; every address is native.yaml's, which the server validates as Local Native's topology.
     layer = run_layer(directory, {**topology.layer(), "native": {**topology.layer()["native"], "runId": record["runId"], "stateDir": str(instance.root), "dockerSocket": docker_socket()},
                                   "localgit": {**topology.layer()["localgit"], "dir": str(instance.git.repositories)}, "server": {**topology.layer()["server"], "blobCacheDir": str(directory / "blob-cache"), "rpcCoverageFile": str(directory / "rpc-coverage.json")},
@@ -238,6 +259,14 @@ def server_environment(instance, layers):
     return environment
 
 
+def engine_environment(instance, record, *, owner=False):
+    credentials = engine_postgres_credentials(instance)
+    role = "dexengine_owner" if owner else "dexengine_server"
+    variable = "DEXENGINE_POSTGRES_OWNER_PASSWORD" if owner else "DEXENGINE_POSTGRES_PASSWORD"
+    return dict(host_environment(*HOST_BASICS), DEXENGINE_CONFIG_FILE=",".join((str(ROOT / "cmd/dexengine-server/config/native.yaml"), record["engineConfig"])),
+                DEXENGINE_SESSION_SIGNING_KEY=engine_session_signing_key(instance), **{variable: credentials[role]})
+
+
 def serve(instance, record, topology, prepared, processes):
     """Start the platform services and every owned child, prove readiness and supervise until stopped."""
     ports = topology.ports
@@ -247,11 +276,16 @@ def serve(instance, record, topology, prepared, processes):
         # The server never migrates: the binary applies the pending migrations as the schema owner, as Kind's init container does.
         run([record["binary"], "migrate"], env=dict(host_environment(*HOST_BASICS), SUPERVERSE_CONFIG_FILE=environment["SUPERVERSE_CONFIG_FILE"],
                                                     SUPERVERSE_POSTGRES_OWNER_PASSWORD=postgres_credentials(instance)[POSTGRES_OWNER]), timeout=120)
+        if services.engine_enabled():
+            run([record["engineBinary"], "migrate"], env=engine_environment(instance, record, owner=True), timeout=120)
     services.up(topology, stop_requested, migrate)
     record["platform"] = services.require_running(topology)
     save_run(instance, record)
     instance.git.repositories.mkdir(parents=True, exist_ok=True, mode=0o700)
     build_token(instance)
+    if services.engine_enabled():
+        processes["engine"] = spawn(instance, [record["engineBinary"]], record, "engine", env=engine_environment(instance, record))
+        await_child(processes["engine"], "engine", lambda: engine_ready(ports["engine_health"]), seconds=SERVER_REGISTRATION_WAIT)
     arguments = ["--port", str(ports["builder"]), "--target", "docker", "--registry", topology.registry, "--state-dir", instance.release_builds]
     builder_environment = dict(host_environment(*HOST_BASICS, *services.DOCKER_SETTINGS), SUPERVERSE_LOCAL_NATIVE="true",
                                SUPERVERSE_NATIVE_RUN_ID=record["runId"], SUPERVERSE_NATIVE_PROCESS_GROUP=str(record["ownerProcess"]["group"]))
