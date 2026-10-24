@@ -21,7 +21,7 @@ import urllib.request
 
 import build_inputs
 from commands import run, wait_until
-from local_platform import POSTGRES_DATABASE, POSTGRES_SUPERUSER, READ_MODEL_STORES, create_buckets, dex_config, keycloak_secret_environment, postgres_roles_sql
+from local_platform import POSTGRES_DATABASE, POSTGRES_SUPERUSER, READ_MODEL_STORES, create_buckets, dex_config, engine_roles_sql, keycloak_secret_environment, postgres_roles_sql
 from native.callback import dex_answers, dexcli
 from native.lane import engine_postgres_credentials, keycloak_credentials, platform_credentials, postgres_credentials
 from operator_errors import require
@@ -81,30 +81,16 @@ def native_read_model_stores(instance):
         "attributeMaps": {"Members": {"tableName": "public.organization_members", "instanceKeyColumn": "account_id"}},
         "dsn": f"postgres://dexengine_dex:{password}@postgres:5432/dexengine?sslmode=disable",
     }
+    stores["dex_servers"] = {
+        "tableName": "public.dex_servers", "rowKey": "dexserver-{server_id}",
+        "attributeMaps": {"APIKeys": {"tableName": "public.dex_server_api_keys", "instanceKeyColumn": "key_id"}},
+        "dsn": f"postgres://dexengine_dex:{password}@postgres:5432/dexengine?sslmode=disable",
+    }
     return stores
 
 
 def engine_enabled():
     return (ROOT / "cmd/dexengine-server/main.go").exists()
-
-
-def engine_roles_sql(credentials):
-    """Create the isolated Engine roles and database without logging passwords."""
-    roles = ("dexengine_owner", "dexengine_server", "dexengine_dex")
-    statements = ["DO $$ BEGIN"]
-    for role in roles:
-        statements.append(f"IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{role}') THEN CREATE ROLE {role} LOGIN; END IF;")
-    statements.append("END $$;")
-    for role in roles:
-        password = credentials[role]
-        require(password.replace("-", "").replace("_", "").isalnum(), "Engine PostgreSQL passwords must be URL-safe")
-        statements.append(f"ALTER ROLE {role} LOGIN PASSWORD '{password}';")
-    statements.extend([
-        "SELECT 'CREATE DATABASE dexengine OWNER dexengine_owner' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'dexengine') \\gexec",
-        "ALTER DATABASE dexengine OWNER TO dexengine_owner;",
-        "GRANT CONNECT ON DATABASE dexengine TO dexengine_server, dexengine_dex;",
-    ])
-    return "\n".join(statements) + "\n"
 
 
 def compose(topology, *arguments, input=None, timeout=600):

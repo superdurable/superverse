@@ -39,7 +39,7 @@ def profile_sandbox_image(configmap):
     return containers[0].get("image")
 
 
-def kind_deployment_identity(profile, images):
+def kind_deployment_identity(profile, images, engine=None):
     require(set(images) == {"server", "studio", "coding"}, "Three deployment-bound component image records are required")
     node_images = node_image_identities(images)
     result = {}
@@ -80,4 +80,22 @@ def kind_deployment_identity(profile, images):
         result["component/" + name] = sorted(observed, key=lambda p: p["uid"])
     # The profile selects future Sandbox images; no Sandbox is created just for evidence.
     result["component/coding"] = {node: {"configDigest": value["id"], "manifestRef": value["reference"]} for node, value in sorted(node_images["coding"].items())}
+    if engine and engine.get("enabled"):
+        deployment = read_object("deployment", "dexengine-server")
+        metadata, status = deployment["metadata"], deployment.get("status", {})
+        require(status.get("observedGeneration", 0) >= metadata["generation"] and status.get("availableReplicas", 0) == 1 and
+                deployment["spec"]["template"]["spec"]["containers"][0]["image"] == engine["controlImage"],
+                "The Engine worker is not Ready on the accepted image")
+        result["deployment/dexengine-server"] = {"uid": metadata["uid"], "generation": metadata["generation"],
+                                                  "templateDigest": json_digest(deployment["spec"]["template"])}
+        database = read_object("statefulset", "paradedb")
+        metadata, status = database["metadata"], database.get("status", {})
+        require(status.get("observedGeneration", 0) >= metadata["generation"] and status.get("readyReplicas", 0) == 1 and
+                database["spec"]["template"]["spec"]["containers"][0]["image"] == engine["paradeDBImage"],
+                "The Engine ParadeDB fixture is not Ready on the accepted image")
+        result["statefulset/paradedb"] = {"uid": metadata["uid"], "generation": metadata["generation"],
+                                          "templateDigest": json_digest(database["spec"]["template"])}
+        config = read_object("configmap", "dexengine-server")
+        require(yaml.safe_load(config["data"]["config.yaml"]) == engine["config"], "Engine ConfigMap differs from the reviewed profile")
+        result["configmap/dexengine-server"] = {"uid": config["metadata"]["uid"], "resourceVersion": config["metadata"]["resourceVersion"]}
     return result

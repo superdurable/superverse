@@ -112,6 +112,7 @@ def main():
     parser.add_argument("--config", default=str(server_config.BASE),
                         help="deploy: the server configuration profile, layered over local-kind.yaml (default); "
                              "local-kind-acceptance.yaml is the final acceptance, whose model the platform developer decides at kind e2e")
+    parser.add_argument("--engine-config", help="deploy: opt into the reviewed private Engine Kind profile for Flow acceptance")
     parser.add_argument("--confirm")
     parser.add_argument("--dependencies-only", action="store_true")
     args = parser.parse_args()

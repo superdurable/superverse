@@ -74,6 +74,14 @@ localDependencies:
   postgresImage: ""
   keycloakImage: ""
   keycloakOrigin: ""
+engineKind:
+  enabled: false
+  runtimeEnabled: false
+  controlImage: ""
+  paradeDBImage: ""
+  config: {}
+  configRevision: ""
+  secretRevision: ""
 sandboxController:
   namespace: {create: true, name: agent-sandbox-system}
   image:

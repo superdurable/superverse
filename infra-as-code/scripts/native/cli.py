@@ -218,7 +218,8 @@ def prepare(instance, record, topology, studio_mode, profile):
         require(build_inputs.fingerprint(build_inputs.native_server_inputs()) == record["nativeSourceFingerprint"], "Native source changed while compiling")
         engine_layer = directory / "dexengine-run.yaml"
         write_private(engine_layer, json.dumps({
-            "server": {"grpcAddress": f"127.0.0.1:{topology.ports['engine_grpc']}", "healthAddress": f"127.0.0.1:{topology.ports['engine_health']}"},
+            "server": {"grpcAddress": f"127.0.0.1:{topology.ports['engine_grpc']}", "healthAddress": f"127.0.0.1:{topology.ports['engine_health']}",
+                       "httpAddress": f"127.0.0.1:{topology.ports['engine_http']}"},
             "dex": {"serverAddress": f"127.0.0.1:{topology.ports['dex']}", "blobCacheDir": str(directory / "dexengine-blob-cache")},
             "postgres": {"host": "127.0.0.1", "port": topology.ports["postgres"]},
         }))

@@ -35,11 +35,12 @@ IMAGE_MODULES = ("gopkg.in/yaml.v3",)
 CONFIG = "cmd/superverse-server/config"
 CONFIG_IMPORTERS = ("cmd/superverse-server", "cmd/tools/check-config", "internal/dexai/bootstrap")
 # A capability with several implementations has its interface in the parent package and each
-# implementation in a sub-package of its own. Callers import the parent; only internal/dexai/bootstrap
-# imports an implementation, and an implementation never imports another. The Kubernetes
+# implementation in a sub-package of its own. Callers import the parent; the corresponding
+# product bootstrap imports an implementation, and implementations never import another. The Kubernetes
 # implementations of the Sandbox instances and the Live serving build on the Kubernetes machinery of
 # the project infrastructure, and its test fixture composes the local backend.
 IMPLEMENTATIONS = {
+    "internal/dexengine/dexservers": ("kube",),
     "internal/comm/platform/repohost": ("github", "localgit"),
     "internal/comm/platform/eventqueue": ("memory",),
     "internal/dexai/delivery/releases/build": ("local", "hosted"),
@@ -65,7 +66,7 @@ IMPLEMENTATION_IMPORTS = {
 # it in one file.
 KUBERNETES_API = "internal/comm/platform/kubeapi"
 KUBERNETES_PACKAGES = ("internal/comm/platform/kubeapi", "internal/dexai/projects/infra/kube", "internal/dexai/agents/sandbox/kube",
-                       "internal/dexai/delivery/deployments/kube")
+                       "internal/dexai/delivery/deployments/kube", "internal/dexengine/dexservers/kube")
 KUBERNETES_FILES = {("internal/dexai/bootstrap", "kubernetes.go")}
 # Likewise only the Docker packages import the Docker Engine API client, in test files as well.
 DOCKER_API = "internal/comm/platform/dockerapi"
@@ -82,10 +83,15 @@ MEMORY_SAFE_PLATFORMS = (("linux", "arm64"), ("linux", "amd64"), ("darwin", "arm
 # The levels are the longest import chain below each package, so a new edge that needs a higher
 # level shows up in review. A business test helper (sandboxdtest) is levelled like its parent's code.
 LEVELS = {
+    "internal/dexengine/dexservers": 3,
+    "internal/dexengine/dexservers/kube": 4,
+    "internal/dexengine/dexservers/resources": 2,
+    "internal/dexengine/dexservers/tokenhttp": 4,
+    "internal/dexengine/serverdao": 4,
     "internal/dexengine/organizations": 1,
     "internal/dexengine/orgdao": 2,
-    "internal/dexengine/api": 3,
-    "internal/dexengine/bootstrap": 4,
+    "internal/dexengine/api": 5,
+    "internal/dexengine/bootstrap": 6,
     "internal/dexai/agents/platformissue": 1,
     "internal/dexai/agents/remoteagentdao": 1,
     "internal/dexai/agents/toolfailure": 1,
@@ -173,10 +179,9 @@ LEVELS = {
     "internal/dexai/bootstrap": 12,
 }
 
-# ENGINEROUTER adds these packages on its own branch; reserve their levels
-# without requiring absent packages to exist in this checkout.
+# The Engine identity leaf is below organization state; the router builds on it.
 PLANNED_ENGINE_LEVELS = {
-    "internal/dexengine/serverid": 1,
+    "internal/dexengine/serverid": 0,
     "internal/dexengine/router": 2,
 }
 
@@ -202,9 +207,10 @@ def violations(package, imported):
     for parent, names in IMPLEMENTATIONS.items():
         for name in names:
             implementation = f"{parent}/{name}"
-            if (under(imported, implementation) and not under(package, implementation, "internal/dexai/bootstrap")
+            composers = ("internal/dexai/bootstrap", "internal/dexengine/bootstrap") if parent == "internal/dexengine/dexservers" else ("internal/dexai/bootstrap",)
+            if (under(imported, implementation) and not under(package, implementation, *composers)
                     and (package, imported) not in IMPLEMENTATION_IMPORTS):
-                yield f"{package} imports the implementation {implementation}; only internal/dexai/bootstrap composes an implementation of {parent}"
+                yield f"{package} imports the implementation {implementation}; only {', '.join(composers)} composes an implementation of {parent}"
     # Test files may import dexai to exercise real product data; production comm imports never do.
     if under(package, "internal/comm") and not under(imported, "internal/comm"):
         yield f"{package} imports {imported}; internal/comm/** imports only internal/comm/**"

@@ -165,6 +165,7 @@ const (
 	kindConfigMap             = "ConfigMap"
 	KindPersistentVolumeClaim = "PersistentVolumeClaim"
 	KindService               = "Service"
+	KindStatefulSet           = "StatefulSet"
 	kindHTTPRoute             = "HTTPRoute"
 	kindDeployment            = "Deployment"
 	KindSandbox               = "Sandbox"
@@ -174,7 +175,7 @@ const (
 var collections = map[string]string{
 	KindNamespace: "namespaces", KindServiceAccount: "serviceaccounts", KindRoleBinding: "rolebindings",
 	KindResourceQuota: "resourcequotas", KindLimitRange: "limitranges", KindNetworkPolicy: "networkpolicies",
-	kindSecret: "secrets", kindConfigMap: "configmaps", KindPersistentVolumeClaim: "persistentvolumeclaims",
+	kindSecret: "secrets", kindConfigMap: "configmaps", KindPersistentVolumeClaim: "persistentvolumeclaims", KindStatefulSet: "statefulsets",
 	KindService: "services", kindHTTPRoute: "httproutes", kindDeployment: "deployments", KindSandbox: "sandboxes",
 }
 

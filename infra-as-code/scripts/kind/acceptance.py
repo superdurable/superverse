@@ -7,6 +7,8 @@
 # SPDX-License-Identifier: LicenseRef-Sustainable-Use-1.0
 
 """Kind browser acceptance against the exact deployed components; its receipt is the release gate."""
+import hashlib
+import importlib.util
 import json
 import os
 import time
@@ -15,6 +17,10 @@ from acceptance.browser import acceptance_admission, acceptance_signals, browser
 import build_inputs
 from commands import run
 import git_host
+if importlib.util.find_spec("kind.engine") is not None:
+    from kind import engine
+else:
+    engine = None  # The private Engine layer is absent from the public mirror.
 from kind.cluster import CLUSTER, GIT, NAMESPACE, kind_nodes, kubectl, state, verify_owner
 from kind.deployment_identity import kind_deployment_identity
 from kind.locks import KIND_ACCEPTANCE_DIRECTORY
@@ -44,6 +50,15 @@ def observed_rpc_coverage():
     return run(["docker", "exec", node, "cat", file], capture=True)
 
 
+def engine_source_unchanged(value):
+    if not value.get("engineEnabled"):
+        return True
+    require(engine is not None, "The deployed private Kind Engine layer is unavailable")
+    engine_values = value.get("engineChartValues") or {}
+    return (engine_values.get("sourceFingerprint") == engine.source_fingerprint() and
+            engine_values.get("profileSHA256") == hashlib.sha256(engine.PROFILE.read_bytes()).hexdigest())
+
+
 def e2e(_args):
     browser_node = browser_node_identity()
     value = verify_owner()
@@ -55,9 +70,11 @@ def e2e(_args):
     profile = value["deploymentInputs"]["profile"]
     require(value["deploymentInputs"].get("config"), "The deployment predates the server configuration profiles; redeploy before acceptance")
     require_unchanged(value["deploymentInputs"]["config"])
+    engine_values = value.get("engineChartValues")
+    require(engine_source_unchanged(value), "The Engine source or reviewed Kind profile changed since deploy")
     # The final acceptance runs the model the platform developer decided, which the receipt records; the browser specs get it from the environment.
     target = model_target(value["deploymentInputs"]["config"], os.environ)
-    require(runtime_identity and kind_deployment_identity(profile, deployed_images) == runtime_identity,
+    require(runtime_identity and kind_deployment_identity(profile, deployed_images, engine_values) == runtime_identity,
             "Deployed resources/configuration changed; redeploy before acceptance")
 
     def check_environment_identity():
@@ -78,7 +95,8 @@ def e2e(_args):
         current = state()
         require(current.get("deployedImages") == deployed_images and current.get("images") == deployed_images and
                 current.get("runtimeIdentity") == runtime_identity and build_inputs.kind_behavior_fingerprint() == fingerprint and
-                kind_deployment_identity(profile, deployed_images) == runtime_identity,
+                engine_source_unchanged(current) and
+                kind_deployment_identity(profile, deployed_images, engine_values) == runtime_identity,
                 "Source or deployed resource identity changed during E2E; no acceptance receipt emitted")
         observed = observed_rpc_coverage()
         coverage = STATE / "rpc-coverage.json"

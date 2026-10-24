@@ -12,6 +12,7 @@ internal/comm/platform/kubeapi/**
 internal/dexai/projects/infra/kube/**
 internal/dexai/agents/sandbox/kube/**
 internal/dexai/delivery/deployments/kube/**
+internal/dexengine/dexservers/kube/**
 internal/dexai/bootstrap/kubernetes.go
 
 # The Sandbox's runtime: the coding image with sandboxd and its helpers. Native runs the same image, but only Kind

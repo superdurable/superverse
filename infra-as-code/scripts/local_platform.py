@@ -126,6 +126,25 @@ def postgres_roles_sql(credentials):
     return "\n".join(statements) + "\n"
 
 
+def engine_roles_sql(credentials):
+    """Create the isolated Engine database and roles with retained private passwords."""
+    roles = ("dexengine_owner", "dexengine_server", "dexengine_dex")
+    statements = ["DO $$ BEGIN"]
+    for role in roles:
+        statements.append(f"IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{role}') THEN CREATE ROLE {role} LOGIN; END IF;")
+    statements.append("END $$;")
+    for role in roles:
+        password = credentials[role]
+        require(password.replace("-", "").replace("_", "").isalnum(), "Engine PostgreSQL passwords must be URL-safe")
+        statements.append(f"ALTER ROLE {role} LOGIN PASSWORD '{password}';")
+    statements.extend([
+        "SELECT 'CREATE DATABASE dexengine OWNER dexengine_owner' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'dexengine') \\gexec",
+        "ALTER DATABASE dexengine OWNER TO dexengine_owner;",
+        "GRANT CONNECT ON DATABASE dexengine TO dexengine_server, dexengine_dex;",
+    ])
+    return "\n".join(statements) + "\n"
+
+
 def keycloak_credentials(state):
     """The lane's Keycloak secrets, retained in its private state directory; a retained secret never changes."""
     return json.loads(retained_secret(state / KEYCLOAK_CREDENTIALS,

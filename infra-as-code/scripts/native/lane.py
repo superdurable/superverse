@@ -64,7 +64,7 @@ def instance_ports(document, index):
     return {
         "studio": url_port(document["studio"]["publicOrigin"]), "grpc": port(document["server"]["grpcAddress"]),
         "health": port(document["server"]["healthAddress"]),
-        "engine_grpc": 26090 + offset, "engine_health": 26091 + offset,
+        "engine_grpc": 26090 + offset, "engine_health": 26091 + offset, "engine_http": 26092 + offset,
         "git": port(document["localgit"]["listen"]), "routes": port(document["native"]["routesListen"]),
         "dex": port(document["dex"]["serverAddress"]), "dex_web": DEX_WEB_PORT + offset,
         "minio": url_port(document["storage"]["s3Endpoint"]), "temporal": TEMPORAL_PORT + offset,

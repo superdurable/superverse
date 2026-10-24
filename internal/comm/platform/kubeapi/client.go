@@ -59,10 +59,24 @@ func (e *StatusError) HTTPStatusCode() int { return e.Status }
 // caller decides what absence means. A transport failure leaves the effect of
 // a mutation unconfirmed; the caller reads the resource again before retrying.
 func (c *Client) Call(ctx context.Context, method, path string, body any) (Object, int, error) {
+	contentType := "application/json"
+	if method == http.MethodPatch {
+		contentType = "application/apply-patch+yaml"
+	}
+	return c.call(ctx, method, path, body, contentType)
+}
+
+// MergePatch updates only the named fields. A resourceVersion in metadata
+// makes a stale scale request conflict instead of overwriting another writer.
+func (c *Client) MergePatch(ctx context.Context, path string, body Object) (Object, int, error) {
+	return c.call(ctx, http.MethodPatch, path, body, "application/merge-patch+json")
+}
+
+func (c *Client) call(ctx context.Context, method, path string, body any, contentType string) (Object, int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	const limit = 8 << 20
-	data, code, err := c.send(ctx, method, path, body, limit)
+	data, code, err := c.send(ctx, method, path, body, limit, contentType)
 	if err != nil || data == nil {
 		return nil, code, err
 	}
@@ -81,7 +95,7 @@ func (c *Client) Call(ctx context.Context, method, path string, body any) (Objec
 func (c *Client) ReadText(ctx context.Context, path string, limit int) (string, int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	data, code, err := c.send(ctx, http.MethodGet, path, nil, limit)
+	data, code, err := c.send(ctx, http.MethodGet, path, nil, limit, "application/json")
 	if len(data) > limit {
 		data = data[:limit]
 	}
@@ -90,13 +104,13 @@ func (c *Client) ReadText(ctx context.Context, path string, limit int) (string, 
 
 // send sends one request and reads up to limit+1 bytes of a successful
 // response, so the caller can tell that it was cut. A 404 returns nil data.
-func (c *Client) send(ctx context.Context, method, path string, body any, limit int) ([]byte, int, error) {
+func (c *Client) send(ctx context.Context, method, path string, body any, limit int, contentType string) ([]byte, int, error) {
 	var data []byte
 	if body != nil {
 		data = comm.Must(json.Marshal(body))
 	}
 	request := comm.Must(http.NewRequestWithContext(ctx, method, strings.TrimRight(c.ServerURL, "/")+path, bytes.NewReader(data)))
-	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Content-Type", contentType)
 	if c.TokenFile != "" {
 		token, err := os.ReadFile(c.TokenFile)
 		if err != nil {

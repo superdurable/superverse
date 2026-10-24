@@ -10,6 +10,7 @@
 import base64
 import copy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -30,6 +31,10 @@ from kind.cluster import (CLUSTER, GIT, KIND_NODE_IMAGE, KUBECONFIG, NAMESPACE, 
                           missing_node_mounts, object_meta, port_forward_argv, prepare_repositories, read_object, recreation_advice,
                           require_node_mount, require_tools, save, start_nodes, state, verify_owner)
 from kind import gateway, server_config
+if importlib.util.find_spec("kind.engine") is not None:
+    from kind import engine
+else:
+    engine = None  # The private Engine layer is absent from the public mirror.
 from local_platform import (POSTGRES_CREDENTIALS, POSTGRES_DATABASE, POSTGRES_OWNER, POSTGRES_SERVER, POSTGRES_SUPERUSER, READ_MODEL_STORES, create_buckets,
                             dex_config, keycloak_credentials, keycloak_secret_environment, postgres_credentials, postgres_roles_sql)
 from kind.deployment_identity import json_digest, kind_deployment_identity
@@ -38,7 +43,7 @@ from kind.images import dependency_reference, load_dependency, resolve_project_d
 from kind.node_images import component_reference
 from kind.server_secrets import read_server_secrets, require_server_secrets
 from operator_errors import require
-from paths import CHART, LOCAL_KIND_VALUES, MAIN_CHECKOUT, STATE, project_env_value
+from paths import CHART, LOCAL_KIND_VALUES, MAIN_CHECKOUT, ROOT, STATE, project_env_value
 from pins import local_dependency_image, local_image
 from private_files import retained_secret, write_private
 
@@ -74,6 +79,8 @@ def login_auth_secrets():
 def up(_args):
     require_tools("docker", "kind", "kubectl", "helm", "git", "aws")
     value = state(required=False)
+    require(value is None or not value.get("engineEnabled") or engine is not None,
+            "The deployed private Kind Engine layer is unavailable in this checkout")
     if CLUSTER in run(["kind", "get", "clusters"], capture=True).splitlines():
         require(value is not None, "Existing superverse-v2 cluster is not owned by this checkout; refusing adoption")
         verify_owner()
@@ -117,7 +124,10 @@ def up(_args):
                                   "postgresImage": local_image("postgres"), "keycloakImage": local_image("keycloak")}
     # Once a deploy migrated the read model and gave Dex its Attribute Store, Dex keeps the stores that deploy rendered, not
     # the checkout's, whose new tables only the next deploy's migrations create; a new cluster starts without.
-    dex = kind_dex_config(credentials, postgres if value.get("readModelStore") else None, value.get("readModelStores"))
+    stores = dict(READ_MODEL_STORES)
+    if value.get("engineEnabled"):
+        stores.update(engine.read_model_stores(engine.credentials()))
+    dex = kind_dex_config(credentials, postgres if value.get("readModelStore") else None, stores)
     # The digest reaches the Dex Pod template, so a changed configuration restarts Dex.
     value["dexConfigRevision"] = json_digest(dex)
     save(value)
@@ -136,6 +146,9 @@ def up(_args):
         kubectl("rollout", "status", "statefulset/" + name, "-n", NAMESPACE, "--timeout=300s", timeout=330)
     initialize_buckets(credentials)
     create_postgres_roles(postgres)
+    if value.get("engineEnabled"):
+        kubectl("rollout", "status", "statefulset/paradedb", "-n", NAMESPACE, "--timeout=300s", timeout=330)
+        engine.create_database_roles(engine.credentials())
     kubectl("rollout", "status", "deployment/superverse-v2-dex", "-n", NAMESPACE, "--timeout=300s", timeout=330)
     kubectl("rollout", "status", "deployment/keycloak", "-n", NAMESPACE, "--timeout=300s", timeout=330)
     kubectl("rollout", "status", "deployment/agent-sandbox-controller", "-n", "agent-sandbox-system", "--timeout=300s", timeout=330)
@@ -144,6 +157,10 @@ def up(_args):
 
 def deploy(args):
     value = verify_owner()
+    require(not args.engine_config or engine is not None, "The private Kind Engine layer is unavailable in this checkout")
+    require(not value.get("engineEnabled") or engine is not None, "The deployed private Kind Engine layer is unavailable")
+    require(args.engine_config or not value.get("engineEnabled"),
+            "This Kind cluster has an Engine layer; pass --engine-config to preserve it on deploy")
     require(args.secret_env_file, "Kind deploy requires --secret-env-file with the server secrets: the Secret is replaced as a whole, so every secret must be in it")
     require(args.published_dependencies, "Kind deploy requires --published-dependencies with a committed approval from infra-as-code/dependencies/published")
     dependencies = published_dependencies.load(args.published_dependencies, verify_publication=True)
@@ -228,9 +245,34 @@ def deploy(args):
         "publishedApprovalSHA256": hashlib.sha256(Path(args.published_dependencies).read_bytes()).hexdigest()}
     for name in ("server", "studio", "dex"):
         kubectl("rollout", "status", "deployment/superverse-v2-" + name, "-n", NAMESPACE, "--timeout=300s", timeout=330)
-    configure_read_model(value, chart_values, credentials, postgres)
+    if args.engine_config:
+        engine_profile = engine.load_profile(args.engine_config)
+        engine_values = engine.chart_values(engine_profile, credentials, cookie_signing_key())
+        engine_values["runtimeEnabled"] = bool(value.get("engineEnabled"))
+        chart_values["engineKind"] = engine_values
+        engine.label_node()
+        engine.create_bucket(engine_profile, credentials)
+        install_chart(chart_values)
+        kubectl("rollout", "status", "statefulset/paradedb", "-n", NAMESPACE, "--timeout=300s", timeout=330)
+        engine_roles = engine.credentials()
+        engine.create_database_roles(engine_roles)
+        engine.migrate(engine_roles)
+        stores = dict(READ_MODEL_STORES)
+        stores.update(engine.read_model_stores(engine_roles))
+        configure_read_model(value, chart_values, credentials, postgres, stores)
+        engine_values["runtimeEnabled"] = True
+        install_chart(chart_values)
+        kubectl("rollout", "status", "deployment/dexengine-server", "-n", NAMESPACE, "--timeout=300s", timeout=330)
+        value.update(engineEnabled=True, engineChartValues=engine_values)
+        value["deploymentInputs"]["engine"] = {
+            "profile": str(engine.PROFILE.relative_to(ROOT)),
+            "profileSHA256": engine_values["profileSHA256"], "sourceFingerprint": engine_values["sourceFingerprint"],
+            "controlImage": engine_values["controlImage"], "serverZDImage": engine_values["config"]["engineServers"]["serverImage"],
+            "paradeDBImage": engine_values["paradeDBImage"], "configRevision": engine_values["configRevision"]}
+    else:
+        configure_read_model(value, chart_values, credentials, postgres)
     deployed_images = copy.deepcopy(value["images"])
-    value["runtimeIdentity"] = wait_until(lambda: kind_deployment_identity(profile_name, deployed_images), seconds=90, interval=2)
+    value["runtimeIdentity"] = wait_until(lambda: kind_deployment_identity(profile_name, deployed_images, value.get("engineChartValues")), seconds=90, interval=2)
     require(state()["images"] == deployed_images, "Component build identities changed during deployment; redeploy before acceptance")
     require(build_inputs.kind_behavior_fingerprint() == fingerprint, "Behavioral inputs changed during deployment; acceptance is not valid")
     value["deployedImages"] = deployed_images
@@ -251,7 +293,7 @@ def create_postgres_roles(postgres):
             input=postgres_roles_sql(postgres), private=True, timeout=60)
 
 
-def configure_read_model(value, chart_values, credentials, postgres):
+def configure_read_model(value, chart_values, credentials, postgres, stores=None):
     """Give platform Dex the read model's Attribute Store, which the server's Flows select where they start.
 
     Dex refuses to start while a table of the store is missing, so the store is configured only after the server's rollout,
@@ -259,7 +301,7 @@ def configure_read_model(value, chart_values, credentials, postgres):
     A later deploy changes nothing here and restarts nothing: only a changed configuration rolls Dex, through its Pod
     template's configuration digest.
     """
-    dex = kind_dex_config(credentials, postgres)
+    dex = kind_dex_config(credentials, postgres, stores)
     revision = json_digest(dex)
     changed = revision != value.get("dexConfigRevision")
     if changed:
@@ -283,7 +325,8 @@ def studio_origin():
 def local_chart_values(value):
     """The dependency images, each built component's Kind-loaded digest alias and the server configuration last deployed."""
     dependencies = dict(value["localDependencies"], minioImage=dependency_reference("minio", value["dependencies"]["minio"]))
-    result = {"localDependencies": dependencies, "server": {}, "studio": {}, "dex": {"configRevision": value.get("dexConfigRevision", "")}}
+    result = {"localDependencies": dependencies, "server": {}, "studio": {}, "dex": {"configRevision": value.get("dexConfigRevision", "")},
+              "engineKind": value.get("engineChartValues", {"enabled": False})}
     deployed = value.get("deploymentInputs", {}).get("config", {}).get("input")
     if deployed:
         result["server"]["config"] = deployed

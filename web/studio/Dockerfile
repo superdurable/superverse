@@ -20,6 +20,7 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000 SUPERVERSE_PROTO_PATH=/app/api/superverse/v2/superverse.proto
 COPY --from=build --chown=node:node /app/web/studio/.next/standalone ./
 COPY --from=build --chown=node:node /app/web/studio/public ./web/studio/public
+RUN chmod -R a+rX ./web/studio/public
 COPY --from=build --chown=node:node /app/web/studio/.next/static ./web/studio/.next/static
 COPY --from=build --chown=node:node /app/api/superverse/v2/superverse.proto ./api/superverse/v2/superverse.proto
 COPY --from=build --chown=node:node /app/web/studio/proto ./web/studio/proto
