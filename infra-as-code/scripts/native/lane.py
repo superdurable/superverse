@@ -240,13 +240,17 @@ def browser_signing_key(instance):
     return key
 
 
-def login_auth_secrets(instance):
+def login_auth_secrets(instance, enabled_clients):
     """Private, independent, retained login issuer/client and AES-GCM browser keys for one Native instance."""
     def new_key(): return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("=")
-    return json.loads(retained_secret(instance.root / "login-auth-secrets.json", lambda: json.dumps({
+    auth = json.loads(retained_secret(instance.root / "login-auth-secrets.json", lambda: json.dumps({
         "issuer": {"current": new_key()}, "clients": {"studio": {"current": new_key()}},
         "browser": {"product": {"current": new_key()}, "login": {"current": new_key()}},
     })))
+    if "engine" in enabled_clients:
+        auth["clients"]["engine"] = {"current": retained_secret(instance.root / "login-engine-client-key", new_key)}
+    auth["clients"] = {key: auth["clients"][key] for key in enabled_clients}
+    return auth
 
 
 def build_token(instance):

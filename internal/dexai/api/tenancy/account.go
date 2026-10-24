@@ -73,13 +73,29 @@ func (s *accountServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb.Log
 }
 
 func (s *accountServer) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.LogoutResponse, error) {
-	if _, err := s.authenticateAccountSurface(ctx, in.GetCaller()); err != nil {
+	if _, err := s.authenticateLogoutSurface(ctx, in.GetCaller()); err != nil {
 		return nil, err
 	}
 	if err := s.Accounts.Logout(ctx, in.GetCaller().GetSessionToken()); err != nil {
 		return nil, boundary.RPCStatus(err)
 	}
 	return &pb.LogoutResponse{}, nil
+}
+
+func (s *accountServer) authenticateLogoutSurface(ctx context.Context, caller *pb.CallerContext) (accounts.AccountSummary, error) {
+	id, secret, supplied := loginCredential(ctx)
+	if !supplied || id != string(accounts.ProductAudienceEngine) {
+		return s.authenticateAccountSurface(ctx, caller)
+	}
+	product, err := s.Accounts.LoginHost.Product(id, secret)
+	if err != nil {
+		return accounts.AccountSummary{}, handoffStatus(err)
+	}
+	if caller == nil {
+		return accounts.AccountSummary{}, status.Error(codes.Unauthenticated, "Engine caller required")
+	}
+	account, _, err := s.Accounts.AuthenticateProduct(ctx, caller.GetAccountId(), caller.GetCanonicalEmail(), caller.GetSessionToken(), product.Audience)
+	return account, boundary.RPCStatus(err)
 }
 
 func (s *accountServer) GetCurrentAccount(ctx context.Context, in *pb.GetCurrentAccountRequest) (*pb.GetCurrentAccountResponse, error) {

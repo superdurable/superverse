@@ -183,6 +183,14 @@ func (a *Accounts) AuthenticateLoginHost(ctx context.Context, accountID, email, 
 	return a.authenticateLogin(ctx, accountID, email, token, audienceLogin)
 }
 
+// AuthenticateProduct verifies a registered product's own audience-bound login.
+func (a *Accounts) AuthenticateProduct(ctx context.Context, accountID, email, token string, audience ProductAudience) (AccountSummary, string, error) {
+	if !audience.valid() {
+		return AccountSummary{}, "", ErrInvalidCredential
+	}
+	return a.authenticateLogin(ctx, accountID, email, token, string(audience))
+}
+
 func (a *Accounts) authenticateLogin(ctx context.Context, accountID, email, token, audience string) (AccountSummary, string, error) {
 	canonical, err := canonicalEmail(email)
 	if err != nil || canonical != email || accountID == "" {

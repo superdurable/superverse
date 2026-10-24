@@ -11,7 +11,7 @@ import { callerEnvelope, callerFromRequest, sessionCookie } from "@/lib/server/c
 import { callAccountRpc } from "@/lib/server/grpc-client";
 import { httpError, readBoundedBody } from "@/lib/server/request-body";
 import { requireSurface } from "@/lib/server/request-origin";
-import { authConfig, originHost } from "@/lib/server/auth-config";
+import { authConfig, loginProductByRedirectURI, originHost } from "@/lib/server/auth-config";
 import { clearCookie, openCookie, sealCookie } from "./browser-cookie";
 import { postExchange } from "./exchange-transport";
 import { issuerSecret, productSecret } from "./secrets";
@@ -151,7 +151,8 @@ export function continueLogin(request: Request): Response {
       typeof delivered.code !== "string" ||
       !/^lh1_[A-Za-z0-9_-]{43}$/.test(delivered.code) ||
       !validPart(delivered.state) ||
-      delivered.redirectUri !== config.productOrigin + callbackPath ||
+      typeof delivered.redirectUri !== "string" ||
+      !loginProductByRedirectURI(delivered.redirectUri) ||
       !validPart(delivered.sessionDigest) ||
       !samePart(delivered.sessionDigest, expectedDigest)
     )
@@ -229,7 +230,8 @@ export async function exchangeLogin(request: Request): Promise<Response> {
       typeof value.code !== "string" ||
       !/^lh1_[A-Za-z0-9_-]{43}$/.test(value.code) ||
       !validPart(value.code_verifier) ||
-      value.redirect_uri !== config.productOrigin + callbackPath
+      typeof value.redirect_uri !== "string" ||
+      loginProductByRedirectURI(value.redirect_uri)?.id !== id
     )
       throw httpError(400, "invalid_request");
     const { login } = await callAccountRpc(

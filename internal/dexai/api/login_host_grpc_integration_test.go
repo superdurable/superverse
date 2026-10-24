@@ -42,15 +42,20 @@ func TestLoginHostGRPCIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	serverDB := postgrestest.ScratchServerDatabaseForTest(t, db)
-	issuerKey, productKey := []byte(strings.Repeat("i", 32)), []byte(strings.Repeat("p", 32))
+	issuerKey, productKey, engineKey := []byte(strings.Repeat("i", 32)), []byte(strings.Repeat("p", 32)), []byte(strings.Repeat("e", 32))
 	const origin = "http://studio.native.localhost:21000"
 	const callback = origin + "/api/auth/callback"
+	const engineOrigin = "http://engine.native.localhost:21001"
+	const engineCallback = engineOrigin + "/api/auth/callback"
 	service := &accounts.Accounts{
 		DAO:    accountdao.New(serverDB, []string{"admin@superverse.test"}),
 		Signer: comm.Must(accounts.NewTokenSigner([]byte(strings.Repeat("s", 32)))),
 		LoginHost: accounts.NewLoginHost(accounts.SecretRing{Current: issuerKey}, []accounts.LoginProduct{{
 			ID: "studio", Origin: origin, RedirectURI: callback, Audience: accounts.ProductAudienceStudio,
 			Secrets: accounts.SecretRing{Current: productKey},
+		}, {
+			ID: "engine", Origin: engineOrigin, RedirectURI: engineCallback, Audience: accounts.ProductAudienceEngine,
+			Secrets: accounts.SecretRing{Current: engineKey},
 		}}, true, true, 60, 5, 120, 10),
 	}
 	connection := serveLoopback(ctx, t, &Server{Boundary: &boundary.Boundary{Logger: slog.Default(), Accounts: service}})
@@ -59,6 +64,8 @@ func TestLoginHostGRPCIntegration(t *testing.T) {
 		"x-superverse-auth-secret", base64.RawURLEncoding.EncodeToString(issuerKey)))
 	product := metadata.NewOutgoingContext(ctx, metadata.Pairs("x-superverse-auth-client", "studio",
 		"x-superverse-auth-secret", base64.RawURLEncoding.EncodeToString(productKey)))
+	engineProduct := metadata.NewOutgoingContext(ctx, metadata.Pairs("x-superverse-auth-client", "engine",
+		"x-superverse-auth-secret", base64.RawURLEncoding.EncodeToString(engineKey)))
 	id := flowid.RandomID(12)
 	registered, err := client.RegisterAccount(issuer, &pb.RegisterAccountRequest{Email: "login-host-" + id + "@example.com",
 		Password: "a-long-test-password", RequestId: "register-" + id})
@@ -158,6 +165,37 @@ func TestLoginHostGRPCIntegration(t *testing.T) {
 		Code: code, CodeVerifier: verifierText, RedirectUri: callback, Caller: caller,
 	}); status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("exchange accepted a caller supplied by the product: %v", err)
+	}
+	engineGrant, err := client.CreateLoginAuthorizationCode(issuer, &pb.CreateLoginAuthorizationCodeRequest{
+		ProductOrigin: engineOrigin, RedirectUri: engineCallback, CodeChallenge: challengeText, Caller: caller,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	engineCode := engineGrant.GetAuthorizationCode().GetCode()
+	if _, err := client.ExchangeLoginAuthorizationCode(product, &pb.ExchangeLoginAuthorizationCodeRequest{
+		Code: engineCode, CodeVerifier: verifierText, RedirectUri: engineCallback,
+	}); status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("Studio credential exchanged an Engine grant: %v", err)
+	}
+	engineExchange, err := client.ExchangeLoginAuthorizationCode(engineProduct, &pb.ExchangeLoginAuthorizationCodeRequest{
+		Code: engineCode, CodeVerifier: verifierText, RedirectUri: engineCallback,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	engineLogin := engineExchange.GetLogin()
+	if err := db.QueryRowContext(ctx, `SELECT audience FROM login_sessions WHERE session_id = $1`, engineLogin.GetSessionId()).Scan(&productAudience); err != nil || productAudience != string(accounts.ProductAudienceEngine) {
+		t.Fatalf("Engine exchange stored audience %q: %v", productAudience, err)
+	}
+	engineCaller := &pb.CallerContext{AccountId: engineLogin.GetAccount().GetAccountId(),
+		CanonicalEmail: engineLogin.GetAccount().GetEmail(), SessionToken: engineLogin.GetSessionToken()}
+	if _, err := client.Logout(engineProduct, &pb.LogoutRequest{Caller: engineCaller}); err != nil {
+		t.Fatalf("Engine product logout did not reach AccountService: %v", err)
+	}
+	var engineSessions int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM login_sessions WHERE session_id = $1`, engineLogin.GetSessionId()).Scan(&engineSessions); err != nil || engineSessions != 0 {
+		t.Fatalf("Engine product session was not revoked: rows=%d err=%v", engineSessions, err)
 	}
 	// Expiry is checked with the database clock even when the physical row has
 	// not yet been cleaned; an expired redemption commits issuer-local cleanup.

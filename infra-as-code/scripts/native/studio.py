@@ -44,10 +44,10 @@ def prepare_studio(record, directory, mode, host_environment, topology, document
     environment["SUPERVERSE_STUDIO_AUTH_CONFIG"] = json.dumps({
         "productOrigin": topology.studio_origin, "loginOrigin": login.get("publicOrigin", ""),
         "handoffEnabled": bool(login.get("handoffEnabled")), "exchangeEnabled": bool(login.get("exchangeEnabled")),
-        "exchangeURL": f"http://{HOST}:{port}", "studioClientID": "studio",
+        "exchangeURL": f"http://{HOST}:{port}", "studioClientID": "studio", "clients": login.get("clients", {}),
     })
     if login.get("handoffEnabled") or login.get("exchangeEnabled"):
-        auth = login_auth_secrets(topology.instance)
+        auth = login_auth_secrets(topology.instance, [id for id, client in login.get("clients", {}).items() if client.get("enabled")])
         environment["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
         environment["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
         environment["SUPERVERSE_LOGIN_BROWSER_KEYS"] = json.dumps(auth["browser"])

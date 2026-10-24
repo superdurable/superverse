@@ -67,12 +67,12 @@ def require_login_loopback_hosts(document):
                 f"{host} must resolve to loopback; add it to the local hosts file before starting Kind")
 
 
-def login_auth_secrets():
+def login_auth_secrets(enabled_clients):
     """Retain distinct private local credentials across Kind redeploys and replicas."""
     def key(name):
         return retained_secret(STATE / ("login-" + name + "-key"),
                                lambda: base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("="))
-    return {"issuer": {"current": key("issuer")}, "clients": {"studio": {"current": key("studio-client")}},
+    return {"issuer": {"current": key("issuer")}, "clients": {id: {"current": key(id + "-client")} for id in enabled_clients},
             "browser": {"login": {"current": key("browser-login")}, "product": {"current": key("browser-product")}}}
 
 
@@ -196,7 +196,7 @@ def deploy(args):
         server["SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS"] = client_secrets
     login = document.get("accounts", {}).get("loginHost", {})
     if login.get("handoffEnabled") or login.get("exchangeEnabled"):
-        auth = login_auth_secrets()
+        auth = login_auth_secrets([id for id, client in login.get("clients", {}).items() if client.get("enabled")])
         server["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
         server["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
     require_server_secrets(server, repohost)
@@ -247,7 +247,7 @@ def deploy(args):
         kubectl("rollout", "status", "deployment/superverse-v2-" + name, "-n", NAMESPACE, "--timeout=300s", timeout=330)
     if args.engine_config:
         engine_profile = engine.load_profile(args.engine_config)
-        engine_values = engine.chart_values(engine_profile, credentials, cookie_signing_key())
+        engine_values = engine.chart_values(engine_profile, credentials, engine.session_signing_key())
         engine_values["runtimeEnabled"] = bool(value.get("engineEnabled"))
         chart_values["engineKind"] = engine_values
         engine.label_node()

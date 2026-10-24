@@ -17,16 +17,18 @@ export function LoginHostActions({
   csrf,
   logoutCSRF,
   productOrigin,
+  productLabel,
 }: {
   email: string;
   csrf?: string;
   logoutCSRF: string;
   productOrigin: string;
+  productLabel: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function continueToStudio() {
+  async function continueToProduct() {
     if (!csrf) return;
     setBusy(true);
     setError("");
@@ -56,17 +58,17 @@ export function LoginHostActions({
       {csrf ? (
         <button
           className="block rounded-md bg-accent px-4 py-2 font-medium text-white"
-          onClick={() => void continueToStudio()}
+          onClick={() => void continueToProduct()}
           disabled={busy}
         >
-          Continue to Dex AI Platform
+          Continue to {productLabel}
         </button>
       ) : (
         <a
           className="block rounded-md bg-accent px-4 py-2 text-center font-medium text-white"
           href={`${productOrigin}/api/auth/start`}
         >
-          Dex AI Platform
+          {productLabel}
         </a>
       )}
       <button

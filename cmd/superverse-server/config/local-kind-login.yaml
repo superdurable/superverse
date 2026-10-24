@@ -19,3 +19,7 @@ accounts:
         enabled: true
         origin: http://studio.kind.localhost:23000
         redirectURI: http://studio.kind.localhost:23000/api/auth/callback
+      engine:
+        enabled: true
+        origin: http://engine.kind.localhost:23001
+        redirectURI: http://engine.kind.localhost:23001/api/auth/callback

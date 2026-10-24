@@ -28,6 +28,9 @@ export async function LoginHostEntry({ mode }: { mode: "login" | "register" }) {
     context = null;
   }
   const caller = callerFromCookieHeader(requestHeaders.get("cookie"), "login");
+  const engineOrigin = config.clients.engine?.enabled ? config.clients.engine.origin : null;
+  const targetOrigin = context?.returnTo ?? config.productOrigin;
+  const targetLabel = targetOrigin === engineOrigin ? "Managed Dex Engine" : "Dex AI Platform";
   let account;
   if (caller) {
     try {
@@ -48,6 +51,7 @@ export async function LoginHostEntry({ mode }: { mode: "login" | "register" }) {
               email={account.email}
               logoutCSRF={sessionCSRF(caller.sessionToken)}
               productOrigin={config.productOrigin}
+              productLabel="Dex AI Platform"
             />
           ) : (
             <a
@@ -58,7 +62,11 @@ export async function LoginHostEntry({ mode }: { mode: "login" | "register" }) {
               Dex AI Platform
             </a>
           )}
-          <p className="mt-4 text-sm text-ink-dim">Managed Dex Engine — Coming soon</p>
+          {engineOrigin && (
+            <a className="mt-4 block text-center text-sm text-accent" href={`${engineOrigin}/api/auth/start`}>
+              Managed Dex Engine
+            </a>
+          )}
         </section>
       </main>
     );
@@ -67,12 +75,13 @@ export async function LoginHostEntry({ mode }: { mode: "login" | "register" }) {
       <main className="grid h-full bg-bg p-6">
         <section className="m-auto w-full max-w-md rounded-xl border border-line-soft bg-panel p-8 shadow-(--shadow-lift)">
           <BrandMark />
-          <h1 className="mt-6 text-2xl font-semibold">Continue to Dex AI Platform</h1>
+          <h1 className="mt-6 text-2xl font-semibold">Continue to {targetLabel}</h1>
           <LoginHostActions
             email={account.email}
             csrf={context.csrf}
             logoutCSRF={sessionCSRF(caller.sessionToken)}
-            productOrigin={config.productOrigin}
+            productOrigin={targetOrigin}
+            productLabel={targetLabel}
           />
         </section>
       </main>

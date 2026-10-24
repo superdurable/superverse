@@ -260,7 +260,7 @@ def server_environment(instance, layers, document):
         environment["SUPERVERSE_CONNECTOR_OAUTH_CLIENT_SECRETS"] = client_secrets
     login = document.get("accounts", {}).get("loginHost", {})
     if login.get("handoffEnabled") or login.get("exchangeEnabled"):
-        auth = login_auth_secrets(instance)
+        auth = login_auth_secrets(instance, [id for id, client in login.get("clients", {}).items() if client.get("enabled")])
         environment["SUPERVERSE_LOGIN_HOST_ISSUER_SECRET_RING"] = json.dumps(auth["issuer"])
         environment["SUPERVERSE_LOGIN_HOST_CLIENT_SECRET_RINGS"] = json.dumps(auth["clients"])
     return environment

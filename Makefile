@@ -62,6 +62,7 @@ generate: generate-proto generate-go generate-web
 generate-proto: install-buf
 	@$(BUF) generate
 	@BUF='$(BUF)' python3 scripts/check-proto-services.py --write
+	@npm --prefix web/engine run generate:protobuf
 
 generate-go:
 	@go generate ./internal/dexai/agents/session/toolinput
@@ -129,9 +130,10 @@ check-go-rules: check-studio-server-boundary check-package-layers \
 
 check-go-proto: check-proto-format check-generated-proto check-proto
 
-# Generated types, pins, Prettier, ESLint, knip, the module and README rules and next build (decision 0012).
+# Studio and Engine generated types, formatting, lint, source rules and production builds (decision 0012).
 check-web:
 	@npm --prefix web/studio run check
+	@npm --prefix web/engine run check
 
 check-web-source:
 	@npm --prefix web/studio run check:source

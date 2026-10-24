@@ -717,11 +717,11 @@ func (c Config) validateLoginHost() []error {
 		if id != "studio" && id != "engine" {
 			fail("accounts.loginHost.clients contains an unknown product")
 		}
-		if id == "engine" && client.Enabled {
-			fail("accounts.loginHost.clients.engine is unavailable until Engine has a callback")
-		}
 		if client.Enabled && (!loginOrigin(client.Origin, c.LocalKind) || client.RedirectURI != client.Origin+"/api/auth/callback" || client.Origin == h.PublicOrigin) {
 			fail("accounts.loginHost.clients contains an invalid origin or callback")
+		}
+		if id == "engine" && client.Enabled && client.Origin == studio.Origin {
+			fail("accounts.loginHost.clients.engine must have its own origin")
 		}
 	}
 	return problems

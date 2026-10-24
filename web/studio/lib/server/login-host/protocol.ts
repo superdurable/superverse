@@ -8,7 +8,7 @@
 
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { httpError } from "@/lib/server/request-body";
-import { authConfig } from "@/lib/server/auth-config";
+import { authConfig, loginProductByOrigin } from "@/lib/server/auth-config";
 
 export interface LoginContext {
   returnTo: string;
@@ -90,8 +90,7 @@ export function parseLoginQuery(
     if (query.size !== 0) throw httpError(400, "Invalid login request");
     return null;
   }
-  const config = authConfig();
-  if (target !== config.productOrigin) throw httpError(400, "Invalid login request");
+  if (!loginProductByOrigin(target)) throw httpError(400, "Invalid login request");
   const state = query.get("state"),
     challenge = query.get("code_challenge"),
     method = query.get("code_challenge_method");
@@ -101,9 +100,9 @@ export function parseLoginQuery(
 }
 
 export function readLoginContext(raw: Record<string, unknown>): LoginContext {
-  const config = authConfig();
   if (
-    raw.returnTo !== config.productOrigin ||
+    typeof raw.returnTo !== "string" ||
+    !loginProductByOrigin(raw.returnTo) ||
     !validPart(raw.state) ||
     !validPart(raw.challenge) ||
     !validPart(raw.csrf)

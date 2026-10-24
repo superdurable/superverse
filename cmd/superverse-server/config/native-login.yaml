@@ -19,3 +19,7 @@ accounts:
         enabled: true
         origin: http://studio.native.localhost:21000
         redirectURI: http://studio.native.localhost:21000/api/auth/callback
+      engine:
+        enabled: true
+        origin: http://engine.native.localhost:21001
+        redirectURI: http://engine.native.localhost:21001/api/auth/callback
